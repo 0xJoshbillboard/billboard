@@ -1,3 +1,2 @@
-#!/bin/sh
-prettier --write .
 forge fmt ./packages/contracts 
+yarn format

@@ -6,7 +6,8 @@
   ],
   "scripts": {
     "build": "yarn workspaces foreach --all run build",
-    "test": "yarn workspaces foreach --all run test"
+    "test": "yarn workspaces foreach --all run test",
+    "format": "prettier --write ."
   },
   "devDependencies": {
     "husky": "^9.1.7"

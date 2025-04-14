@@ -1,1 +1,3 @@
-yarn lint && yarn format && forge fmt ./packages/contracts 
+#!/bin/sh
+prettier --write .
+forge fmt ./packages/contracts 

@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { useState } from "react";
+import { Link, useLocation } from "react-router-dom";
 import {
   AppBar,
   Toolbar,
@@ -17,19 +17,29 @@ import {
   MenuItem,
   Container,
   Chip,
-} from '@mui/material';
-import { Menu as MenuIcon, Brightness4 as Brightness4Icon, Brightness7 as Brightness7Icon } from '@mui/icons-material';
-import { useConnectWallet, useSetChain } from '@web3-onboard/react';
-import { chains } from '../utils/chains';
-import BillboardIcon from './Icons/Billboard';
-import { menuItems } from '../utils/links';
-import useBillboard from '../hooks/useBillboard';
+} from "@mui/material";
+import {
+  Menu as MenuIcon,
+  Brightness4 as Brightness4Icon,
+  Brightness7 as Brightness7Icon,
+} from "@mui/icons-material";
+import { useConnectWallet, useSetChain } from "@web3-onboard/react";
+import { chains } from "../utils/chains";
+import BillboardIcon from "./Icons/Billboard";
+import { menuItems } from "../utils/links";
+import useBillboard from "../hooks/useBillboard";
 
-export default function Header({ toggleColorMode }: { toggleColorMode: () => void }) {
+export default function Header({
+  toggleColorMode,
+}: {
+  toggleColorMode: () => void;
+}) {
   const [, setChain] = useSetChain();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [showMobileChainOptions, setShowMobileChainOptions] = useState(false);
-  const [chainMenuAnchor, setChainMenuAnchor] = useState<null | HTMLElement>(null);
+  const [chainMenuAnchor, setChainMenuAnchor] = useState<null | HTMLElement>(
+    null,
+  );
   const theme = useTheme();
   const location = useLocation();
   const [{ wallet, connecting }, connect, disconnect] = useConnectWallet();
@@ -51,12 +61,21 @@ export default function Header({ toggleColorMode }: { toggleColorMode: () => voi
   };
 
   return (
-    <AppBar position="static" sx={{ color: theme.palette.text.primary, boxShadow: 'none' }}>
-      <Container maxWidth={false} sx={{ maxWidth: '1440px' }}>
-        <Toolbar sx={{ justifyContent: 'space-between', padding: { xs: 0 } }}>
-          <Box sx={{ display: 'flex', alignItems: 'center' }}>
+    <AppBar
+      position="static"
+      sx={{ color: theme.palette.text.primary, boxShadow: "none" }}
+    >
+      <Container maxWidth={false} sx={{ maxWidth: "1440px" }}>
+        <Toolbar sx={{ justifyContent: "space-between", padding: { xs: 0 } }}>
+          <Box sx={{ display: "flex", alignItems: "center" }}>
             <BillboardIcon />
-            <Typography ml={1} variant="h6" component="div" sx={{ fontWeight: 'bold' }} color="primary">
+            <Typography
+              ml={1}
+              variant="h6"
+              component="div"
+              sx={{ fontWeight: "bold" }}
+              color="primary"
+            >
               Billboard
             </Typography>
           </Box>
@@ -64,8 +83,8 @@ export default function Header({ toggleColorMode }: { toggleColorMode: () => voi
           {/* Desktop Navigation */}
           <Box
             sx={{
-              display: { xs: 'none', md: 'flex' },
-              alignItems: 'center',
+              display: { xs: "none", md: "flex" },
+              alignItems: "center",
               gap: 2,
             }}
           >
@@ -75,10 +94,11 @@ export default function Header({ toggleColorMode }: { toggleColorMode: () => voi
                 component={Link}
                 to={item.path}
                 sx={{
-                  fontWeight: location.pathname === item.path ? 'bold' : 'normal',
-                  '&:hover': {
+                  fontWeight:
+                    location.pathname === item.path ? "bold" : "normal",
+                  "&:hover": {
                     color: theme.palette.text.secondary,
-                    backgroundColor: 'transparent',
+                    backgroundColor: "transparent",
                   },
                 }}
               >
@@ -87,10 +107,19 @@ export default function Header({ toggleColorMode }: { toggleColorMode: () => voi
             ))}
             {!!wallet?.accounts[0].address && (
               <>
-                <Typography variant="body1" sx={{ color: theme.palette.text.primary }}>
-                  {wallet.accounts[0].address.slice(0, 6)}...{wallet.accounts[0].address.slice(-4)}
+                <Typography
+                  variant="body1"
+                  sx={{ color: theme.palette.text.primary }}
+                >
+                  {wallet.accounts[0].address.slice(0, 6)}...
+                  {wallet.accounts[0].address.slice(-4)}
                 </Typography>
-                <Chip label={`${usdcBalance} USDC`} color="primary" size="small" sx={{ fontWeight: 'medium' }} />
+                <Chip
+                  label={`${usdcBalance} USDC`}
+                  color="primary"
+                  size="small"
+                  sx={{ fontWeight: "medium" }}
+                />
               </>
             )}
             {wallet?.chains[0].namespace && (
@@ -98,16 +127,20 @@ export default function Header({ toggleColorMode }: { toggleColorMode: () => voi
                 onClick={handleChainMenuOpen}
                 sx={{
                   color: theme.palette.text.primary,
-                  '&:hover': {
+                  "&:hover": {
                     color: theme.palette.text.secondary,
-                    backgroundColor: 'transparent',
+                    backgroundColor: "transparent",
                   },
                 }}
               >
                 Chain: {parseInt(wallet.chains[0].id, 16)}
               </Button>
             )}
-            <Menu anchorEl={chainMenuAnchor} open={Boolean(chainMenuAnchor)} onClose={() => handleChainMenuClose()}>
+            <Menu
+              anchorEl={chainMenuAnchor}
+              open={Boolean(chainMenuAnchor)}
+              onClose={() => handleChainMenuClose()}
+            >
               {chains.map((chain) => (
                 <MenuItem
                   key={chain.id}
@@ -121,38 +154,54 @@ export default function Header({ toggleColorMode }: { toggleColorMode: () => voi
             <Button
               onClick={wallet ? () => disconnect(wallet) : () => connect()}
               sx={{
-                '&:hover': {
+                "&:hover": {
                   color: theme.palette.text.secondary,
-                  backgroundColor: 'transparent',
+                  backgroundColor: "transparent",
                 },
               }}
               variant="contained"
               color="secondary"
             >
-              {connecting ? 'Connecting...' : wallet ? 'Disconnect Wallet' : 'Connect Wallet'}
+              {connecting
+                ? "Connecting..."
+                : wallet
+                  ? "Disconnect Wallet"
+                  : "Connect Wallet"}
             </Button>
 
             <IconButton onClick={toggleColorMode} color="inherit">
-              {theme.palette.mode === 'dark' ? <Brightness7Icon /> : <Brightness4Icon />}
+              {theme.palette.mode === "dark" ? (
+                <Brightness7Icon />
+              ) : (
+                <Brightness4Icon />
+              )}
             </IconButton>
           </Box>
 
           {/* Mobile Menu Icon */}
           <Box
             sx={{
-              display: { xs: 'flex', md: 'none' },
+              display: { xs: "flex", md: "none" },
               gap: 1,
             }}
           >
-            <IconButton onClick={toggleColorMode} color="inherit" sx={{ display: { xs: 'flex', md: 'none' } }}>
-              {theme.palette.mode === 'dark' ? <Brightness7Icon /> : <Brightness4Icon />}
+            <IconButton
+              onClick={toggleColorMode}
+              color="inherit"
+              sx={{ display: { xs: "flex", md: "none" } }}
+            >
+              {theme.palette.mode === "dark" ? (
+                <Brightness7Icon />
+              ) : (
+                <Brightness4Icon />
+              )}
             </IconButton>
             <IconButton
               edge="end"
               color="inherit"
               aria-label="menu"
               onClick={toggleMenu}
-              sx={{ display: { xs: 'flex', md: 'none' } }}
+              sx={{ display: { xs: "flex", md: "none" } }}
             >
               <MenuIcon />
             </IconButton>
@@ -164,8 +213,8 @@ export default function Header({ toggleColorMode }: { toggleColorMode: () => voi
             open={isMenuOpen}
             onClose={toggleMenu}
             sx={{
-              display: { xs: 'block', md: 'none' },
-              '& .MuiDrawer-paper': {
+              display: { xs: "block", md: "none" },
+              "& .MuiDrawer-paper": {
                 width: 240,
                 backgroundColor: theme.palette.background.default,
               },
@@ -179,8 +228,11 @@ export default function Header({ toggleColorMode }: { toggleColorMode: () => voi
                   to={item.path}
                   onClick={toggleMenu}
                   sx={{
-                    backgroundColor: location.pathname === item.path ? theme.palette.action.selected : 'transparent',
-                    '&:hover': {
+                    backgroundColor:
+                      location.pathname === item.path
+                        ? theme.palette.action.selected
+                        : "transparent",
+                    "&:hover": {
                       backgroundColor: theme.palette.action.hover,
                     },
                   }}
@@ -188,8 +240,12 @@ export default function Header({ toggleColorMode }: { toggleColorMode: () => voi
                   <ListItemText
                     primary={item.text}
                     sx={{
-                      color: location.pathname === item.path ? theme.palette.primary.main : theme.palette.text.primary,
-                      fontWeight: location.pathname === item.path ? 'bold' : 'normal',
+                      color:
+                        location.pathname === item.path
+                          ? theme.palette.primary.main
+                          : theme.palette.text.primary,
+                      fontWeight:
+                        location.pathname === item.path ? "bold" : "normal",
                     }}
                   />
                 </ListItem>
@@ -200,22 +256,32 @@ export default function Header({ toggleColorMode }: { toggleColorMode: () => voi
                   toggleMenu();
                 }}
                 sx={{
-                  '&:hover': {
+                  "&:hover": {
                     backgroundColor: theme.palette.action.hover,
-                    cursor: 'pointer',
+                    cursor: "pointer",
                   },
                 }}
               >
                 <ListItemText
-                  primary={connecting ? 'Connecting...' : wallet ? 'Disconnect Wallet' : 'Connect Wallet'}
+                  primary={
+                    connecting
+                      ? "Connecting..."
+                      : wallet
+                        ? "Disconnect Wallet"
+                        : "Connect Wallet"
+                  }
                 />
               </ListItem>
 
               <ListItem>
                 {!!wallet?.accounts[0].address && (
                   <Box>
-                    <Typography variant="body1" sx={{ color: theme.palette.text.primary }}>
-                      {wallet.accounts[0].address.slice(0, 6)}...{wallet.accounts[0].address.slice(-4)}
+                    <Typography
+                      variant="body1"
+                      sx={{ color: theme.palette.text.primary }}
+                    >
+                      {wallet.accounts[0].address.slice(0, 6)}...
+                      {wallet.accounts[0].address.slice(-4)}
                     </Typography>
                     <Typography variant="body2" color="primary" sx={{ mt: 1 }}>
                       {usdcBalance} USDC
@@ -228,14 +294,16 @@ export default function Header({ toggleColorMode }: { toggleColorMode: () => voi
                   setShowMobileChainOptions(true);
                 }}
                 sx={{
-                  '&:hover': {
+                  "&:hover": {
                     backgroundColor: theme.palette.action.hover,
-                    cursor: 'pointer',
+                    cursor: "pointer",
                   },
                 }}
               >
                 {wallet?.chains[0].namespace && (
-                  <ListItemText primary={`Chain: ${parseInt(wallet.chains[0].id, 16)}`} />
+                  <ListItemText
+                    primary={`Chain: ${parseInt(wallet.chains[0].id, 16)}`}
+                  />
                 )}
               </ListItemButton>
               <List>
@@ -249,7 +317,9 @@ export default function Header({ toggleColorMode }: { toggleColorMode: () => voi
                       }}
                       selected={wallet?.chains[0].id === chain.id}
                     >
-                      <ListItemText primary={`${chain.label} (${parseInt(chain.id, 16)})`} />
+                      <ListItemText
+                        primary={`${chain.label} (${parseInt(chain.id, 16)})`}
+                      />
                     </ListItemButton>
                   ))}
               </List>

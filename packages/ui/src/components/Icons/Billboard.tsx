@@ -1,4 +1,4 @@
-import { useTheme } from '@mui/material';
+import { useTheme } from "@mui/material";
 
 export default function BillboardIcon() {
   const theme = useTheme();

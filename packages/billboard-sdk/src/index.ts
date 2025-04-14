@@ -62,7 +62,7 @@ export class BillboardSDK {
           });
           const imageUrl = (await response.json()) as { result?: string };
           return { ...ad, url: imageUrl.result || "" };
-        })
+        }),
       );
       return withImages;
     } catch (error) {
@@ -80,7 +80,7 @@ export class BillboardSDK {
       const bytes = new Uint8Array(arrayBuffer);
       const binary = bytes.reduce(
         (acc, byte) => acc + String.fromCharCode(byte),
-        ""
+        "",
       );
       const imageBase64 = btoa(binary);
 

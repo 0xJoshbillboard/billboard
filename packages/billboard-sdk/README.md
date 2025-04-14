@@ -13,9 +13,9 @@ yarn add billboard-sdk
 ## Usage
 
 ```typescript
-import BillboardSDK from 'billboard-sdk';
+import BillboardSDK from "billboard-sdk";
 
-const sdk = new BillboardSDK('your-api-key');
+const sdk = new BillboardSDK("your-api-key");
 await sdk.initialize();
 ```
 

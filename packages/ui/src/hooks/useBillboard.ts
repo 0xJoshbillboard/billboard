@@ -1,16 +1,20 @@
-import { Contract, BrowserProvider, BigNumberish, getBigInt } from 'ethers';
-import { useConnectWallet } from '@web3-onboard/react';
-import { useEffect, useState } from 'react';
-import { billboardABI, usdcMockABI, billboardGovernanceABI } from '../utils/abis';
-import { BillboardSDK } from 'billboard-sdk';
+import { Contract, BrowserProvider, BigNumberish, getBigInt } from "ethers";
+import { useConnectWallet } from "@web3-onboard/react";
+import { useEffect, useState } from "react";
+import {
+  billboardABI,
+  usdcMockABI,
+  billboardGovernanceABI,
+} from "../utils/abis";
+import { BillboardSDK } from "billboard-sdk";
 
-const CONTRACT_ADDRESS = '0x6A655887aD8Bce1D0a19a1092905100744330120';
+const CONTRACT_ADDRESS = "0x6A655887aD8Bce1D0a19a1092905100744330120";
 const CONTRACT_ABI = billboardABI;
 
-const GOVERNANCE_ADDRESS = '0x973d3B7fa5418B4577A0c68E56c24D120051B785';
+const GOVERNANCE_ADDRESS = "0x973d3B7fa5418B4577A0c68E56c24D120051B785";
 const GOVERNANCE_ABI = billboardGovernanceABI;
 
-const USDC_ADDRESS = '0x65046188900D3C1FE0c559983997267326a85D10';
+const USDC_ADDRESS = "0x65046188900D3C1FE0c559983997267326a85D10";
 const USDC_MOCK_ABI = usdcMockABI;
 
 const billboardSDK = new BillboardSDK();
@@ -27,20 +31,26 @@ export default function useBillboard() {
   const [{ wallet }] = useConnectWallet();
   const [contract, setContract] = useState<Contract | null>(null);
   const [usdcContract, setUsdcContract] = useState<Contract | null>(null);
-  const [governanceContract, setGovernanceContract] = useState<Contract | null>(null);
+  const [governanceContract, setGovernanceContract] = useState<Contract | null>(
+    null,
+  );
   const [governanceSettings, setGovernanceSettings] = useState<{
     price: null | number;
     duration: null | number;
   }>({ price: null, duration: null });
   const [billboards, setBillboards] = useState<Billboard[]>([]);
-  const [usdcBalance, setUsdcBalance] = useState<string>('0');
+  const [usdcBalance, setUsdcBalance] = useState<string>("0");
 
   useEffect(() => {
     const setContracts = async () => {
       if (wallet?.provider) {
         const provider = new BrowserProvider(wallet.provider);
         const signer = await provider.getSigner();
-        const govContract = new Contract(GOVERNANCE_ADDRESS, GOVERNANCE_ABI, signer);
+        const govContract = new Contract(
+          GOVERNANCE_ADDRESS,
+          GOVERNANCE_ABI,
+          signer,
+        );
         setContract(new Contract(CONTRACT_ADDRESS, CONTRACT_ABI, signer));
         setUsdcContract(new Contract(USDC_ADDRESS, USDC_MOCK_ABI, signer));
         setGovernanceContract(govContract);
@@ -97,33 +107,41 @@ export default function useBillboard() {
 
   const approveUSDC = async (amount: string) => {
     if (!usdcContract || !contract) {
-      throw new Error('USDC not defined');
+      throw new Error("USDC not defined");
     }
     await usdcContract.approve(CONTRACT_ADDRESS, amount);
   };
 
   const fetchUsdcBalance = async () => {
     if (!usdcContract || !wallet?.accounts[0].address) {
-      return '0';
+      return "0";
     }
     const balance = await usdcContract.balanceOf(wallet?.accounts[0].address);
-    return (Number(balance) / 1_000_000).toLocaleString() + '';
+    return (Number(balance) / 1_000_000).toLocaleString() + "";
   };
 
   const allowanceUSDC = async () => {
     if (!usdcContract) {
-      throw new Error('USDC not defined');
+      throw new Error("USDC not defined");
     }
-    return (await usdcContract.allowance(wallet?.accounts[0].address, CONTRACT_ADDRESS)) as BigNumberish;
+    return (await usdcContract.allowance(
+      wallet?.accounts[0].address,
+      CONTRACT_ADDRESS,
+    )) as BigNumberish;
   };
 
-  const buy = async (description: string, link: string, file: File | null, cid?: string) => {
+  const buy = async (
+    description: string,
+    link: string,
+    file: File | null,
+    cid?: string,
+  ) => {
     if (!contract) {
-      throw new Error('Contract not defined');
+      throw new Error("Contract not defined");
     }
     const allowance = await allowanceUSDC();
-    if (getBigInt(allowance) < getBigInt('1000000000')) {
-      await approveUSDC('1000000000');
+    if (getBigInt(allowance) < getBigInt("1000000000")) {
+      await approveUSDC("1000000000");
     }
     let url;
     if (file) {
@@ -131,10 +149,10 @@ export default function useBillboard() {
     } else if (cid) {
       url = { cid };
     } else {
-      throw new Error('No file or CID provided');
+      throw new Error("No file or CID provided");
     }
     if (!url?.cid) {
-      throw new Error('url not defined');
+      throw new Error("url not defined");
     }
     try {
       const tx = await contract.purchaseBillboard(description, link, url.cid);
@@ -142,13 +160,13 @@ export default function useBillboard() {
       return { cid: url.cid, tx };
     } catch (error) {
       console.error(error);
-      throw new Error('Failed to purchase billboard');
+      throw new Error("Failed to purchase billboard");
     }
   };
 
   const extend = async (index: number) => {
     if (!contract || !governanceContract) {
-      throw new Error('Contract not defined');
+      throw new Error("Contract not defined");
     }
     // Check if we have enough allowance for extending the billboard
     const allowance = await allowanceUSDC();
@@ -169,9 +187,11 @@ export default function useBillboard() {
 
   const fetchBillboards = async () => {
     if (!contract || !wallet?.accounts[0].address) {
-      throw new Error('Contract or wallet not defined');
+      throw new Error("Contract or wallet not defined");
     }
-    const billboards = await contract.getBillboards(wallet?.accounts[0].address);
+    const billboards = await contract.getBillboards(
+      wallet?.accounts[0].address,
+    );
     return billboards.map((billboard: any) => ({
       owner: billboard.owner,
       expiryTime: Number(billboard.expiryTime),

@@ -1,33 +1,33 @@
-const path = require('path');
+const path = require("path");
 
 module.exports = {
-  entry: './src/index.ts',
-  mode: 'production',
+  entry: "./src/index.ts",
+  mode: "production",
   module: {
     rules: [
       {
         test: /\.tsx?$/,
-        use: 'ts-loader',
+        use: "ts-loader",
         exclude: /node_modules/,
       },
     ],
   },
   resolve: {
-    extensions: ['.tsx', '.ts', '.js'],
+    extensions: [".tsx", ".ts", ".js"],
     alias: {
-      '@monorepo/hooks': path.resolve(__dirname, '../hooks/build'),
+      "@monorepo/hooks": path.resolve(__dirname, "../hooks/build"),
     },
   },
   output: {
-    filename: 'index.js',
-    path: path.resolve(__dirname, 'build'),
+    filename: "index.js",
+    path: path.resolve(__dirname, "build"),
     library: {
-      type: 'umd',
-      name: 'BillboardSDK',
+      type: "umd",
+      name: "BillboardSDK",
     },
-    globalObject: 'this',
+    globalObject: "this",
   },
   externals: {
-    firebase: 'firebase',
+    firebase: "firebase",
   },
 };

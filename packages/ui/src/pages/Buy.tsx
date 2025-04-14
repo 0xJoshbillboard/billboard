@@ -1,5 +1,5 @@
-import useBillboard from '../hooks/useBillboard';
-import { useState } from 'react';
+import useBillboard from "../hooks/useBillboard";
+import { useState } from "react";
 import {
   Button,
   Box,
@@ -12,8 +12,8 @@ import {
   Divider,
   Alert,
   Container,
-} from '@mui/material';
-import CloudUploadIcon from '@mui/icons-material/CloudUpload';
+} from "@mui/material";
+import CloudUploadIcon from "@mui/icons-material/CloudUpload";
 
 export default function Buy() {
   // State management
@@ -21,9 +21,9 @@ export default function Buy() {
   const [isUploading, setIsUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [useCustomCID, setUseCustomCID] = useState(false);
-  const [customCID, setCustomCID] = useState('');
-  const [description, setDescription] = useState('');
-  const [link, setLink] = useState('');
+  const [customCID, setCustomCID] = useState("");
+  const [description, setDescription] = useState("");
+  const [link, setLink] = useState("");
   const [linkError, setLinkError] = useState<string | null>(null);
 
   // Hooks
@@ -44,7 +44,7 @@ export default function Buy() {
       setLinkError(null);
       return true;
     } catch (e) {
-      setLinkError('Please enter a valid URL (e.g., https://example.com)');
+      setLinkError("Please enter a valid URL (e.g., https://example.com)");
       return false;
     }
   };
@@ -63,24 +63,24 @@ export default function Buy() {
   const handleUpload = async () => {
     // Validate inputs
     if (!description.trim()) {
-      setError('Please enter a description');
+      setError("Please enter a description");
       return;
     }
 
     if (!link.trim()) {
-      setError('Please enter a link');
+      setError("Please enter a link");
       return;
     }
 
     if (!validateLink(link)) {
-      setError('Please enter a valid URL');
+      setError("Please enter a valid URL");
       return;
     }
 
     // Handle custom CID path
     if (useCustomCID) {
       if (!customCID.trim()) {
-        setError('Please enter a CID');
+        setError("Please enter a CID");
         return;
       }
 
@@ -89,7 +89,10 @@ export default function Buy() {
         await buy(description, link, null, customCID);
         setError(null);
       } catch (err) {
-        setError('Failed to process with custom CID: ' + (err instanceof Error ? err.message : String(err)));
+        setError(
+          "Failed to process with custom CID: " +
+            (err instanceof Error ? err.message : String(err)),
+        );
       } finally {
         setIsUploading(false);
       }
@@ -97,7 +100,7 @@ export default function Buy() {
     // Handle file upload path
     else {
       if (!selectedFile) {
-        setError('Please select a file first');
+        setError("Please select a file first");
         return;
       }
 
@@ -106,7 +109,10 @@ export default function Buy() {
         await buy(description, link, selectedFile);
         setError(null);
       } catch (err) {
-        setError('Failed to upload image: ' + (err instanceof Error ? err.message : String(err)));
+        setError(
+          "Failed to upload image: " +
+            (err instanceof Error ? err.message : String(err)),
+        );
       } finally {
         setIsUploading(false);
       }
@@ -121,10 +127,20 @@ export default function Buy() {
         </Typography>
         {governanceSettings.price && governanceSettings.duration && (
           <>
-            <Typography variant="body1" gutterBottom align="center" sx={{ mb: 3 }}>
+            <Typography
+              variant="body1"
+              gutterBottom
+              align="center"
+              sx={{ mb: 3 }}
+            >
               Price: {governanceSettings?.price} USDC
             </Typography>
-            <Typography variant="body1" gutterBottom align="center" sx={{ mb: 3 }}>
+            <Typography
+              variant="body1"
+              gutterBottom
+              align="center"
+              sx={{ mb: 3 }}
+            >
               Duration: {governanceSettings?.duration} seconds
             </Typography>
           </>
@@ -132,9 +148,14 @@ export default function Buy() {
 
         <Divider sx={{ mb: 3 }} />
 
-        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+        <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
           {/* Development helper */}
-          <Button variant="outlined" color="secondary" onClick={() => getUSDCMock()} sx={{ alignSelf: 'flex-start' }}>
+          <Button
+            variant="outlined"
+            color="secondary"
+            onClick={() => getUSDCMock()}
+            sx={{ alignSelf: "flex-start" }}
+          >
             Get Mock USDC
           </Button>
 
@@ -164,7 +185,11 @@ export default function Buy() {
           {/* Upload method selection */}
           <FormControlLabel
             control={
-              <Switch checked={useCustomCID} onChange={(e) => setUseCustomCID(e.target.checked)} name="useCustomCID" />
+              <Switch
+                checked={useCustomCID}
+                onChange={(e) => setUseCustomCID(e.target.checked)}
+                name="useCustomCID"
+              />
             }
             label="Use custom CID instead of uploading"
           />
@@ -180,16 +205,21 @@ export default function Buy() {
               placeholder="Your CID here"
             />
           ) : (
-            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+            <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
               <Button
                 variant="outlined"
                 component="label"
                 startIcon={<CloudUploadIcon />}
                 disabled={isUploading}
-                sx={{ alignSelf: 'flex-start' }}
+                sx={{ alignSelf: "flex-start" }}
               >
                 Select Image
-                <input type="file" accept="image/*" hidden onChange={handleFileChange} />
+                <input
+                  type="file"
+                  accept="image/*"
+                  hidden
+                  onChange={handleFileChange}
+                />
               </Button>
 
               {selectedFile && (
@@ -206,11 +236,15 @@ export default function Buy() {
             size="large"
             onClick={handleUpload}
             disabled={
-              (useCustomCID ? !customCID : !selectedFile) || !description || !link || !!linkError || isUploading
+              (useCustomCID ? !customCID : !selectedFile) ||
+              !description ||
+              !link ||
+              !!linkError ||
+              isUploading
             }
             sx={{ mt: 2 }}
           >
-            {isUploading ? <CircularProgress size={24} /> : 'Buy Billboard'}
+            {isUploading ? <CircularProgress size={24} /> : "Buy Billboard"}
           </Button>
 
           {/* Error display */}
@@ -222,7 +256,9 @@ export default function Buy() {
 
           {/* Image preview */}
           {!useCustomCID && selectedFile && (
-            <Box sx={{ mt: 3, p: 2, border: '1px solid #eee', borderRadius: 2 }}>
+            <Box
+              sx={{ mt: 3, p: 2, border: "1px solid #eee", borderRadius: 2 }}
+            >
               <Typography variant="subtitle1" gutterBottom fontWeight="medium">
                 Selected Image Preview
               </Typography>
@@ -231,13 +267,16 @@ export default function Buy() {
                 src={URL.createObjectURL(selectedFile)}
                 alt="Selected image"
                 sx={{
-                  width: '100%',
+                  width: "100%",
                   maxHeight: 300,
-                  objectFit: 'contain',
+                  objectFit: "contain",
                   borderRadius: 1,
                 }}
               />
-              <Typography variant="body2" sx={{ mt: 1, color: 'text.secondary', wordBreak: 'break-all' }}>
+              <Typography
+                variant="body2"
+                sx={{ mt: 1, color: "text.secondary", wordBreak: "break-all" }}
+              >
                 File: {selectedFile.name}
               </Typography>
             </Box>

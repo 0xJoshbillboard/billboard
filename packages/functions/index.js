@@ -30,7 +30,7 @@ const provider = new ethers.JsonRpcProvider(rpcUrl);
 const contract = new ethers.Contract(
   "0x6A655887aD8Bce1D0a19a1092905100744330120",
   contractABI,
-  provider
+  provider,
 );
 
 const fetchContractLogs = async () => {
@@ -52,12 +52,12 @@ const fetchContractLogs = async () => {
     const logsPurchased = await contract.queryFilter(
       filterPurchased,
       lastProcessedBlock + 1,
-      currentBlock
+      currentBlock,
     );
     const logsExtended = await contract.queryFilter(
       filterExtended,
       lastProcessedBlock + 1,
-      currentBlock
+      currentBlock,
     );
 
     const batch = db.batch();
@@ -97,7 +97,7 @@ const fetchContractLogs = async () => {
         lastProcessedBlock: currentBlock,
         lastRunTimestamp: new Date().toISOString(),
       },
-      { merge: true }
+      { merge: true },
     );
 
     await batch.commit();
@@ -106,7 +106,7 @@ const fetchContractLogs = async () => {
     logger.log(
       `Successfully processed ${totalLogs} logs from the contract (blocks ${
         lastProcessedBlock + 1
-      } to ${currentBlock})`
+      } to ${currentBlock})`,
     );
     return {
       success: true,
@@ -130,7 +130,7 @@ exports.scheduledFetchContractLogs = onSchedule(
     const result = await fetchContractLogs();
     logger.log("Completed scheduled contract log fetch:", result);
     return null;
-  }
+  },
 );
 
 const updateActiveAds = async () => {
@@ -210,7 +210,7 @@ const updateActiveAds = async () => {
     await batch.commit();
 
     logger.log(
-      `Successfully updated active ads: ${activeAdsCount} active ads processed, ${expiredAdsCount} expired ads moved`
+      `Successfully updated active ads: ${activeAdsCount} active ads processed, ${expiredAdsCount} expired ads moved`,
     );
     return {
       success: true,
@@ -234,7 +234,7 @@ exports.scheduledUpdateActiveAds = onSchedule(
     const result = await updateActiveAds();
     logger.log("Completed scheduled active ads update:", result);
     return null;
-  }
+  },
 );
 
 // Function to upload image to IPFS
@@ -279,7 +279,7 @@ exports.uploadImageToIPFS = onRequest(
         error: error.message || "Failed to upload image to IPFS",
       });
     }
-  }
+  },
 );
 
 // Function to get image from IPFS
@@ -317,5 +317,5 @@ exports.getImageFromIPFS = onRequest(
         error: error.message || "Failed to upload image to IPFS",
       });
     }
-  }
+  },
 );

@@ -1,11 +1,20 @@
-import { Stack, Typography, Button, Card, CardContent, Box, Link } from '@mui/material';
-import { Link as RouterLink } from 'react-router-dom';
-import { useConnectWallet } from '@web3-onboard/react';
-import useBillboard from '../hooks/useBillboard';
+import {
+  Stack,
+  Typography,
+  Button,
+  Card,
+  CardContent,
+  Box,
+  Link,
+} from "@mui/material";
+import { Link as RouterLink } from "react-router-dom";
+import { useConnectWallet } from "@web3-onboard/react";
+import useBillboard from "../hooks/useBillboard";
 
 export default function Dashboard() {
   const [{ wallet }, connect] = useConnectWallet();
-  const { governanceSettings, extend, billboards, fetchBillboards } = useBillboard();
+  const { governanceSettings, extend, billboards, fetchBillboards } =
+    useBillboard();
   const formatDuration = (seconds: number) => {
     const days = Math.floor(seconds / (60 * 60 * 24));
     return `${days} days`;
@@ -16,7 +25,7 @@ export default function Dashboard() {
       await extend(index);
       await fetchBillboards();
     } catch (error) {
-      console.error('Error extending billboard:', error);
+      console.error("Error extending billboard:", error);
     }
   };
 
@@ -30,7 +39,12 @@ export default function Dashboard() {
           <Typography variant="h6" gutterBottom>
             Please connect your wallet to view your billboards
           </Typography>
-          <Button variant="contained" color="primary" sx={{ mt: 2 }} onClick={() => connect()}>
+          <Button
+            variant="contained"
+            color="primary"
+            sx={{ mt: 2 }}
+            onClick={() => connect()}
+          >
             Connect Wallet
           </Button>
         </Box>
@@ -44,17 +58,22 @@ export default function Dashboard() {
         Your Billboards
       </Typography>
 
-      {governanceSettings.price !== null && governanceSettings.duration !== null && (
-        <Card sx={{ mb: 3, bgcolor: 'background.paper' }}>
-          <CardContent>
-            <Typography variant="h6" gutterBottom>
-              Billboard Information
-            </Typography>
-            <Typography variant="body1">Price: {governanceSettings.price} USDC</Typography>
-            <Typography variant="body1">Duration: {formatDuration(governanceSettings.duration)}</Typography>
-          </CardContent>
-        </Card>
-      )}
+      {governanceSettings.price !== null &&
+        governanceSettings.duration !== null && (
+          <Card sx={{ mb: 3, bgcolor: "background.paper" }}>
+            <CardContent>
+              <Typography variant="h6" gutterBottom>
+                Billboard Information
+              </Typography>
+              <Typography variant="body1">
+                Price: {governanceSettings.price} USDC
+              </Typography>
+              <Typography variant="body1">
+                Duration: {formatDuration(governanceSettings.duration)}
+              </Typography>
+            </CardContent>
+          </Card>
+        )}
 
       {billboards.length > 0 ? (
         <Stack spacing={2}>
@@ -63,19 +82,23 @@ export default function Dashboard() {
               <CardContent>
                 <Typography variant="h6">{billboard.description}</Typography>
                 <Typography variant="body2" color="text.secondary">
-                  Link:{' '}
+                  Link:{" "}
                   <Link href={billboard.link} target="_blank" rel="noopener">
                     {billboard.link}
                   </Link>
                 </Typography>
                 <Typography variant="body2" color="text.secondary">
-                  Expires: {new Date(billboard.expiryTime * 1000).toLocaleString()}
+                  Expires:{" "}
+                  {new Date(billboard.expiryTime * 1000).toLocaleString()}
                 </Typography>
                 <Typography variant="body2" color="text.secondary">
                   IPFS Hash: {billboard.ipfsHash}
                 </Typography>
                 <Box sx={{ mt: 2 }}>
-                  <Button variant="contained" onClick={() => handleExtend(index)}>
+                  <Button
+                    variant="contained"
+                    onClick={() => handleExtend(index)}
+                  >
                     Extend
                   </Button>
                 </Box>
@@ -88,7 +111,13 @@ export default function Dashboard() {
           <Typography variant="h6" gutterBottom>
             You don't have any billboards yet
           </Typography>
-          <Button component={RouterLink} to="/buy" variant="contained" color="primary" sx={{ mt: 2 }}>
+          <Button
+            component={RouterLink}
+            to="/buy"
+            variant="contained"
+            color="primary"
+            sx={{ mt: 2 }}
+          >
             Buy Your First Billboard
           </Button>
         </Box>

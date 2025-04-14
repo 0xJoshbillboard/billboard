@@ -1,0 +1,47 @@
+name: Build and Test
+
+on: [push]
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      # Install npm first (should come with Node)
+      - name: Verify npm installation
+        run: |
+          node --version
+          npm --version
+
+      # Install and setup Yarn
+      - name: Setup Yarn
+        run: |
+          npm install -g corepack
+          corepack enable
+          corepack prepare yarn@4.6.0 --activate
+          yarn set version 4.6.0
+
+      # Verify Yarn installation
+      - name: Verify Yarn installation
+        run: |
+          yarn --version
+          which yarn
+
+      - name: Install dependencies
+        run: |
+          yarn install --immutable
+          yarn cache clean
+
+      - name: Build remaining packages
+        run: |
+          yarn workspaces foreach --all run build
+
+      - name: Run tests
+        run: yarn test:all

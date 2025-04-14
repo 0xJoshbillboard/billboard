@@ -1,1 +1,5 @@
-# billboard
+# Billboard
+
+## License
+
+MIT

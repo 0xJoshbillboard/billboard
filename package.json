@@ -1,0 +1,11 @@
+{
+  "name": "billboard",
+  "packageManager": "yarn@4.4.1",
+  "workspaces": [
+    "packages/*"
+  ],
+  "scripts": {
+    "build": "yarn workspaces foreach --all run build",
+    "test": "yarn workspaces foreach --all run test"
+  }
+}

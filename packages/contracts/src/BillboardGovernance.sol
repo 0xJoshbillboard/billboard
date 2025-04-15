@@ -23,4 +23,8 @@ contract BillboardGovernance is Initializable, OwnableUpgradeable {
     function setPricePerBillboard(uint256 _pricePerBillboard) public onlyOwner {
         pricePerBillboard = _pricePerBillboard;
     }
+
+    function setSecurityDeposit(uint256 _securityDeposit) public onlyOwner {
+        securityDeposit = _securityDeposit;
+    }
 }

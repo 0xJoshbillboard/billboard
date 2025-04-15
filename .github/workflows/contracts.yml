@@ -1,29 +1,42 @@
-name: CI
+name: Smart Contract Tests
+
 on:
   push:
-    branches:
-      - master
-  pull_request:
+  workflow_dispatch:
 
 env:
   FOUNDRY_PROFILE: ci
 
 jobs:
-  run-ci:
+  check:
+    strategy:
+      fail-fast: true
+
+    name: Foundry project
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
 
       - name: Install Foundry
         uses: foundry-rs/foundry-toolchain@v1
-        with:
-          version: nightly
 
-      - name: Install deps
-        run: forge install
+      - name: Show Forge version
+        run: |
+          forge --version
 
-      - name: Check gas snapshots
-        run: forge snapshot --check
+      - name: Run Forge fmt
+        run: |
+          forge fmt --check
+        id: fmt
 
-      - name: Run tests
-        run: forge test
+      - name: Run Forge build
+        run: |
+          forge build --sizes
+        id: build
+
+      - name: Run Forge tests
+        run: |
+          cd packages/contracts && forge test -vvv
+        id: test

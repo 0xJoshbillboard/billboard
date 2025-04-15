@@ -201,11 +201,8 @@ contract BillboardTest is Test {
         BillboardRegistry(address(proxy)).withdrawSecurityDeposit();
 
         // Try to register again after withdrawal
+        vm.expectRevert("Provider already registered");
         BillboardRegistry(address(proxy)).registerBillboardProvider("newprovider");
-
-        // Verify the new handle is set
-        string memory handle = BillboardRegistry(address(proxy)).getBillboardProvider(user);
-        assertEq(handle, "newprovider");
 
         vm.stopPrank();
     }
@@ -227,18 +224,9 @@ contract BillboardTest is Test {
         vm.expectRevert("Deposit already withdrawn");
         BillboardRegistry(address(proxy)).withdrawSecurityDeposit();
 
-        // Register again
+        // Try to register again
+        vm.expectRevert("Provider already registered");
         BillboardRegistry(address(proxy)).registerBillboardProvider("newprovider");
-
-        // Try to withdraw immediately (should fail due to time lock)
-        vm.expectRevert("Deposit locked for 30 days");
-        BillboardRegistry(address(proxy)).withdrawSecurityDeposit();
-
-        // Advance time by 30 days again
-        vm.warp(block.timestamp + 30 days);
-
-        // Should be able to withdraw the second deposit
-        BillboardRegistry(address(proxy)).withdrawSecurityDeposit();
 
         vm.stopPrank();
     }

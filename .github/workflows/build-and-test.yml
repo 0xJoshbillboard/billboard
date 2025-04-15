@@ -39,9 +39,9 @@ jobs:
           yarn install --immutable
           yarn cache clean
 
-      - name: Build remaining packages
+      - name: Build packages
         run: |
           yarn workspaces foreach --all run build
 
       - name: Run tests
-        run: yarn test:all
+        run: yarn test

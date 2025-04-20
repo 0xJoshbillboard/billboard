@@ -24,8 +24,7 @@ const pinata = new PinataSDK({
   pinataJwt: process.env.PINATA_API_KEY,
   pinataGateway: process.env.PINATA_GATEWAY,
 });
-const rpcUrl =
-  "https://optimism-sepolia.infura.io/v3/da6fa5c1aa6546b882fee23987d3b294";
+const rpcUrl = `https://optimism-sepolia.infura.io/v3/${process.INFURA_API}`;
 const provider = new ethers.JsonRpcProvider(rpcUrl);
 const contract = new ethers.Contract(
   "0x6A655887aD8Bce1D0a19a1092905100744330120",

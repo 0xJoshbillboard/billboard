@@ -41,7 +41,7 @@ jobs:
 
       - name: Build packages
         run: |
-          yarn workspaces foreach --all run build
+          yarn build
 
       - name: Run tests
         run: yarn test

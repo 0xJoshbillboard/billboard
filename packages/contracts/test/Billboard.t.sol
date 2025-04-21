@@ -30,7 +30,7 @@ contract BillboardTest is Test {
         governanceProxy = new BillboardGovernanceProxy(address(governance), address(this), "");
 
         BillboardRegistry(address(proxy)).initialize(address(usdc), address(governanceProxy));
-        BillboardGovernance(address(governanceProxy)).initialize(30 days, 1000e6, securityDeposit);
+        BillboardGovernance(address(governanceProxy)).initialize(30 days, 1000e6, securityDeposit, address(usdc));
 
         // Mint 1000000 USDC to the test contract
         usdc.mint(address(this), initialBalance);

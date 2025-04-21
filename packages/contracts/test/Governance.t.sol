@@ -7,6 +7,7 @@ import {BillboardGovernanceProxy} from "../src/BillboardGovernanceProxy.sol";
 import {BillboardRegistry} from "../src/BillboardRegistry.sol";
 import {BillboardProxy} from "../src/BillboardProxy.sol";
 import {USDCMock} from "../src/mocks/USDCMock.sol";
+import {BillboardToken} from "../src/BillboardToken.sol";
 import {
     TransparentUpgradeableProxy,
     ITransparentUpgradeableProxy
@@ -18,9 +19,11 @@ contract GovernanceTest is Test {
     BillboardRegistry public registry;
     BillboardProxy public proxy;
     USDCMock public usdc;
+    BillboardToken public token;
 
     address public owner;
     address public user;
+    address public user2;
     uint256 public initialDuration = 30 days;
     uint256 public initialPrice = 1000e6;
     uint256 public securityDeposit = 10000e6;
@@ -28,199 +31,314 @@ contract GovernanceTest is Test {
     function setUp() public {
         owner = address(this);
         user = address(0x1);
+        user2 = address(0x2);
+
+        // Deploy USDC mock
+        usdc = new USDCMock();
+
+        // Deploy BillboardToken
+        token = new BillboardToken(address(usdc));
 
         // Deploy contracts
         governance = new BillboardGovernance();
         governanceProxy = new BillboardGovernanceProxy(address(governance), owner, "");
 
         // Initialize governance through proxy
-        BillboardGovernance(address(governanceProxy)).initialize(initialDuration, initialPrice, securityDeposit);
-
-        // Deploy USDC mock for registry tests
-        usdc = new USDCMock();
+        BillboardGovernance(address(governanceProxy)).initialize(
+            initialDuration,
+            initialPrice,
+            securityDeposit,
+            address(token)
+        );
 
         // Deploy registry for integration tests
         registry = new BillboardRegistry();
         proxy = new BillboardProxy(address(registry), owner, "");
         BillboardRegistry(address(proxy)).initialize(address(usdc), address(governanceProxy));
+
+        // Fast forward past initial voting period
+        vm.warp(block.timestamp + 30 days + 1);
     }
 
-    function test_Initialization() public {
+    function test_Initialization() public view {
         assertEq(BillboardGovernance(address(governanceProxy)).duration(), initialDuration);
         assertEq(BillboardGovernance(address(governanceProxy)).pricePerBillboard(), initialPrice);
         assertEq(BillboardGovernance(address(governanceProxy)).securityDeposit(), securityDeposit);
         assertEq(BillboardGovernance(address(governanceProxy)).owner(), owner);
     }
 
-    function test_SetDuration() public {
-        uint256 newDuration = 60 days;
-        BillboardGovernance(address(governanceProxy)).setDuration(newDuration);
-        assertEq(BillboardGovernance(address(governanceProxy)).duration(), newDuration);
-    }
-
-    function test_SetDuration_RevertWhenNotOwner() public {
-        uint256 newDuration = 60 days;
-        vm.prank(user);
-        vm.expectRevert(abi.encodeWithSignature("OwnableUnauthorizedAccount(address)", user));
-        BillboardGovernance(address(governanceProxy)).setDuration(newDuration);
-    }
-
-    function test_SetPricePerBillboard() public {
-        uint256 newPrice = 2000e6;
-        BillboardGovernance(address(governanceProxy)).setPricePerBillboard(newPrice);
-        assertEq(BillboardGovernance(address(governanceProxy)).pricePerBillboard(), newPrice);
-    }
-
-    function test_SetPricePerBillboard_RevertWhenNotOwner() public {
-        uint256 newPrice = 2000e6;
-        vm.prank(user);
-        vm.expectRevert(abi.encodeWithSignature("OwnableUnauthorizedAccount(address)", user));
-        BillboardGovernance(address(governanceProxy)).setPricePerBillboard(newPrice);
-    }
-
-    function test_SetSecurityDeposit() public {
-        uint256 newDeposit = 20000e6;
-        BillboardGovernance(address(governanceProxy)).setSecurityDeposit(newDeposit);
-        assertEq(BillboardGovernance(address(governanceProxy)).securityDeposit(), newDeposit);
-    }
-
-    function test_SetSecurityDeposit_RevertWhenNotOwner() public {
-        uint256 newDeposit = 20000e6;
-        vm.prank(user);
-        vm.expectRevert(abi.encodeWithSignature("OwnableUnauthorizedAccount(address)", user));
-        BillboardGovernance(address(governanceProxy)).setSecurityDeposit(newDeposit);
-    }
-
-    function test_RegistryIntegration_SecurityDeposit() public {
-        // Mint USDC to user
-        usdc.mint(user, securityDeposit);
-
+    function test_CreateProposal_WithSufficientTokens() public {
+        // Setup: Mint USDC and buy tokens for user
+        uint256 tokenAmount = 2000 * 10**18; // More than minimum required
+        usdc.mint(user, tokenAmount);
         vm.startPrank(user);
-
-        // Approve USDC spending
-        usdc.approve(address(proxy), securityDeposit);
-
-        // Register as billboard provider
-        BillboardRegistry(address(proxy)).registerBillboardProvider("testProvider");
-
-        // Verify provider was registered
-        string memory handle = BillboardRegistry(address(proxy)).getBillboardProvider(user);
-        assertEq(handle, "testProvider");
-
+        usdc.approve(address(token), tokenAmount);
+        token.buyTokens(tokenAmount);
         vm.stopPrank();
 
-        // Change security deposit
-        uint256 newDeposit = 15000e6;
-        BillboardGovernance(address(governanceProxy)).setSecurityDeposit(newDeposit);
-        assertEq(BillboardGovernance(address(governanceProxy)).securityDeposit(), newDeposit);
+        // Create a merkle root for the snapshot
+        bytes32[] memory leaves = new bytes32[](1);
+        leaves[0] = keccak256(abi.encodePacked(user, uint256(tokenAmount)));
+        bytes32 merkleRoot = getMerkleRoot(leaves);
 
-        // Register another user with new deposit amount
-        address user2 = address(0x2);
-        usdc.mint(user2, newDeposit);
+        // Create proposal
+        vm.startPrank(user);
+        BillboardGovernance(address(governanceProxy)).createProposal(
+            60 days, // new duration
+            2000e6, // new price
+            15000e6, // new security deposit
+            merkleRoot,
+            block.number,
+            tokenAmount,
+            getMerkleProof(leaves, 0)
+        );
+        vm.stopPrank();
+
+        // Verify proposal was created
+        (
+            uint256 duration,
+            uint256 price,
+            uint256 deposit,
+            uint256 votesFor,
+            uint256 votesAgainst,
+            bool executed,
+            bytes32 root,
+            uint256 snapshotBlock
+        ) = BillboardGovernance(address(governanceProxy)).getProposal(0);
+
+        assertEq(duration, 60 days);
+        assertEq(price, 2000e6);
+        assertEq(deposit, 15000e6);
+        assertEq(votesFor, 0);
+        assertEq(votesAgainst, 0);
+        assertEq(executed, false);
+        assertEq(root, merkleRoot);
+        assertEq(snapshotBlock, block.number);
+    }
+
+    function test_CreateProposal_RevertWhenInsufficientTokens() public {
+        // Setup: Mint USDC and buy tokens for user (less than minimum)
+        uint256 tokenAmount = 500 * 10**18; // Less than minimum required
+        usdc.mint(user, tokenAmount);
+        vm.startPrank(user);
+        usdc.approve(address(token), tokenAmount);
+        token.buyTokens(tokenAmount);
+        vm.stopPrank();
+
+        // Create a merkle root for the snapshot
+        bytes32[] memory leaves = new bytes32[](1);
+        leaves[0] = keccak256(abi.encodePacked(user, uint256(tokenAmount)));
+        bytes32 merkleRoot = getMerkleRoot(leaves);
+
+        // Attempt to create proposal
+        vm.startPrank(user);
+        vm.expectRevert("Insufficient tokens to create proposal");
+        BillboardGovernance(address(governanceProxy)).createProposal(
+            60 days,
+            2000e6,
+            15000e6,
+            merkleRoot,
+            block.number,
+            tokenAmount,
+            getMerkleProof(leaves, 0)
+        );
+        vm.stopPrank();
+    }
+
+    function test_VoteOnProposal() public {
+        // Setup: Mint USDC and buy tokens for both users
+        uint256 user1Amount = 2000 * 10**18;
+        uint256 user2Amount = 1000 * 10**18;
+
+        usdc.mint(user, user1Amount);
+        usdc.mint(user2, user2Amount);
+
+        vm.startPrank(user);
+        usdc.approve(address(token), user1Amount);
+        token.buyTokens(user1Amount);
+        vm.stopPrank();
 
         vm.startPrank(user2);
-        usdc.approve(address(proxy), newDeposit);
-
-        // Should require the new deposit amount
-        BillboardRegistry(address(proxy)).registerBillboardProvider("provider2");
-
-        string memory handle2 = BillboardRegistry(address(proxy)).getBillboardProvider(user2);
-        assertEq(handle2, "provider2");
+        usdc.approve(address(token), user2Amount);
+        token.buyTokens(user2Amount);
         vm.stopPrank();
-    }
 
-    function test_UpgradeImplementation() public {
-        // Deploy new implementation
-        BillboardGovernance newImplementation = new BillboardGovernance();
+        // Create a merkle root for the snapshot including both users
+        bytes32[] memory leaves = new bytes32[](2);
+        leaves[0] = keccak256(abi.encodePacked(user, uint256(user1Amount)));
+        leaves[1] = keccak256(abi.encodePacked(user2, uint256(user2Amount)));
+        bytes32 merkleRoot = getMerkleRoot(leaves);
 
-        // Get the ProxyAdmin address
-        address proxyAdmin = address(
-            uint160(
-                uint256(
-                    vm.load(
-                        address(governanceProxy), 0x10d6a54a4754c8869d6886b5f5d7fbfa5b4522237ea5c60d11bc4e7a1ff9390b
-                    )
-                )
-            )
+        // Create proposal
+        vm.startPrank(user);
+        BillboardGovernance(address(governanceProxy)).createProposal(
+            60 days,
+            2000e6,
+            15000e6,
+            merkleRoot,
+            block.number,
+            user1Amount,
+            getMerkleProof(leaves, 0)
         );
+        vm.stopPrank();
 
-        // Call upgradeToAndCall through the ProxyAdmin
-        vm.prank(owner);
-        (bool success,) = proxyAdmin.call(
-            abi.encodeWithSignature(
-                "upgradeAndCall(address,address,bytes)", address(governanceProxy), address(newImplementation), ""
-            )
+        // Vote on proposal
+        vm.startPrank(user2);
+        BillboardGovernance(address(governanceProxy)).vote(
+            0, // proposalId
+            true, // support
+            user2Amount,
+            getMerkleProof(leaves, 1)
         );
-        require(success, "Upgrade failed");
-
-        // Verify the implementation was upgraded but state is preserved
-        assertEq(BillboardGovernance(address(governanceProxy)).duration(), initialDuration);
-        assertEq(BillboardGovernance(address(governanceProxy)).pricePerBillboard(), initialPrice);
-    }
-
-    function test_UpgradeImplementation_RevertWhenNotAdmin() public {
-        // Deploy new implementation
-        BillboardGovernance newImplementation = new BillboardGovernance();
-
-        // Attempt to upgrade from non-admin account
-        vm.prank(user);
-        vm.expectRevert();
-        ITransparentUpgradeableProxy(address(governanceProxy)).upgradeToAndCall(address(newImplementation), "");
-    }
-
-    function test_RegistryIntegration_PurchaseBillboard() public {
-        // Mint USDC to user
-        usdc.mint(user, initialPrice);
-
-        vm.startPrank(user);
-
-        // Approve USDC spending
-        usdc.approve(address(proxy), initialPrice);
-
-        // Purchase billboard
-        BillboardRegistry(address(proxy)).purchaseBillboard("Test Billboard", "https://test.com", "test-hash");
-
-        // Verify billboard was created with correct expiry time
-        BillboardRegistry.Billboard[] memory billboards = BillboardRegistry(address(proxy)).getBillboards(user);
-        assertEq(billboards.length, 1);
-        assertEq(billboards[0].expiryTime, block.timestamp + initialDuration);
-
-        vm.stopPrank();
-    }
-
-    function test_RegistryIntegration_DurationChange() public {
-        // Mint USDC to user
-        usdc.mint(user, initialPrice * 2);
-
-        vm.startPrank(user);
-
-        // Approve USDC spending
-        usdc.approve(address(proxy), initialPrice * 2);
-
-        // Purchase billboard
-        BillboardRegistry(address(proxy)).purchaseBillboard("Test Billboard", "https://test.com", "test-hash");
-
-        // Verify billboard was created with correct expiry time
-        BillboardRegistry.Billboard[] memory billboards = BillboardRegistry(address(proxy)).getBillboards(user);
-        assertEq(billboards[0].expiryTime, block.timestamp + initialDuration);
-
         vm.stopPrank();
 
-        // Change duration
-        uint256 newDuration = 60 days;
+        // Verify vote was recorded
+        (
+            , , , uint256 votesFor, uint256 votesAgainst, , ,
+        ) = BillboardGovernance(address(governanceProxy)).getProposal(0);
+        assertEq(votesFor, user2Amount);
+        assertEq(votesAgainst, 0);
+    }
 
-        // Use the owner address directly instead of the proxy address
-        vm.prank(owner);
-        BillboardGovernance(address(governanceProxy)).setDuration(newDuration);
+    function test_ExecuteProposal() public {
+        // Setup: Mint USDC and buy tokens for both users
+        uint256 user1Amount = 2000 * 10**18;
+        uint256 user2Amount = 1000 * 10**18;
 
-        // Purchase another billboard with new duration
+        usdc.mint(user, user1Amount);
+        usdc.mint(user2, user2Amount);
+
         vm.startPrank(user);
-        BillboardRegistry(address(proxy)).purchaseBillboard("Second Billboard", "https://test2.com", "test-hash-2");
-
-        // Verify new duration is applied
-        billboards = BillboardRegistry(address(proxy)).getBillboards(user);
-        assertEq(billboards[1].expiryTime, block.timestamp + newDuration);
-
+        usdc.approve(address(token), user1Amount);
+        token.buyTokens(user1Amount);
         vm.stopPrank();
+
+        vm.startPrank(user2);
+        usdc.approve(address(token), user2Amount);
+        token.buyTokens(user2Amount);
+        vm.stopPrank();
+
+        // Create a merkle root for the snapshot including both users
+        bytes32[] memory leaves = new bytes32[](2);
+        leaves[0] = keccak256(abi.encodePacked(user, uint256(user1Amount)));
+        leaves[1] = keccak256(abi.encodePacked(user2, uint256(user2Amount)));
+        bytes32 merkleRoot = getMerkleRoot(leaves);
+
+        // Create proposal
+        vm.startPrank(user);
+        BillboardGovernance(address(governanceProxy)).createProposal(
+            60 days,
+            2000e6,
+            15000e6,
+            merkleRoot,
+            block.number,
+            user1Amount,
+            getMerkleProof(leaves, 0)
+        );
+        vm.stopPrank();
+
+        // Vote on proposal
+        vm.startPrank(user2);
+        BillboardGovernance(address(governanceProxy)).vote(
+            0, // proposalId
+            true, // support
+            user2Amount,
+            getMerkleProof(leaves, 1)
+        );
+        vm.stopPrank();
+
+        // Fast forward past voting period
+        vm.warp(block.timestamp + 30 days + 1);
+
+        // Execute proposal
+        BillboardGovernance(address(governanceProxy)).executeProposal(0);
+
+        // Verify new values are set
+        assertEq(BillboardGovernance(address(governanceProxy)).duration(), 60 days);
+        assertEq(BillboardGovernance(address(governanceProxy)).pricePerBillboard(), 2000e6);
+        assertEq(BillboardGovernance(address(governanceProxy)).securityDeposit(), 15000e6);
+
+        // Verify proposal is marked as executed
+        (
+            , , , , , bool executed, ,
+        ) = BillboardGovernance(address(governanceProxy)).getProposal(0);
+        assertEq(executed, true);
+    }
+
+    function test_ExecuteProposal_RevertWhenVotingPeriodNotEnded() public {
+        // Setup: Create a proposal
+        test_CreateProposal_WithSufficientTokens();
+
+        // Try to execute before voting period ends
+        vm.expectRevert("Voting period not ended");
+        BillboardGovernance(address(governanceProxy)).executeProposal(0);
+    }
+
+    function test_ExecuteProposal_RevertWhenNotPassed() public {
+        // Setup: Create a proposal
+        test_CreateProposal_WithSufficientTokens();
+
+        // Fast forward past voting period
+        vm.warp(block.timestamp + 30 days + 1);
+
+        // Try to execute when votes are equal (not passed)
+        vm.expectRevert("Proposal not passed");
+        BillboardGovernance(address(governanceProxy)).executeProposal(0);
+    }
+
+    // Helper functions for merkle tree
+    function getMerkleRoot(bytes32[] memory leaves) internal pure returns (bytes32) {
+        if (leaves.length == 0) return bytes32(0);
+        if (leaves.length == 1) return leaves[0];
+
+        bytes32[] memory nodes = leaves;
+        while (nodes.length > 1) {
+            bytes32[] memory newNodes = new bytes32[]((nodes.length + 1) / 2);
+            for (uint256 i = 0; i < nodes.length; i += 2) {
+                if (i + 1 < nodes.length) {
+                    newNodes[i / 2] = keccak256(abi.encodePacked(nodes[i], nodes[i + 1]));
+                } else {
+                    newNodes[i / 2] = nodes[i];
+                }
+            }
+            nodes = newNodes;
+        }
+        return nodes[0];
+    }
+
+    function getMerkleProof(bytes32[] memory leaves, uint256 index) internal pure returns (bytes32[] memory) {
+        require(index < leaves.length, "Index out of bounds");
+        
+        bytes32[] memory proof = new bytes32[](32); // Maximum depth for 2^32 leaves
+        uint256 proofLength = 0;
+        
+        bytes32[] memory nodes = leaves;
+        uint256 currentIndex = index;
+        
+        while (nodes.length > 1) {
+            if (currentIndex % 2 == 1) {
+                proof[proofLength++] = nodes[currentIndex - 1];
+            } else if (currentIndex + 1 < nodes.length) {
+                proof[proofLength++] = nodes[currentIndex + 1];
+            }
+            
+            bytes32[] memory newNodes = new bytes32[]((nodes.length + 1) / 2);
+            for (uint256 i = 0; i < nodes.length; i += 2) {
+                if (i + 1 < nodes.length) {
+                    newNodes[i / 2] = keccak256(abi.encodePacked(nodes[i], nodes[i + 1]));
+                } else {
+                    newNodes[i / 2] = nodes[i];
+                }
+            }
+            nodes = newNodes;
+            currentIndex = currentIndex / 2;
+        }
+        
+        bytes32[] memory trimmedProof = new bytes32[](proofLength);
+        for (uint256 i = 0; i < proofLength; i++) {
+            trimmedProof[i] = proof[i];
+        }
+        
+        return trimmedProof;
     }
 }

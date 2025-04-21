@@ -33,30 +33,21 @@ contract GovernanceTest is Test {
         user = address(0x1);
         user2 = address(0x2);
 
-        // Deploy USDC mock
         usdc = new USDCMock();
 
-        // Deploy BillboardToken
         token = new BillboardToken(address(usdc));
 
-        // Deploy contracts
         governance = new BillboardGovernance();
         governanceProxy = new BillboardGovernanceProxy(address(governance), owner, "");
 
-        // Initialize governance through proxy
         BillboardGovernance(address(governanceProxy)).initialize(
-            initialDuration,
-            initialPrice,
-            securityDeposit,
-            address(token)
+            initialDuration, initialPrice, securityDeposit, address(token)
         );
 
-        // Deploy registry for integration tests
         registry = new BillboardRegistry();
         proxy = new BillboardProxy(address(registry), owner, "");
         BillboardRegistry(address(proxy)).initialize(address(usdc), address(governanceProxy));
 
-        // Fast forward past initial voting period
         vm.warp(block.timestamp + 30 days + 1);
     }
 
@@ -68,33 +59,24 @@ contract GovernanceTest is Test {
     }
 
     function test_CreateProposal_WithSufficientTokens() public {
-        // Setup: Mint USDC and buy tokens for user
-        uint256 tokenAmount = 2000 * 10**18; // More than minimum required
-        usdc.mint(user, tokenAmount);
+        uint256 usdcAmount = 2000e6;
+        uint256 expectedBbtAmount = usdcAmount * 10 ** 12;
+        usdc.mint(user, usdcAmount);
         vm.startPrank(user);
-        usdc.approve(address(token), tokenAmount);
-        token.buyTokens(tokenAmount);
+        usdc.approve(address(token), usdcAmount);
+        token.buyTokens(usdcAmount);
         vm.stopPrank();
 
-        // Create a merkle root for the snapshot
         bytes32[] memory leaves = new bytes32[](1);
-        leaves[0] = keccak256(abi.encodePacked(user, uint256(tokenAmount)));
+        leaves[0] = keccak256(abi.encodePacked(user, expectedBbtAmount));
         bytes32 merkleRoot = getMerkleRoot(leaves);
 
-        // Create proposal
         vm.startPrank(user);
         BillboardGovernance(address(governanceProxy)).createProposal(
-            60 days, // new duration
-            2000e6, // new price
-            15000e6, // new security deposit
-            merkleRoot,
-            block.number,
-            tokenAmount,
-            getMerkleProof(leaves, 0)
+            60 days, 2000e6, 15000e6, merkleRoot, block.number, expectedBbtAmount, getMerkleProof(leaves, 0)
         );
         vm.stopPrank();
 
-        // Verify proposal was created
         (
             uint256 duration,
             uint256 price,
@@ -117,176 +99,131 @@ contract GovernanceTest is Test {
     }
 
     function test_CreateProposal_RevertWhenInsufficientTokens() public {
-        // Setup: Mint USDC and buy tokens for user (less than minimum)
-        uint256 tokenAmount = 500 * 10**18; // Less than minimum required
-        usdc.mint(user, tokenAmount);
+        uint256 usdcAmount = 500e6;
+        uint256 expectedBbtAmount = usdcAmount * 10 ** 12;
+        usdc.mint(user, usdcAmount);
         vm.startPrank(user);
-        usdc.approve(address(token), tokenAmount);
-        token.buyTokens(tokenAmount);
+        usdc.approve(address(token), usdcAmount);
+        token.buyTokens(usdcAmount);
         vm.stopPrank();
 
-        // Create a merkle root for the snapshot
         bytes32[] memory leaves = new bytes32[](1);
-        leaves[0] = keccak256(abi.encodePacked(user, uint256(tokenAmount)));
+        leaves[0] = keccak256(abi.encodePacked(user, expectedBbtAmount));
         bytes32 merkleRoot = getMerkleRoot(leaves);
 
-        // Attempt to create proposal
         vm.startPrank(user);
         vm.expectRevert("Insufficient tokens to create proposal");
         BillboardGovernance(address(governanceProxy)).createProposal(
-            60 days,
-            2000e6,
-            15000e6,
-            merkleRoot,
-            block.number,
-            tokenAmount,
-            getMerkleProof(leaves, 0)
+            60 days, 2000e6, 15000e6, merkleRoot, block.number, expectedBbtAmount, getMerkleProof(leaves, 0)
         );
         vm.stopPrank();
     }
 
     function test_VoteOnProposal() public {
-        // Setup: Mint USDC and buy tokens for both users
-        uint256 user1Amount = 2000 * 10**18;
-        uint256 user2Amount = 1000 * 10**18;
+        uint256 user1UsdcAmount = 2000e6;
+        uint256 user2UsdcAmount = 1000e6;
+        uint256 user1BbtAmount = user1UsdcAmount * 10 ** 12;
+        uint256 user2BbtAmount = user2UsdcAmount * 10 ** 12;
 
-        usdc.mint(user, user1Amount);
-        usdc.mint(user2, user2Amount);
+        usdc.mint(user, user1UsdcAmount);
+        usdc.mint(user2, user2UsdcAmount);
 
         vm.startPrank(user);
-        usdc.approve(address(token), user1Amount);
-        token.buyTokens(user1Amount);
+        usdc.approve(address(token), user1UsdcAmount);
+        token.buyTokens(user1UsdcAmount);
         vm.stopPrank();
 
         vm.startPrank(user2);
-        usdc.approve(address(token), user2Amount);
-        token.buyTokens(user2Amount);
+        usdc.approve(address(token), user2UsdcAmount);
+        token.buyTokens(user2UsdcAmount);
         vm.stopPrank();
 
-        // Create a merkle root for the snapshot including both users
         bytes32[] memory leaves = new bytes32[](2);
-        leaves[0] = keccak256(abi.encodePacked(user, uint256(user1Amount)));
-        leaves[1] = keccak256(abi.encodePacked(user2, uint256(user2Amount)));
+        leaves[0] = keccak256(abi.encodePacked(user, user1BbtAmount));
+        leaves[1] = keccak256(abi.encodePacked(user2, user2BbtAmount));
         bytes32 merkleRoot = getMerkleRoot(leaves);
 
-        // Create proposal
         vm.startPrank(user);
         BillboardGovernance(address(governanceProxy)).createProposal(
-            60 days,
-            2000e6,
-            15000e6,
-            merkleRoot,
-            block.number,
-            user1Amount,
-            getMerkleProof(leaves, 0)
+            60 days, 2000e6, 15000e6, merkleRoot, block.number, user1BbtAmount, getMerkleProof(leaves, 0)
         );
         vm.stopPrank();
 
-        // Vote on proposal
         vm.startPrank(user2);
         BillboardGovernance(address(governanceProxy)).vote(
-            0, // proposalId
-            true, // support
-            user2Amount,
-            getMerkleProof(leaves, 1)
+            0, true, user2BbtAmount, getMerkleProof(leaves, 1)
         );
         vm.stopPrank();
 
-        // Verify vote was recorded
-        (
-            , , , uint256 votesFor, uint256 votesAgainst, , ,
-        ) = BillboardGovernance(address(governanceProxy)).getProposal(0);
-        assertEq(votesFor, user2Amount);
+        (,,, uint256 votesFor, uint256 votesAgainst,,,) = BillboardGovernance(address(governanceProxy)).getProposal(0);
+        assertEq(votesFor, user2BbtAmount);
         assertEq(votesAgainst, 0);
     }
 
     function test_ExecuteProposal() public {
-        // Setup: Mint USDC and buy tokens for both users
-        uint256 user1Amount = 2000 * 10**18;
-        uint256 user2Amount = 1000 * 10**18;
+        uint256 user1UsdcAmount = 2000e6;
+        uint256 user2UsdcAmount = 1000e6;
+        uint256 user1BbtAmount = user1UsdcAmount * 10 ** 12;
+        uint256 user2BbtAmount = user2UsdcAmount * 10 ** 12;
 
-        usdc.mint(user, user1Amount);
-        usdc.mint(user2, user2Amount);
+        usdc.mint(user, user1UsdcAmount);
+        usdc.mint(user2, user2UsdcAmount);
 
         vm.startPrank(user);
-        usdc.approve(address(token), user1Amount);
-        token.buyTokens(user1Amount);
+        usdc.approve(address(token), user1UsdcAmount);
+        token.buyTokens(user1UsdcAmount);
         vm.stopPrank();
 
         vm.startPrank(user2);
-        usdc.approve(address(token), user2Amount);
-        token.buyTokens(user2Amount);
+        usdc.approve(address(token), user2UsdcAmount);
+        token.buyTokens(user2UsdcAmount);
         vm.stopPrank();
 
-        // Create a merkle root for the snapshot including both users
         bytes32[] memory leaves = new bytes32[](2);
-        leaves[0] = keccak256(abi.encodePacked(user, uint256(user1Amount)));
-        leaves[1] = keccak256(abi.encodePacked(user2, uint256(user2Amount)));
+        leaves[0] = keccak256(abi.encodePacked(user, user1BbtAmount));
+        leaves[1] = keccak256(abi.encodePacked(user2, user2BbtAmount));
         bytes32 merkleRoot = getMerkleRoot(leaves);
 
-        // Create proposal
         vm.startPrank(user);
         BillboardGovernance(address(governanceProxy)).createProposal(
-            60 days,
-            2000e6,
-            15000e6,
-            merkleRoot,
-            block.number,
-            user1Amount,
-            getMerkleProof(leaves, 0)
+            60 days, 2000e6, 15000e6, merkleRoot, block.number, user1BbtAmount, getMerkleProof(leaves, 0)
         );
         vm.stopPrank();
 
-        // Vote on proposal
         vm.startPrank(user2);
         BillboardGovernance(address(governanceProxy)).vote(
-            0, // proposalId
-            true, // support
-            user2Amount,
-            getMerkleProof(leaves, 1)
+            0, true, user2BbtAmount, getMerkleProof(leaves, 1)
         );
         vm.stopPrank();
 
-        // Fast forward past voting period
         vm.warp(block.timestamp + 30 days + 1);
 
-        // Execute proposal
         BillboardGovernance(address(governanceProxy)).executeProposal(0);
 
-        // Verify new values are set
         assertEq(BillboardGovernance(address(governanceProxy)).duration(), 60 days);
         assertEq(BillboardGovernance(address(governanceProxy)).pricePerBillboard(), 2000e6);
         assertEq(BillboardGovernance(address(governanceProxy)).securityDeposit(), 15000e6);
 
-        // Verify proposal is marked as executed
-        (
-            , , , , , bool executed, ,
-        ) = BillboardGovernance(address(governanceProxy)).getProposal(0);
+        (,,,,, bool executed,,) = BillboardGovernance(address(governanceProxy)).getProposal(0);
         assertEq(executed, true);
     }
 
     function test_ExecuteProposal_RevertWhenVotingPeriodNotEnded() public {
-        // Setup: Create a proposal
         test_CreateProposal_WithSufficientTokens();
 
-        // Try to execute before voting period ends
         vm.expectRevert("Voting period not ended");
         BillboardGovernance(address(governanceProxy)).executeProposal(0);
     }
 
     function test_ExecuteProposal_RevertWhenNotPassed() public {
-        // Setup: Create a proposal
         test_CreateProposal_WithSufficientTokens();
 
-        // Fast forward past voting period
         vm.warp(block.timestamp + 30 days + 1);
 
-        // Try to execute when votes are equal (not passed)
         vm.expectRevert("Proposal not passed");
         BillboardGovernance(address(governanceProxy)).executeProposal(0);
     }
 
-    // Helper functions for merkle tree
     function getMerkleRoot(bytes32[] memory leaves) internal pure returns (bytes32) {
         if (leaves.length == 0) return bytes32(0);
         if (leaves.length == 1) return leaves[0];
@@ -308,20 +245,20 @@ contract GovernanceTest is Test {
 
     function getMerkleProof(bytes32[] memory leaves, uint256 index) internal pure returns (bytes32[] memory) {
         require(index < leaves.length, "Index out of bounds");
-        
-        bytes32[] memory proof = new bytes32[](32); // Maximum depth for 2^32 leaves
+
+        bytes32[] memory proof = new bytes32[](32);
         uint256 proofLength = 0;
-        
+
         bytes32[] memory nodes = leaves;
         uint256 currentIndex = index;
-        
+
         while (nodes.length > 1) {
             if (currentIndex % 2 == 1) {
                 proof[proofLength++] = nodes[currentIndex - 1];
             } else if (currentIndex + 1 < nodes.length) {
                 proof[proofLength++] = nodes[currentIndex + 1];
             }
-            
+
             bytes32[] memory newNodes = new bytes32[]((nodes.length + 1) / 2);
             for (uint256 i = 0; i < nodes.length; i += 2) {
                 if (i + 1 < nodes.length) {
@@ -333,12 +270,12 @@ contract GovernanceTest is Test {
             nodes = newNodes;
             currentIndex = currentIndex / 2;
         }
-        
+
         bytes32[] memory trimmedProof = new bytes32[](proofLength);
         for (uint256 i = 0; i < proofLength; i++) {
             trimmedProof[i] = proof[i];
         }
-        
+
         return trimmedProof;
     }
 }

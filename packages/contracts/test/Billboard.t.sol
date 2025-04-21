@@ -15,7 +15,6 @@ contract BillboardTest is Test {
     BillboardGovernance public governance;
     BillboardGovernanceProxy public governanceProxy;
 
-    address public owner;
     address public user;
     uint256 public initialBalance = 1000000e6;
     uint256 public securityDeposit = 5000e6;
@@ -32,10 +31,8 @@ contract BillboardTest is Test {
         BillboardRegistry(address(proxy)).initialize(address(usdc), address(governanceProxy));
         BillboardGovernance(address(governanceProxy)).initialize(30 days, 1000e6, securityDeposit, address(usdc));
 
-        // Mint 1000000 USDC to the test contract
         usdc.mint(address(this), initialBalance);
 
-        // Create a user for testing
         user = address(0x1);
         vm.label(user, "User");
         usdc.mint(user, initialBalance);
@@ -112,8 +109,8 @@ contract BillboardTest is Test {
         vm.warp(1000);
         BillboardRegistry(address(proxy)).withdrawFunds();
 
-        uint256 expectedBalance = initialBalance;
-        assertEq(usdc.balanceOf(address(this)), expectedBalance);
+        assertEq(usdc.balanceOf(address(proxy)), 0);
+        assertEq(usdc.balanceOf(address(this)), initialBalance);
     }
 
     function test_RegisterBillboardProvider() public {
@@ -137,11 +134,9 @@ contract BillboardTest is Test {
 
         uint256 initialUserBalance = usdc.balanceOf(user);
 
-        // Try to withdraw before 30 days
         vm.expectRevert("Deposit locked for 30 days");
         BillboardRegistry(address(proxy)).withdrawSecurityDeposit();
 
-        // Advance time by 30 days
         vm.warp(block.timestamp + 30 days);
 
         vm.expectEmit(true, true, true, true);
@@ -149,10 +144,8 @@ contract BillboardTest is Test {
 
         BillboardRegistry(address(proxy)).withdrawSecurityDeposit();
 
-        // Check balance increased by security deposit amount
         assertEq(usdc.balanceOf(user), initialUserBalance + securityDeposit);
 
-        // Try to withdraw again
         vm.expectRevert("Deposit already withdrawn");
         BillboardRegistry(address(proxy)).withdrawSecurityDeposit();
 
@@ -168,7 +161,6 @@ contract BillboardTest is Test {
         string memory handle = BillboardRegistry(address(proxy)).getBillboardProvider(user);
         assertEq(handle, "testprovider");
 
-        // Non-registered provider should return empty string
         string memory emptyHandle = BillboardRegistry(address(proxy)).getBillboardProvider(address(0x2));
         assertEq(emptyHandle, "");
     }
@@ -177,10 +169,8 @@ contract BillboardTest is Test {
         vm.startPrank(user);
         usdc.approve(address(proxy), securityDeposit * 2);
 
-        // First registration
         BillboardRegistry(address(proxy)).registerBillboardProvider("testprovider");
 
-        // Try to register again
         vm.expectRevert("Provider already registered");
         BillboardRegistry(address(proxy)).registerBillboardProvider("newprovider");
 
@@ -191,16 +181,12 @@ contract BillboardTest is Test {
         vm.startPrank(user);
         usdc.approve(address(proxy), securityDeposit * 2);
 
-        // First registration
         BillboardRegistry(address(proxy)).registerBillboardProvider("testprovider");
 
-        // Advance time by 30 days
         vm.warp(block.timestamp + 30 days);
 
-        // Withdraw security deposit
         BillboardRegistry(address(proxy)).withdrawSecurityDeposit();
 
-        // Try to register again after withdrawal
         vm.expectRevert("Provider already registered");
         BillboardRegistry(address(proxy)).registerBillboardProvider("newprovider");
 
@@ -211,20 +197,15 @@ contract BillboardTest is Test {
         vm.startPrank(user);
         usdc.approve(address(proxy), securityDeposit * 2);
 
-        // Register provider
         BillboardRegistry(address(proxy)).registerBillboardProvider("testprovider");
 
-        // Advance time by 30 days
         vm.warp(block.timestamp + 30 days);
 
-        // First withdrawal (should succeed)
         BillboardRegistry(address(proxy)).withdrawSecurityDeposit();
 
-        // Second withdrawal attempt (should fail)
         vm.expectRevert("Deposit already withdrawn");
         BillboardRegistry(address(proxy)).withdrawSecurityDeposit();
 
-        // Try to register again
         vm.expectRevert("Provider already registered");
         BillboardRegistry(address(proxy)).registerBillboardProvider("newprovider");
 

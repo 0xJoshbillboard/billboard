@@ -7,7 +7,7 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 contract BillboardToken is ERC20, Ownable {
     IERC20 public immutable usdc;
-    uint256 public constant TOTAL_SUPPLY = 1_000_000 * 10**18;
+    uint256 public constant TOTAL_SUPPLY = 1_000_000 * 10 ** 18;
     uint256 public constant USDC_DECIMALS = 6;
     uint256 public constant TOKEN_DECIMALS = 18;
 
@@ -20,8 +20,8 @@ contract BillboardToken is ERC20, Ownable {
         require(usdcAmount > 0, "Amount must be greater than 0");
         require(usdc.transferFrom(msg.sender, address(this), usdcAmount), "USDC transfer failed");
 
-        uint256 bbtAmount = usdcAmount * 10**(TOKEN_DECIMALS - USDC_DECIMALS);
-        
+        uint256 bbtAmount = usdcAmount * 10 ** (TOKEN_DECIMALS - USDC_DECIMALS);
+
         _transfer(owner(), msg.sender, bbtAmount);
     }
 

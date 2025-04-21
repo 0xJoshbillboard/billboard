@@ -14,16 +14,16 @@ export const chains = [
     label: "Optimism Sepolia",
     rpcUrl: rpcUrl(chainNames.optimismSepolia),
   },
-  {
-    id: "0xa",
-    token: "ETH",
-    label: "Optimism",
-    rpcUrl: rpcUrl(chainNames.optimismMainnet),
-  },
-  {
-    id: "0x7a69",
-    token: "ETH",
-    label: "Local",
-    rpcUrl: "http://127.0.0.1:8545",
-  },
+  // {
+  //   id: "0xa",
+  //   token: "ETH",
+  //   label: "Optimism",
+  //   rpcUrl: rpcUrl(chainNames.optimismMainnet),
+  // },
+  // {
+  //   id: "0x7a69",
+  //   token: "ETH",
+  //   label: "Local",
+  //   rpcUrl: "http://127.0.0.1:8545",
+  // },
 ];

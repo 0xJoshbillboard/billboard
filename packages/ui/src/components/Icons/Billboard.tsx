@@ -4,7 +4,9 @@ export default function BillboardIcon() {
   const theme = useTheme();
   return (
     <svg
-      fill={theme.palette.primary.main}
+      fill={
+        theme.palette.mode === "light" ? "#000000" : theme.palette.primary.main
+      }
       height={32}
       width={32}
       version="1.1"

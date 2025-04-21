@@ -36,7 +36,11 @@ const onboard = init({
 
 function App() {
   const [mode, setMode] = useState<"light" | "dark">(
-    localStorage.getItem("theme") === "dark" ? "dark" : "light",
+    !localStorage.getItem("theme")
+      ? "dark"
+      : localStorage.getItem("theme") === "dark"
+        ? "dark"
+        : "light",
   );
 
   const theme = useMemo(
@@ -45,13 +49,13 @@ function App() {
         palette: {
           mode,
           primary: {
-            main: mode === "dark" ? "#ffeb3b" : "#1b5e20",
+            main: mode === "dark" ? "#ffeb3b" : "#ffc107",
           },
           secondary: {
-            main: mode === "dark" ? "#ff9800" : "#2196f3",
+            main: mode === "dark" ? "#ff9800" : "#ff9800",
           },
           background: {
-            default: mode === "light" ? "#fafafa" : "#121212",
+            default: mode === "light" ? "#f5f5f5" : "#121212",
           },
         },
       }),

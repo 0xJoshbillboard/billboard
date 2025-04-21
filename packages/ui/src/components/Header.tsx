@@ -13,10 +13,7 @@ import {
   ListItemButton,
   Box,
   useTheme,
-  Menu,
-  MenuItem,
   Container,
-  Chip,
 } from "@mui/material";
 import {
   Menu as MenuIcon,
@@ -28,6 +25,7 @@ import { chains } from "../utils/chains";
 import BillboardIcon from "./Icons/Billboard";
 import { menuItems } from "../utils/links";
 import useBillboard from "../hooks/useBillboard";
+import { AccountDashboard } from "./AccountDashboard";
 
 export default function Header({
   toggleColorMode,
@@ -37,9 +35,6 @@ export default function Header({
   const [, setChain] = useSetChain();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [showMobileChainOptions, setShowMobileChainOptions] = useState(false);
-  const [chainMenuAnchor, setChainMenuAnchor] = useState<null | HTMLElement>(
-    null,
-  );
   const theme = useTheme();
   const location = useLocation();
   const [{ wallet, connecting }, connect, disconnect] = useConnectWallet();
@@ -49,15 +44,10 @@ export default function Header({
     setIsMenuOpen(!isMenuOpen);
   };
 
-  const handleChainMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
-    setChainMenuAnchor(event.currentTarget);
-  };
-
   const handleChainMenuClose = (chainId?: string) => {
     if (chainId) {
       setChain({ chainId });
     }
-    setChainMenuAnchor(null);
   };
 
   return (
@@ -74,7 +64,7 @@ export default function Header({
               variant="h6"
               component="div"
               sx={{ fontWeight: "bold" }}
-              color="primary"
+              color={theme.palette.mode === "light" ? "black" : "primary"}
             >
               Billboard
             </Typography>
@@ -96,6 +86,10 @@ export default function Header({
                 sx={{
                   fontWeight:
                     location.pathname === item.path ? "bold" : "normal",
+                  color:
+                    theme.palette.mode === "light"
+                      ? "rgba(0, 0, 0, 0.87)"
+                      : theme.palette.text.primary,
                   "&:hover": {
                     color: theme.palette.text.secondary,
                     backgroundColor: "transparent",
@@ -105,52 +99,7 @@ export default function Header({
                 {item.text}
               </Button>
             ))}
-            {!!wallet?.accounts[0].address && (
-              <>
-                <Typography
-                  variant="body1"
-                  sx={{ color: theme.palette.text.primary }}
-                >
-                  {wallet.accounts[0].address.slice(0, 6)}...
-                  {wallet.accounts[0].address.slice(-4)}
-                </Typography>
-                <Chip
-                  label={`${usdcBalance} USDC`}
-                  color="primary"
-                  size="small"
-                  sx={{ fontWeight: "medium" }}
-                />
-              </>
-            )}
-            {wallet?.chains[0].namespace && (
-              <Button
-                onClick={handleChainMenuOpen}
-                sx={{
-                  color: theme.palette.text.primary,
-                  "&:hover": {
-                    color: theme.palette.text.secondary,
-                    backgroundColor: "transparent",
-                  },
-                }}
-              >
-                Chain: {parseInt(wallet.chains[0].id, 16)}
-              </Button>
-            )}
-            <Menu
-              anchorEl={chainMenuAnchor}
-              open={Boolean(chainMenuAnchor)}
-              onClose={() => handleChainMenuClose()}
-            >
-              {chains.map((chain) => (
-                <MenuItem
-                  key={chain.id}
-                  onClick={() => handleChainMenuClose(chain.id)}
-                  selected={wallet?.chains[0].id === chain.id}
-                >
-                  {chain.label} ({parseInt(chain.id, 16)})
-                </MenuItem>
-              ))}
-            </Menu>
+            {!!wallet?.accounts[0].address && <AccountDashboard />}
             <Button
               onClick={wallet ? () => disconnect(wallet) : () => connect()}
               sx={{

@@ -150,9 +150,7 @@ contract GovernanceTest is Test {
         vm.stopPrank();
 
         vm.startPrank(user2);
-        BillboardGovernance(address(governanceProxy)).vote(
-            0, true, user2BbtAmount, getMerkleProof(leaves, 1)
-        );
+        BillboardGovernance(address(governanceProxy)).vote(0, true, user2BbtAmount, getMerkleProof(leaves, 1));
         vm.stopPrank();
 
         (,,, uint256 votesFor, uint256 votesAgainst,,,) = BillboardGovernance(address(governanceProxy)).getProposal(0);
@@ -191,9 +189,7 @@ contract GovernanceTest is Test {
         vm.stopPrank();
 
         vm.startPrank(user2);
-        BillboardGovernance(address(governanceProxy)).vote(
-            0, true, user2BbtAmount, getMerkleProof(leaves, 1)
-        );
+        BillboardGovernance(address(governanceProxy)).vote(0, true, user2BbtAmount, getMerkleProof(leaves, 1));
         vm.stopPrank();
 
         vm.warp(block.timestamp + 30 days + 1);

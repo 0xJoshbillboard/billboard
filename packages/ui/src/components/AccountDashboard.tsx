@@ -3,9 +3,10 @@ import useBillboard from "../hooks/useBillboard";
 import { Button, Chip, Menu, MenuItem, useTheme } from "@mui/material";
 import { useState } from "react";
 import { chains } from "../utils/chains";
+import { WalletRounded } from "@mui/icons-material";
 
 export const AccountDashboard = () => {
-  const [{ wallet }] = useConnectWallet();
+  const [{ wallet }, , disconnect] = useConnectWallet();
   const [, setChain] = useSetChain();
   const { usdcBalance } = useBillboard();
   const theme = useTheme();
@@ -34,18 +35,32 @@ export const AccountDashboard = () => {
     setAccountMenuAnchor(null);
   };
 
+  const handleDisconnect = () => {
+    if (wallet) {
+      disconnect(wallet);
+    }
+    handleAccountMenuClose();
+  };
+
   if (!wallet?.accounts[0].address) return null;
 
   return (
     <>
       <Button
         onClick={handleAccountMenuOpen}
+        variant="outlined"
+        startIcon={<WalletRounded />}
         sx={{
-          color: theme.palette.text.primary,
+          borderRadius: 2,
+          fontWeight: 600,
+          borderColor: theme.palette.primary.main,
+          color: theme.palette.primary.main,
           "&:hover": {
-            color: theme.palette.text.secondary,
-            backgroundColor: "transparent",
+            backgroundColor: theme.palette.primary.main,
+            color: theme.palette.primary.contrastText,
+            borderColor: theme.palette.primary.main,
           },
+          transition: "all 0.3s ease",
         }}
       >
         {wallet.accounts[0].address.slice(0, 6)}...
@@ -69,6 +84,12 @@ export const AccountDashboard = () => {
             Chain: {parseInt(wallet.chains[0].id, 16)}
           </MenuItem>
         )}
+        <MenuItem
+          onClick={handleDisconnect}
+          sx={{ color: theme.palette.error.main }}
+        >
+          Disconnect Wallet
+        </MenuItem>
       </Menu>
       <Menu
         anchorEl={chainMenuAnchor}

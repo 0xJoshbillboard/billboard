@@ -32,6 +32,7 @@ export default function Home() {
             src="/assets/billboard-landing-page.png"
             alt="Billboard"
             style={{
+              width: "100%",
               maxWidth: "500px",
               height: "auto",
               borderRadius: "50%",

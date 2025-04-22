@@ -14,11 +14,17 @@ import {
   Box,
   useTheme,
   Container,
+  Divider,
+  Avatar,
+  Chip,
+  Menu,
+  MenuItem,
 } from "@mui/material";
 import {
   Menu as MenuIcon,
   Brightness4 as Brightness4Icon,
   Brightness7 as Brightness7Icon,
+  KeyboardArrowDown,
 } from "@mui/icons-material";
 import { useConnectWallet, useSetChain } from "@web3-onboard/react";
 import { chains } from "../utils/chains";
@@ -35,6 +41,9 @@ export default function Header({
   const [, setChain] = useSetChain();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [showMobileChainOptions, setShowMobileChainOptions] = useState(false);
+  const [chainMenuAnchor, setChainMenuAnchor] = useState<null | HTMLElement>(
+    null,
+  );
   const theme = useTheme();
   const location = useLocation();
   const [{ wallet, connecting }, connect, disconnect] = useConnectWallet();
@@ -44,7 +53,12 @@ export default function Header({
     setIsMenuOpen(!isMenuOpen);
   };
 
+  const handleChainMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
+    setChainMenuAnchor(event.currentTarget);
+  };
+
   const handleChainMenuClose = (chainId?: string) => {
+    setChainMenuAnchor(null);
     if (chainId) {
       setChain({ chainId });
     }
@@ -52,18 +66,42 @@ export default function Header({
 
   return (
     <AppBar
-      position="static"
-      sx={{ color: theme.palette.text.primary, boxShadow: "none" }}
+      position="sticky"
+      elevation={1}
+      sx={{
+        color: theme.palette.text.primary,
+        backgroundColor:
+          theme.palette.mode === "light"
+            ? "rgba(255, 255, 255, 0.95)"
+            : "rgba(18, 18, 18, 0.95)",
+        backdropFilter: "blur(8px)",
+      }}
     >
       <Container maxWidth={false} sx={{ maxWidth: "1440px" }}>
-        <Toolbar sx={{ justifyContent: "space-between", padding: { xs: 0 } }}>
-          <Box sx={{ display: "flex", alignItems: "center" }}>
+        <Toolbar
+          sx={{ justifyContent: "space-between", padding: { xs: 1, sm: 2 } }}
+        >
+          <Box
+            sx={{
+              display: "flex",
+              alignItems: "center",
+              "&:hover": {
+                opacity: 0.9,
+                transition: "opacity 0.2s ease-in-out",
+              },
+            }}
+            component={Link}
+            to="/"
+          >
             <BillboardIcon />
             <Typography
               ml={1}
               variant="h6"
               component="div"
-              sx={{ fontWeight: "bold" }}
+              sx={{
+                fontWeight: 700,
+                letterSpacing: "0.02em",
+              }}
               color={theme.palette.mode === "light" ? "black" : "primary"}
             >
               Billboard
@@ -75,7 +113,7 @@ export default function Header({
             sx={{
               display: { xs: "none", md: "flex" },
               alignItems: "center",
-              gap: 2,
+              gap: 3,
             }}
           >
             {menuItems.map((item) => (
@@ -84,41 +122,74 @@ export default function Header({
                 component={Link}
                 to={item.path}
                 sx={{
-                  fontWeight:
-                    location.pathname === item.path ? "bold" : "normal",
-                  color:
-                    theme.palette.mode === "light"
-                      ? "rgba(0, 0, 0, 0.87)"
-                      : theme.palette.text.primary,
+                  fontWeight: 500,
+                  position: "relative",
+                  color: theme.palette.text.primary,
                   "&:hover": {
-                    color: theme.palette.text.secondary,
                     backgroundColor: "transparent",
+                    color: theme.palette.primary.main,
                   },
+                  "&::after":
+                    location.pathname === item.path
+                      ? {
+                          content: '""',
+                          position: "absolute",
+                          bottom: -2,
+                          left: "25%",
+                          width: "50%",
+                          height: 2,
+                          backgroundColor: theme.palette.primary.main,
+                        }
+                      : {},
                 }}
               >
                 {item.text}
               </Button>
             ))}
-            {!!wallet?.accounts[0].address && <AccountDashboard />}
-            <Button
-              onClick={wallet ? () => disconnect(wallet) : () => connect()}
+
+            {!!wallet?.accounts[0].address && (
+              <Box sx={{ ml: 1 }}>
+                <AccountDashboard />
+              </Box>
+            )}
+
+            {!wallet && (
+              <Button
+                onClick={() => connect()}
+                variant="contained"
+                color="primary"
+                sx={{
+                  fontWeight: 600,
+                  px: 3,
+                  py: 1,
+                  borderRadius: 2,
+                  boxShadow: 2,
+                  "&:hover": {
+                    boxShadow: 4,
+                  },
+                }}
+              >
+                {connecting ? "Connecting..." : "Connect Wallet"}
+              </Button>
+            )}
+
+            <IconButton
+              onClick={toggleColorMode}
+              color="inherit"
               sx={{
+                ml: 1,
+                backgroundColor:
+                  theme.palette.mode === "light"
+                    ? "rgba(0, 0, 0, 0.04)"
+                    : "rgba(255, 255, 255, 0.08)",
                 "&:hover": {
-                  color: theme.palette.text.secondary,
-                  backgroundColor: "transparent",
+                  backgroundColor:
+                    theme.palette.mode === "light"
+                      ? "rgba(0, 0, 0, 0.08)"
+                      : "rgba(255, 255, 255, 0.12)",
                 },
               }}
-              variant="contained"
-              color="secondary"
             >
-              {connecting
-                ? "Connecting..."
-                : wallet
-                  ? "Disconnect Wallet"
-                  : "Connect Wallet"}
-            </Button>
-
-            <IconButton onClick={toggleColorMode} color="inherit">
               {theme.palette.mode === "dark" ? (
                 <Brightness7Icon />
               ) : (
@@ -132,12 +203,32 @@ export default function Header({
             sx={{
               display: { xs: "flex", md: "none" },
               gap: 1,
+              alignItems: "center",
             }}
           >
+            {wallet?.accounts[0].address && (
+              <Chip
+                avatar={
+                  <Avatar sx={{ bgcolor: theme.palette.primary.main }}>
+                    W
+                  </Avatar>
+                }
+                label={`${wallet.accounts[0].address.slice(0, 4)}...${wallet.accounts[0].address.slice(-4)}`}
+                variant="outlined"
+                size="small"
+                sx={{ mr: 1 }}
+              />
+            )}
+
             <IconButton
               onClick={toggleColorMode}
               color="inherit"
-              sx={{ display: { xs: "flex", md: "none" } }}
+              sx={{
+                backgroundColor:
+                  theme.palette.mode === "light"
+                    ? "rgba(0, 0, 0, 0.04)"
+                    : "rgba(255, 255, 255, 0.08)",
+              }}
             >
               {theme.palette.mode === "dark" ? (
                 <Brightness7Icon />
@@ -145,12 +236,19 @@ export default function Header({
                 <Brightness4Icon />
               )}
             </IconButton>
+
             <IconButton
               edge="end"
               color="inherit"
               aria-label="menu"
               onClick={toggleMenu}
-              sx={{ display: { xs: "flex", md: "none" } }}
+              sx={{
+                ml: 1,
+                backgroundColor:
+                  theme.palette.mode === "light"
+                    ? "rgba(0, 0, 0, 0.04)"
+                    : "rgba(255, 255, 255, 0.08)",
+              }}
             >
               <MenuIcon />
             </IconButton>
@@ -164,114 +262,174 @@ export default function Header({
             sx={{
               display: { xs: "block", md: "none" },
               "& .MuiDrawer-paper": {
-                width: 240,
-                backgroundColor: theme.palette.background.default,
+                width: 280,
+                backgroundColor: theme.palette.background.paper,
+                boxShadow: 3,
               },
             }}
           >
-            <List>
+            <Box sx={{ p: 3, display: "flex", alignItems: "center" }}>
+              <BillboardIcon />
+              <Typography
+                ml={1}
+                variant="h6"
+                component="div"
+                sx={{ fontWeight: 700 }}
+                color={theme.palette.mode === "light" ? "black" : "primary"}
+              >
+                Billboard
+              </Typography>
+            </Box>
+
+            <Divider sx={{ mb: 2 }} />
+
+            {wallet?.accounts[0].address && (
+              <Box sx={{ px: 3, py: 2, bgcolor: theme.palette.action.hover }}>
+                <Typography variant="subtitle2" color="text.secondary">
+                  Connected Wallet
+                </Typography>
+                <Typography
+                  variant="body2"
+                  sx={{ wordBreak: "break-all", mt: 0.5 }}
+                >
+                  {wallet.accounts[0].address}
+                </Typography>
+                <Box sx={{ display: "flex", alignItems: "center", mt: 1 }}>
+                  <Typography variant="body2" color="primary" fontWeight={600}>
+                    {usdcBalance} USDC
+                  </Typography>
+                </Box>
+              </Box>
+            )}
+
+            <List sx={{ px: 1 }}>
               {menuItems.map((item) => (
                 <ListItem
                   key={item.text}
                   component={Link}
                   to={item.path}
                   onClick={toggleMenu}
+                  disablePadding
+                >
+                  <ListItemButton
+                    sx={{
+                      py: 1.5,
+                      borderRadius: 1,
+                      mb: 0.5,
+                      backgroundColor:
+                        location.pathname === item.path
+                          ? theme.palette.action.selected
+                          : "transparent",
+                      "&:hover": {
+                        backgroundColor: theme.palette.action.hover,
+                      },
+                    }}
+                  >
+                    <ListItemText
+                      primary={item.text}
+                      primaryTypographyProps={{
+                        fontWeight: location.pathname === item.path ? 600 : 400,
+                        color:
+                          location.pathname === item.path
+                            ? theme.palette.primary.main
+                            : theme.palette.text.primary,
+                      }}
+                    />
+                  </ListItemButton>
+                </ListItem>
+              ))}
+
+              <Divider sx={{ my: 2 }} />
+
+              <ListItem disablePadding>
+                <ListItemButton
+                  onClick={() => {
+                    wallet ? disconnect(wallet) : connect();
+                    toggleMenu();
+                  }}
                   sx={{
-                    backgroundColor:
-                      location.pathname === item.path
-                        ? theme.palette.action.selected
-                        : "transparent",
+                    py: 1.5,
+                    borderRadius: 1,
+                    backgroundColor: theme.palette.primary.main,
+                    color: theme.palette.primary.contrastText,
                     "&:hover": {
-                      backgroundColor: theme.palette.action.hover,
+                      backgroundColor: theme.palette.primary.dark,
                     },
                   }}
                 >
                   <ListItemText
-                    primary={item.text}
-                    sx={{
-                      color:
-                        location.pathname === item.path
-                          ? theme.palette.primary.main
-                          : theme.palette.text.primary,
-                      fontWeight:
-                        location.pathname === item.path ? "bold" : "normal",
+                    primary={
+                      connecting
+                        ? "Connecting..."
+                        : wallet
+                          ? "Disconnect Wallet"
+                          : "Connect Wallet"
+                    }
+                    primaryTypographyProps={{
+                      fontWeight: 600,
+                      textAlign: "center",
                     }}
                   />
-                </ListItem>
-              ))}
-              <ListItem
-                onClick={() => {
-                  wallet ? disconnect(wallet) : connect();
-                  toggleMenu();
-                }}
-                sx={{
-                  "&:hover": {
-                    backgroundColor: theme.palette.action.hover,
-                    cursor: "pointer",
-                  },
-                }}
-              >
-                <ListItemText
-                  primary={
-                    connecting
-                      ? "Connecting..."
-                      : wallet
-                        ? "Disconnect Wallet"
-                        : "Connect Wallet"
-                  }
-                />
+                </ListItemButton>
               </ListItem>
 
-              <ListItem>
-                {!!wallet?.accounts[0].address && (
-                  <Box>
-                    <Typography
-                      variant="body1"
-                      sx={{ color: theme.palette.text.primary }}
-                    >
-                      {wallet.accounts[0].address.slice(0, 6)}...
-                      {wallet.accounts[0].address.slice(-4)}
-                    </Typography>
-                    <Typography variant="body2" color="primary" sx={{ mt: 1 }}>
-                      {usdcBalance} USDC
-                    </Typography>
-                  </Box>
-                )}
-              </ListItem>
-              <ListItemButton
-                onClick={() => {
-                  setShowMobileChainOptions(true);
-                }}
-                sx={{
-                  "&:hover": {
-                    backgroundColor: theme.palette.action.hover,
-                    cursor: "pointer",
-                  },
-                }}
-              >
-                {wallet?.chains[0].namespace && (
-                  <ListItemText
-                    primary={`Chain: ${parseInt(wallet.chains[0].id, 16)}`}
-                  />
-                )}
-              </ListItemButton>
-              <List>
-                {showMobileChainOptions &&
-                  chains.map((chain) => (
-                    <ListItemButton
-                      key={chain.id}
-                      onClick={() => {
-                        handleChainMenuClose(chain.id);
-                        setShowMobileChainOptions(false);
+              {wallet?.chains[0].namespace && (
+                <>
+                  <ListItemButton
+                    onClick={() => {
+                      setShowMobileChainOptions(!showMobileChainOptions);
+                    }}
+                    sx={{
+                      mt: 2,
+                      py: 1.5,
+                      borderRadius: 1,
+                      border: `1px solid ${theme.palette.divider}`,
+                      "&:hover": {
+                        backgroundColor: theme.palette.action.hover,
+                      },
+                    }}
+                  >
+                    <ListItemText
+                      primary={`Current Chain: ${parseInt(wallet.chains[0].id, 16)}`}
+                      primaryTypographyProps={{
+                        fontWeight: 500,
                       }}
-                      selected={wallet?.chains[0].id === chain.id}
-                    >
-                      <ListItemText
-                        primary={`${chain.label} (${parseInt(chain.id, 16)})`}
-                      />
-                    </ListItemButton>
-                  ))}
-              </List>
+                    />
+                    <KeyboardArrowDown />
+                  </ListItemButton>
+
+                  {showMobileChainOptions && (
+                    <Box sx={{ ml: 2, mt: 1, mb: 2 }}>
+                      {chains.map((chain) => (
+                        <ListItemButton
+                          key={chain.id}
+                          onClick={() => {
+                            handleChainMenuClose(chain.id);
+                            setShowMobileChainOptions(false);
+                            toggleMenu();
+                          }}
+                          selected={wallet?.chains[0].id === chain.id}
+                          sx={{
+                            py: 1,
+                            borderRadius: 1,
+                            mb: 0.5,
+                            pl: 2,
+                          }}
+                        >
+                          <ListItemText
+                            primary={`${chain.label} (${parseInt(chain.id, 16)})`}
+                            primaryTypographyProps={{
+                              fontWeight:
+                                wallet?.chains[0].id === chain.id ? 600 : 400,
+                              fontSize: "0.875rem",
+                            }}
+                          />
+                        </ListItemButton>
+                      ))}
+                    </Box>
+                  )}
+                </>
+              )}
             </List>
           </Drawer>
         </Toolbar>

@@ -49,13 +49,81 @@ function App() {
         palette: {
           mode,
           primary: {
-            main: mode === "dark" ? "#ffeb3b" : "#ffc107",
+            main: mode === "dark" ? "#ffeb3b" : "#ff5722", // Yellow for dark, Orange-red for light
+            light: mode === "dark" ? "#fff176" : "#ff8a65",
+            dark: mode === "dark" ? "#ffd600" : "#d84315",
+            contrastText: mode === "dark" ? "#000000" : "#ffffff",
           },
           secondary: {
-            main: mode === "dark" ? "#ff9800" : "#ff9800",
+            main: mode === "dark" ? "#ff9800" : "#009688", // Orange for dark, Teal for light
+            light: mode === "dark" ? "#ffb74d" : "#4db6ac",
+            dark: mode === "dark" ? "#f57c00" : "#00796b",
+            contrastText: mode === "dark" ? "#000000" : "#ffffff",
           },
           background: {
             default: mode === "light" ? "#f5f5f5" : "#121212",
+            paper: mode === "light" ? "#ffffff" : "#1e1e1e",
+          },
+          text: {
+            primary: mode === "light" ? "#212121" : "#ffffff",
+            secondary: mode === "light" ? "#757575" : "#b0b0b0",
+          },
+          divider:
+            mode === "light"
+              ? "rgba(0, 0, 0, 0.12)"
+              : "rgba(255, 255, 255, 0.12)",
+          error: {
+            main: "#f44336",
+          },
+          warning: {
+            main: "#ff9800",
+          },
+          info: {
+            main: mode === "light" ? "#2196f3" : "#29b6f6",
+          },
+          success: {
+            main: "#4caf50",
+          },
+        },
+        components: {
+          MuiButton: {
+            styleOverrides: {
+              root: {
+                borderRadius: 8,
+                textTransform: "none",
+                fontWeight: 600,
+              },
+            },
+          },
+          MuiCard: {
+            styleOverrides: {
+              root: {
+                borderRadius: 12,
+                boxShadow:
+                  mode === "light"
+                    ? "0px 2px 4px rgba(0, 0, 0, 0.1)"
+                    : "0px 2px 4px rgba(0, 0, 0, 0.4)",
+              },
+            },
+          },
+          MuiDivider: {
+            styleOverrides: {
+              root: {
+                margin: "16px 0",
+              },
+            },
+          },
+        },
+        typography: {
+          fontFamily: '"Roboto", "Helvetica", "Arial", sans-serif',
+          h1: {
+            fontWeight: 700,
+          },
+          h2: {
+            fontWeight: 700,
+          },
+          button: {
+            fontWeight: 600,
           },
         },
       }),
@@ -94,7 +162,10 @@ function App() {
   );
 }
 
-createRoot(document.getElementById("root")!).render(
+const rootElement = document.getElementById("root");
+if (!rootElement) throw new Error("Failed to find the root element");
+
+createRoot(rootElement).render(
   <React.StrictMode>
     <App />
   </React.StrictMode>,

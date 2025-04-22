@@ -1,21 +1,15 @@
 import { Contract, BrowserProvider, BigNumberish, getBigInt } from "ethers";
 import { useConnectWallet } from "@web3-onboard/react";
 import { useEffect, useState } from "react";
-import {
-  billboardABI,
-  usdcMockABI,
-  billboardGovernanceABI,
-} from "../utils/abis";
 import { BillboardSDK } from "billboard-sdk";
-
-const CONTRACT_ADDRESS = "0x6A655887aD8Bce1D0a19a1092905100744330120";
-const CONTRACT_ABI = billboardABI;
-
-const GOVERNANCE_ADDRESS = "0x973d3B7fa5418B4577A0c68E56c24D120051B785";
-const GOVERNANCE_ABI = billboardGovernanceABI;
-
-const USDC_ADDRESS = "0x65046188900D3C1FE0c559983997267326a85D10";
-const USDC_MOCK_ABI = usdcMockABI;
+import {
+  BILLBOARD_ADDRESS,
+  CONTRACT_ABI,
+  GOVERNANCE_ADDRESS,
+  GOVERNANCE_ABI,
+  USDC_ADDRESS,
+  USDC_MOCK_ABI,
+} from "../utils/contracts";
 
 const billboardSDK = new BillboardSDK();
 
@@ -51,7 +45,7 @@ export default function useBillboard() {
           GOVERNANCE_ABI,
           signer,
         );
-        setContract(new Contract(CONTRACT_ADDRESS, CONTRACT_ABI, signer));
+        setContract(new Contract(BILLBOARD_ADDRESS, CONTRACT_ABI, signer));
         setUsdcContract(new Contract(USDC_ADDRESS, USDC_MOCK_ABI, signer));
         setGovernanceContract(govContract);
       }
@@ -109,7 +103,7 @@ export default function useBillboard() {
     if (!usdcContract || !contract) {
       throw new Error("USDC not defined");
     }
-    await usdcContract.approve(CONTRACT_ADDRESS, amount);
+    await usdcContract.approve(BILLBOARD_ADDRESS, amount);
   };
 
   const fetchUsdcBalance = async () => {
@@ -126,7 +120,7 @@ export default function useBillboard() {
     }
     return (await usdcContract.allowance(
       wallet?.accounts[0].address,
-      CONTRACT_ADDRESS,
+      BILLBOARD_ADDRESS,
     )) as BigNumberish;
   };
 

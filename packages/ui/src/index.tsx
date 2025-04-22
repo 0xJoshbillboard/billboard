@@ -13,6 +13,7 @@ import Layout from "./components/Layout";
 import Buy from "./pages/Buy";
 import SDK from "./pages/SDK";
 import Dashboard from "./pages/Dashboard";
+import Governance from "./pages/Governance";
 
 const injected = injectedModule();
 
@@ -154,6 +155,7 @@ function App() {
               <Route path="buy" element={<Buy />} />
               <Route path="sdk" element={<SDK />} />
               <Route path="dashboard" element={<Dashboard />} />
+              <Route path="governance" element={<Governance />} />
             </Route>
           </Routes>
         </BrowserRouter>

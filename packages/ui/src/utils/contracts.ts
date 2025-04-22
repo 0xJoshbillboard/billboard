@@ -1,11 +1,15 @@
 import billboardABI from "../../../contracts/out/BillboardRegistry.sol/BillboardRegistry.json";
 import governanceABI from "../../../contracts/out/BillboardGovernance.sol/BillboardGovernance.json";
 import usdcMockABI from "../../../contracts/out/USDCMock.sol/USDCMock.json";
+import billboardTokenABI from "../../../contracts/out/BillboardToken.sol/BillboardToken.json";
 
 export const CONTRACT_ABI = billboardABI.abi;
 export const GOVERNANCE_ABI = governanceABI.abi;
 export const USDC_MOCK_ABI = usdcMockABI.abi;
+export const BILLBOARD_TOKEN_ABI = billboardTokenABI.abi;
 
-export const BILLBOARD_ADDRESS = "0x6a655887ad8bce1d0a19a1092905100744330120";
-export const GOVERNANCE_ADDRESS = "0x973d3b7fa5418b4577a0c68e56c24d120051b785";
-export const USDC_ADDRESS = "0x65046188900d3c1fe0c559983997267326a85d10";
+export const BILLBOARD_ADDRESS = "0xdcbacd4de1714f0b6c68e61aac8ab31fadd649d1";
+export const GOVERNANCE_ADDRESS = "0x6e5f0fc82f3402c12e8d304403661b7e1cdc5067";
+export const USDC_ADDRESS = "0xf520533ac237491b2ceb47a4275f045dddbe8d23";
+export const BILLBOARD_TOKEN_ADDRESS =
+  "0xc12dfdeee23b05008987e506f9593b0d24c1e759";

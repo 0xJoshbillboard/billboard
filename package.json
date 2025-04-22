@@ -1,11 +1,12 @@
 {
   "name": "billboard",
+  "private": true,
   "packageManager": "yarn@4.6.0",
   "workspaces": [
     "packages/*"
   ],
   "scripts": {
-    "build": "yarn workspaces foreach --all run build",
+    "build": "cd packages/contracts && forge build && yarn workspaces foreach --all run build",
     "test": "yarn workspaces foreach --all run test",
     "format": "prettier --write .",
     "prepare": "husky"

@@ -22,5 +22,10 @@
     "firebase-functions": "^6.3.2",
     "pinata": "^2.1.1"
   },
-  "private": true
+  "private": true,
+  "devDependencies": {
+    "@eslint/js": "^9.25.1",
+    "eslint": "^9.25.1",
+    "globals": "^16.0.0"
+  }
 }

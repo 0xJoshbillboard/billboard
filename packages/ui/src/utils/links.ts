@@ -3,4 +3,5 @@ export const menuItems = [
   { text: "Buy", path: "/buy" },
   { text: "SDK", path: "/sdk" },
   { text: "Dashboard", path: "/dashboard" },
+  { text: "Governance", path: "/governance" },
 ];

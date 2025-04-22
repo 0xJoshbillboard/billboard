@@ -17,8 +17,6 @@ import {
   Divider,
   Avatar,
   Chip,
-  Menu,
-  MenuItem,
 } from "@mui/material";
 import {
   Menu as MenuIcon,
@@ -51,10 +49,6 @@ export default function Header({
 
   const toggleMenu = () => {
     setIsMenuOpen(!isMenuOpen);
-  };
-
-  const handleChainMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
-    setChainMenuAnchor(event.currentTarget);
   };
 
   const handleChainMenuClose = (chainId?: string) => {

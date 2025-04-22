@@ -5,7 +5,7 @@ const { getFirestore } = require("firebase-admin/firestore");
 const { initializeApp } = require("firebase-admin/app");
 const { onRequest } = require("firebase-functions/v2/https");
 const { PinataSDK } = require("pinata");
-const contractABI = require("./abi");
+const abi = require("./abi");
 const { setGlobalOptions } = require("firebase-functions");
 const dotenv = require("dotenv");
 
@@ -24,11 +24,11 @@ const pinata = new PinataSDK({
   pinataJwt: process.env.PINATA_API_KEY,
   pinataGateway: process.env.PINATA_GATEWAY,
 });
-const rpcUrl = `https://optimism-sepolia.infura.io/v3/${process.INFURA_API}`;
+const rpcUrl = `https://optimism-sepolia.infura.io/v3/${process.env.INFURA_API}`;
 const provider = new ethers.JsonRpcProvider(rpcUrl);
 const contract = new ethers.Contract(
-  "0x6A655887aD8Bce1D0a19a1092905100744330120",
-  contractABI,
+  "0xdcbacd4de1714f0b6c68e61aac8ab31fadd649d1",
+  abi,
   provider,
 );
 
@@ -143,20 +143,16 @@ const updateActiveAds = async () => {
     const batch = db.batch();
     let activeAdsCount = 0;
 
-    // Create a map to track the latest ad for each ipfsHash
     const latestAdsByIpfsHash = new Map();
 
     contractLogsSnapshot.forEach((doc) => {
       const adData = doc.data();
 
-      // Only consider ads that have an expiryTime and ipfsHash
       if (adData.expiryTime && adData.ipfsHash) {
-        // Check if the ad is still active (expiryTime > current time)
         if (
           adData.expiryTime > currentTimeInSeconds &&
           adData.expiryTime >= cutoffTimeInSeconds
         ) {
-          // If we already have an ad with this ipfsHash, keep only the one with the latest expiryTime
           if (
             !latestAdsByIpfsHash.has(adData.ipfsHash) ||
             latestAdsByIpfsHash.get(adData.ipfsHash).expiryTime <
@@ -176,36 +172,30 @@ const updateActiveAds = async () => {
       }
     });
 
-    // Add all the latest active ads to the batch
     for (const [ipfsHash, adData] of latestAdsByIpfsHash.entries()) {
       const activeAdRef = db.collection("active_ads").doc(ipfsHash);
       batch.set(activeAdRef, adData);
       activeAdsCount++;
     }
 
-    // Step 2: Process active_ads to move expired ads to expired_active_ads
     const activeAdsSnapshot = await db.collection("active_ads").get();
     let expiredAdsCount = 0;
 
     activeAdsSnapshot.forEach((doc) => {
       const adData = doc.data();
 
-      // Check if the ad is expired
       if (adData.expiryTime < currentTimeInSeconds) {
-        // Move to expired_active_ads collection
         const expiredAdRef = db.collection("expired_active_ads").doc(doc.id);
         batch.set(expiredAdRef, {
           ...adData,
           expiredAt: new Date().toISOString(),
         });
 
-        // Delete from active_ads collection
         batch.delete(doc.ref);
         expiredAdsCount++;
       }
     });
 
-    // Commit all the changes
     await batch.commit();
 
     logger.log(
@@ -236,7 +226,6 @@ exports.scheduledUpdateActiveAds = onSchedule(
   },
 );
 
-// Function to upload image to IPFS
 exports.uploadImageToIPFS = onRequest(
   {
     cors,
@@ -281,28 +270,24 @@ exports.uploadImageToIPFS = onRequest(
   },
 );
 
-// Function to get image from IPFS
 exports.getImageFromIPFS = onRequest(
   {
     cors,
   },
   async (req, res) => {
     try {
-      // Check if the request method is POST
       if (req.method !== "POST") {
         return res
           .status(405)
           .json({ error: "Method not allowed. Please use GET." });
       }
 
-      // Check if image data is provided
       if (!req.body || !req.body.cid) {
         return res.status(400).json({ error: "No cid data provided." });
       }
 
       const imageCid = req.body.cid;
 
-      // Upload to IPFS via Pinata
       const result = await pinata.gateways.public.convert(imageCid);
 
       return res.status(200).json({

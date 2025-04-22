@@ -19,4 +19,4 @@ contract DeployBillboardToken is Script {
 
         vm.stopBroadcast();
     }
-} 
+}

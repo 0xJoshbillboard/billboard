@@ -23,10 +23,11 @@ contract DeployBillboard is Script {
         console.log("Billboard Governance deployed at:", address(governance));
 
         // Deploy the BillboardGovernanceProxy
-        BillboardGovernanceProxy governanceProxy = new BillboardGovernanceProxy(address(governance), 0xd0B19109DD194fe366f2d2dA34B3C22Dabb1Cb0b, "");
+        BillboardGovernanceProxy governanceProxy =
+            new BillboardGovernanceProxy(address(governance), 0xd0B19109DD194fe366f2d2dA34B3C22Dabb1Cb0b, "");
         console.log("Billboard Governance Proxy deployed at:", address(governanceProxy));
 
-      // Deploy the BillboardToken
+        // Deploy the BillboardToken
         BillboardToken token = new BillboardToken(address(usdc));
         console.log("Billboard Token deployed at:", address(token));
 

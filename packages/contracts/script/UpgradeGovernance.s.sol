@@ -7,7 +7,7 @@ import "@openzeppelin/contracts/proxy/transparent/TransparentUpgradeableProxy.so
 import "@openzeppelin/contracts/proxy/transparent/ProxyAdmin.sol";
 
 contract UpgradeGovernance is Script {
-    address PROXY_ADDRESS = address(0x6e5f0fc82f3402c12e8d304403661b7e1cdc5067);
+    address PROXY_ADDRESS = address(0x6E5f0FC82f3402c12E8d304403661B7e1CDc5067);
     address PROXY_ADMIN = address(0x366CE779048AB65BFA009B2c0eb276d4F59f4149);
 
     function run() public {
@@ -31,7 +31,7 @@ contract GetProxyAdmin is Script {
     function run() public view {
         bytes32 ADMIN_SLOT = 0xb53127684a568b3173ae13b9f8a6016e243e63b6e8ee1178d6a717850b5d6103;
 
-        address proxyAddress = address(0x6e5f0fc82f3402c12e8d304403661b7e1cdc5067);
+        address proxyAddress = address(0x6E5f0FC82f3402c12E8d304403661B7e1CDc5067);
         require(proxyAddress != address(0), "Please set the proxy address");
 
         bytes32 adminSlot = vm.load(proxyAddress, ADMIN_SLOT);

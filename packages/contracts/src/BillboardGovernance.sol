@@ -34,8 +34,13 @@ contract BillboardGovernance is Initializable, OwnableUpgradeable {
     mapping(address => mapping(uint256 => bool)) public hasVoted;
 
     event ProposalCreated(
-        uint256 indexed proposalId, uint256 duration, uint256 pricePerBillboard, uint256 securityDeposit,
-        uint256 votingPeriod, uint256 minProposalTokens, uint256 minVotingTokens
+        uint256 indexed proposalId,
+        uint256 duration,
+        uint256 pricePerBillboard,
+        uint256 securityDeposit,
+        uint256 votingPeriod,
+        uint256 minProposalTokens,
+        uint256 minVotingTokens
     );
     event Voted(uint256 indexed proposalId, address indexed voter, bool support, uint256 votes);
     event ProposalExecuted(uint256 indexed proposalId);
@@ -54,7 +59,7 @@ contract BillboardGovernance is Initializable, OwnableUpgradeable {
         minVotingTokens = 500 * 10 ** 18;
         token = BillboardToken(_token);
         lastVoteTimestamp = block.timestamp;
-        
+
         // Initialize new state variables
         proposals = new Proposal[](0);
     }
@@ -90,12 +95,12 @@ contract BillboardGovernance is Initializable, OwnableUpgradeable {
         lastVoteTimestamp = block.timestamp;
 
         emit ProposalCreated(
-            proposals.length - 1, 
-            _duration, 
-            _pricePerBillboard, 
-            _securityDeposit, 
-            _votingPeriod, 
-            _minProposalTokens, 
+            proposals.length - 1,
+            _duration,
+            _pricePerBillboard,
+            _securityDeposit,
+            _votingPeriod,
+            _minProposalTokens,
             _minVotingTokens
         );
     }
@@ -107,7 +112,7 @@ contract BillboardGovernance is Initializable, OwnableUpgradeable {
         Proposal storage proposal = proposals[proposalId];
         require(!proposal.executed, "Proposal already executed");
         require(token.balanceOf(msg.sender) >= minVotingTokens, "Insufficient tokens to vote");
-        
+
         hasVoted[msg.sender][proposalId] = true;
 
         if (support) {
@@ -143,14 +148,11 @@ contract BillboardGovernance is Initializable, OwnableUpgradeable {
         require(proposalId < proposals.length, "Invalid proposal");
         Proposal storage proposal = proposals[proposalId];
         require(!proposal.depositReturned, "Deposit already returned");
-        require(
-            proposal.executed || block.timestamp >= lastVoteTimestamp + votingPeriod,
-            "Proposal still active"
-        );
+        require(proposal.executed || block.timestamp >= lastVoteTimestamp + votingPeriod, "Proposal still active");
 
         proposal.depositReturned = true;
         require(token.transfer(proposal.proposer, securityDeposit), "Security deposit return failed");
-        
+
         emit SecurityDepositReturned(proposalId, proposal.proposer, securityDeposit);
     }
 

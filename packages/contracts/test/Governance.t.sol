@@ -75,14 +75,8 @@ contract GovernanceTest is Test {
         );
         vm.stopPrank();
 
-        (
-            uint256 duration,
-            uint256 price,
-            uint256 deposit,
-            uint256 votesFor,
-            uint256 votesAgainst,
-            bool executed
-        ) = BillboardGovernance(address(governanceProxy)).getProposal(0);
+        (uint256 duration, uint256 price, uint256 deposit, uint256 votesFor, uint256 votesAgainst, bool executed) =
+            BillboardGovernance(address(governanceProxy)).getProposal(0);
 
         assertEq(duration, 60 days);
         assertEq(price, 2000e6);

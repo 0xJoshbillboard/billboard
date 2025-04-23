@@ -13,13 +13,21 @@ import {
   Button,
   Divider,
   useTheme,
+  TextField,
+  Alert,
+  CircularProgress,
 } from "@mui/material";
 
 export default function SDK() {
-  const { getAds } = useBillboard();
+  const { getAds, registerProvider } = useBillboard();
   const [ads, setAds] = useState<Billboard[]>([]);
   const [randomAd, setRandomAd] = useState<Billboard | null>(null);
   const [loading, setLoading] = useState(false);
+  const [providerHandle, setProviderHandle] = useState("");
+  const [registrationStatus, setRegistrationStatus] = useState<{
+    success: boolean;
+    message: string;
+  } | null>(null);
   const theme = useTheme();
 
   useEffect(() => {
@@ -48,11 +56,137 @@ export default function SDK() {
     }
   };
 
+  const handleRegisterProvider = async () => {
+    if (!providerHandle.trim()) {
+      setRegistrationStatus({
+        success: false,
+        message: "Please enter a provider handle",
+      });
+      return;
+    }
+
+    setLoading(true);
+    try {
+      await registerProvider(providerHandle);
+      setRegistrationStatus({
+        success: true,
+        message: "Successfully registered as a billboard provider!",
+      });
+      setProviderHandle("");
+    } catch (error: any) {
+      setRegistrationStatus({
+        success: false,
+        message: error.message || "Failed to register as provider",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <Container
       maxWidth="lg"
       sx={{ py: 6, backgroundColor: theme.palette.background.paper }}
     >
+      <Box sx={{ textAlign: "center", mb: 4 }}>
+        <Typography variant="h4" sx={{ mb: 4 }}>
+          Integrate our SDK to earn USDC
+        </Typography>
+        <Link
+          href="https://www.npmjs.com/package/billboard-sdk"
+          target="_blank"
+          rel="noopener noreferrer"
+          sx={{
+            display: "block",
+            mb: 2,
+            color: "primary.main",
+            fontWeight: 600,
+          }}
+        >
+          Billboard SDK
+        </Link>
+      </Box>
+
+      {/* Provider Registration Section */}
+      <Box
+        sx={{
+          mb: 6,
+          p: 4,
+          border: `1px solid ${theme.palette.divider}`,
+          borderRadius: 2,
+          boxShadow: "0 4px 20px rgba(0,0,0,0.05)",
+          background: `linear-gradient(to right bottom, ${theme.palette.background.paper}, ${theme.palette.background.default})`,
+        }}
+      >
+        <Typography
+          variant="h5"
+          sx={{
+            mb: 3,
+            fontWeight: 600,
+            position: "relative",
+            display: "inline-block",
+            "&:after": {
+              content: '""',
+              position: "absolute",
+              bottom: -8,
+              left: 0,
+              width: 60,
+              height: 3,
+              backgroundColor: theme.palette.primary.main,
+              borderRadius: 1,
+            },
+          }}
+        >
+          Register as a Billboard Provider
+        </Typography>
+        <Typography variant="body2" color="text.secondary" sx={{ mb: 4 }}>
+          Join our network of providers and start earning USDC by displaying
+          advertisements on your platform.
+        </Typography>
+        <Stack spacing={3} sx={{ maxWidth: 450, mx: "auto" }}>
+          <TextField
+            label="Provider Handle"
+            value={providerHandle}
+            onChange={(e) => setProviderHandle(e.target.value)}
+            fullWidth
+            placeholder="Enter your unique provider identifier"
+            variant="outlined"
+            InputProps={{
+              sx: { borderRadius: 1.5 },
+            }}
+          />
+          <Button
+            variant="contained"
+            onClick={handleRegisterProvider}
+            disabled={loading}
+            sx={{
+              py: 1.2,
+              fontWeight: 600,
+              borderRadius: 1.5,
+              textTransform: "none",
+              boxShadow: "0 4px 10px rgba(0,0,0,0.1)",
+              "&:hover": {
+                boxShadow: "0 6px 15px rgba(0,0,0,0.15)",
+              },
+            }}
+            startIcon={
+              loading ? <CircularProgress size={20} color="inherit" /> : null
+            }
+          >
+            {loading ? "Processing Registration..." : "Register as Provider"}
+          </Button>
+          {registrationStatus && (
+            <Alert
+              severity={registrationStatus.success ? "success" : "error"}
+              variant="filled"
+              sx={{ borderRadius: 1.5 }}
+            >
+              {registrationStatus.message}
+            </Alert>
+          )}
+        </Stack>
+      </Box>
+
       <Typography
         variant="h4"
         component="h1"

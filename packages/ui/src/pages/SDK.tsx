@@ -12,6 +12,7 @@ import {
   Box,
   Button,
   Divider,
+  useTheme,
 } from "@mui/material";
 
 export default function SDK() {
@@ -19,6 +20,7 @@ export default function SDK() {
   const [ads, setAds] = useState<Billboard[]>([]);
   const [randomAd, setRandomAd] = useState<Billboard | null>(null);
   const [loading, setLoading] = useState(false);
+  const theme = useTheme();
 
   useEffect(() => {
     const fetchingAds = async () => {
@@ -47,7 +49,10 @@ export default function SDK() {
   };
 
   return (
-    <Container maxWidth="lg" sx={{ py: 6, backgroundColor: "#f9f9f9" }}>
+    <Container
+      maxWidth="lg"
+      sx={{ py: 6, backgroundColor: theme.palette.background.paper }}
+    >
       <Typography
         variant="h4"
         component="h1"
@@ -85,7 +90,7 @@ export default function SDK() {
               <Box
                 sx={{
                   height: 200,
-                  backgroundColor: "#f0f0f0",
+                  backgroundColor: theme.palette.grey[100],
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
@@ -200,7 +205,7 @@ export default function SDK() {
               <Box
                 sx={{
                   height: 200,
-                  backgroundColor: "#f0f0f0",
+                  backgroundColor: theme.palette.grey[100],
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",

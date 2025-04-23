@@ -45,6 +45,9 @@ export default function Governance() {
     duration: "",
     pricePerBillboard: "",
     securityDeposit: "",
+    votingPeriod: "",
+    minProposalTokens: "",
+    minVotingTokens: "",
   });
   const [buyAmount, setBuyAmount] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -93,28 +96,31 @@ export default function Governance() {
     if (!governanceContract || !tokenContract) return;
 
     try {
-      // Note: In a real implementation, you would need to:
-      // 1. Create a merkle tree of token holders
-      // 2. Get a snapshot block
-      // 3. Generate a merkle proof for the proposer
-      // This is simplified for the UI example
+      setIsLoading(true);
+      setErrorMessage("");
+
       const tx = await createProposal(
         Number(BigInt(newProposal.duration) * BigInt(86400)), // Convert days to seconds
         Number(BigInt(newProposal.pricePerBillboard) * BigInt(1e6)), // Convert to USDC decimals
         Number(BigInt(newProposal.securityDeposit) * BigInt(1e6)), // Convert to USDC decimals
-        "0x0", // Placeholder for merkle root
-        0, // Placeholder for snapshot block
-        Number(BigInt(tokenBalance) * BigInt(1e18)), // Current token balance
-        [], // Placeholder for merkle proof
+        Number(BigInt(newProposal.votingPeriod) * BigInt(86400)), // Convert days to seconds
+        Number(BigInt(newProposal.minProposalTokens) * BigInt(1e18)), // Convert to token decimals
+        Number(BigInt(newProposal.minVotingTokens) * BigInt(1e18)), // Convert to token decimals
       );
       await tx.wait();
       setNewProposal({
         duration: "",
         pricePerBillboard: "",
         securityDeposit: "",
+        votingPeriod: "",
+        minProposalTokens: "",
+        minVotingTokens: "",
       });
     } catch (error) {
       console.error("Failed to create proposal:", error);
+      setErrorMessage("Failed to create proposal. Please try again.");
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -122,18 +128,20 @@ export default function Governance() {
     if (!governanceContract) return;
 
     try {
-      // Note: In a real implementation, you would need to:
-      // 1. Generate a merkle proof for the voter's token balance
-      // This is simplified for the UI example
+      setIsLoading(true);
+      setErrorMessage("");
+
       const tx = await vote(
         proposalId,
         support,
         Number(BigInt(tokenBalance) * BigInt(1e18)), // Current token balance
-        [], // Placeholder for merkle proof
       );
       await tx.wait();
     } catch (error) {
       console.error("Failed to vote:", error);
+      setErrorMessage("Failed to vote. Please try again.");
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -174,6 +182,39 @@ export default function Governance() {
               </Typography>
               <Typography variant="h6">
                 {governanceSettings.price || 0} USDC
+              </Typography>
+            </Box>
+            <Box>
+              <Typography variant="subtitle1" color="text.secondary">
+                Voting Period
+              </Typography>
+              <Typography variant="h6">
+                {governanceSettings.votingPeriod
+                  ? governanceSettings.votingPeriod
+                  : 0}{" "}
+                days
+              </Typography>
+            </Box>
+            <Box>
+              <Typography variant="subtitle1" color="text.secondary">
+                Min Proposal Tokens
+              </Typography>
+              <Typography variant="h6">
+                {governanceSettings.minProposalTokens
+                  ? governanceSettings.minProposalTokens
+                  : 0}{" "}
+                BBT
+              </Typography>
+            </Box>
+            <Box>
+              <Typography variant="subtitle1" color="text.secondary">
+                Min Voting Tokens
+              </Typography>
+              <Typography variant="h6">
+                {governanceSettings.minVotingTokens
+                  ? governanceSettings.minVotingTokens
+                  : 0}{" "}
+                BBT
               </Typography>
             </Box>
           </Stack>
@@ -267,6 +308,42 @@ export default function Governance() {
               }
               fullWidth
             />
+            <TextField
+              label="Voting Period (days)"
+              type="number"
+              value={newProposal.votingPeriod}
+              onChange={(e) =>
+                setNewProposal({
+                  ...newProposal,
+                  votingPeriod: e.target.value,
+                })
+              }
+              fullWidth
+            />
+            <TextField
+              label="Minimum Proposal Tokens (BBT)"
+              type="number"
+              value={newProposal.minProposalTokens}
+              onChange={(e) =>
+                setNewProposal({
+                  ...newProposal,
+                  minProposalTokens: e.target.value,
+                })
+              }
+              fullWidth
+            />
+            <TextField
+              label="Minimum Voting Tokens (BBT)"
+              type="number"
+              value={newProposal.minVotingTokens}
+              onChange={(e) =>
+                setNewProposal({
+                  ...newProposal,
+                  minVotingTokens: e.target.value,
+                })
+              }
+              fullWidth
+            />
             <Button
               variant="contained"
               color="primary"
@@ -274,10 +351,14 @@ export default function Governance() {
               disabled={
                 !newProposal.duration ||
                 !newProposal.pricePerBillboard ||
-                !newProposal.securityDeposit
+                !newProposal.securityDeposit ||
+                !newProposal.votingPeriod ||
+                !newProposal.minProposalTokens ||
+                !newProposal.minVotingTokens ||
+                isLoading
               }
             >
-              Create Proposal
+              {isLoading ? "Creating..." : "Create Proposal"}
             </Button>
           </Stack>
         </Paper>
@@ -318,6 +399,30 @@ export default function Governance() {
                     </Box>
                     <Box>
                       <Typography variant="subtitle1" color="text.secondary">
+                        Voting Period
+                      </Typography>
+                      <Typography variant="h6">
+                        {proposal.votingPeriod / 86400} days
+                      </Typography>
+                    </Box>
+                    <Box>
+                      <Typography variant="subtitle1" color="text.secondary">
+                        Min Proposal Tokens
+                      </Typography>
+                      <Typography variant="h6">
+                        {proposal.minProposalTokens / 1e18} BBT
+                      </Typography>
+                    </Box>
+                    <Box>
+                      <Typography variant="subtitle1" color="text.secondary">
+                        Min Voting Tokens
+                      </Typography>
+                      <Typography variant="h6">
+                        {proposal.minVotingTokens / 1e18} BBT
+                      </Typography>
+                    </Box>
+                    <Box>
+                      <Typography variant="subtitle1" color="text.secondary">
                         Votes
                       </Typography>
                       <Typography variant="h6">
@@ -334,6 +439,7 @@ export default function Governance() {
                         variant="contained"
                         color="success"
                         onClick={() => handleVote(proposal.id, true)}
+                        disabled={isLoading}
                       >
                         Vote For
                       </Button>
@@ -341,6 +447,7 @@ export default function Governance() {
                         variant="contained"
                         color="error"
                         onClick={() => handleVote(proposal.id, false)}
+                        disabled={isLoading}
                       >
                         Vote Against
                       </Button>
@@ -352,6 +459,7 @@ export default function Governance() {
                         variant="contained"
                         color="primary"
                         onClick={() => handleExecuteProposal(proposal.id)}
+                        disabled={isLoading}
                       >
                         Execute Proposal
                       </Button>

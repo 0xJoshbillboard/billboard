@@ -11,12 +11,17 @@ import "../src/BillboardToken.sol";
 
 contract DeployBillboard is Script {
     function run() public {
+        // Get the deployer address from the private key
+        address deployer = vm.addr(vm.envUint("PRIVATE_KEY"));
+        console.log("Deployer address:", deployer);
+
         vm.startBroadcast();
 
         USDCMock usdc = new USDCMock();
         console.log("USDC Mock deployed at:", address(usdc));
 
-        usdc.mint(0xd0B19109DD194fe366f2d2dA34B3C22Dabb1Cb0b, 10000e6);
+        // Mint USDC to the deployer
+        usdc.mint(deployer, 10000e6);
 
         // Deploy the BillboardGovernance
         BillboardGovernance governance = new BillboardGovernance();
@@ -24,7 +29,7 @@ contract DeployBillboard is Script {
 
         // Deploy the BillboardGovernanceProxy
         BillboardGovernanceProxy governanceProxy =
-            new BillboardGovernanceProxy(address(governance), 0xd0B19109DD194fe366f2d2dA34B3C22Dabb1Cb0b, "");
+            new BillboardGovernanceProxy(address(governance), deployer, "");
         console.log("Billboard Governance Proxy deployed at:", address(governanceProxy));
 
         // Deploy the BillboardToken
@@ -40,7 +45,7 @@ contract DeployBillboard is Script {
         console.log("Billboard Registry deployed at:", address(registry));
 
         // Deploy the BillboardProxy with the implementation address
-        BillboardProxy proxy = new BillboardProxy(address(registry), 0xd0B19109DD194fe366f2d2dA34B3C22Dabb1Cb0b, "");
+        BillboardProxy proxy = new BillboardProxy(address(registry), deployer, "");
         console.log("Billboard Proxy deployed at:", address(proxy));
 
         // Initialize the proxy with the registry address

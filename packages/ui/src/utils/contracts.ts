@@ -10,6 +10,6 @@ export const BILLBOARD_TOKEN_ABI = billboardTokenABI.abi;
 
 export const BILLBOARD_ADDRESS = "0xdcbacd4de1714f0b6c68e61aac8ab31fadd649d1";
 export const GOVERNANCE_ADDRESS = "0x6e5f0fc82f3402c12e8d304403661b7e1cdc5067";
-export const USDC_ADDRESS = "0xf520533ac237491b2ceb47a4275f045dddbe8d23";
+export const USDC_ADDRESS = "0xF520533aC237491B2CeB47A4275F045ddDBe8d23";
 export const BILLBOARD_TOKEN_ADDRESS =
   "0xc12dfdeee23b05008987e506f9593b0d24c1e759";

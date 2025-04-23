@@ -3,39 +3,43 @@ pragma solidity ^0.8.20;
 
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
-import "@openzeppelin/contracts/utils/cryptography/MerkleProof.sol";
 import "./BillboardToken.sol";
 
 contract BillboardGovernance is Initializable, OwnableUpgradeable {
     uint256 public duration;
     uint256 public pricePerBillboard;
     uint256 public securityDeposit;
+    uint256 public votingPeriod;
+    uint256 public minProposalTokens;
+    uint256 public minVotingTokens;
     BillboardToken public token;
 
-    uint256 public constant VOTING_PERIOD = 30 days;
-    uint256 public constant MIN_PROPOSAL_TOKENS = 1000 * 10 ** 18;
     uint256 public lastVoteTimestamp;
 
     struct Proposal {
         uint256 duration;
         uint256 pricePerBillboard;
         uint256 securityDeposit;
+        uint256 votingPeriod;
+        uint256 minProposalTokens;
+        uint256 minVotingTokens;
         uint256 votesFor;
         uint256 votesAgainst;
         bool executed;
-        bytes32 merkleRoot;
-        uint256 snapshotBlock;
+        address proposer;
+        bool depositReturned;
     }
 
     Proposal[] public proposals;
     mapping(address => mapping(uint256 => bool)) public hasVoted;
-    mapping(bytes32 => bool) public usedSnapshots;
 
     event ProposalCreated(
-        uint256 indexed proposalId, uint256 duration, uint256 pricePerBillboard, uint256 securityDeposit
+        uint256 indexed proposalId, uint256 duration, uint256 pricePerBillboard, uint256 securityDeposit,
+        uint256 votingPeriod, uint256 minProposalTokens, uint256 minVotingTokens
     );
     event Voted(uint256 indexed proposalId, address indexed voter, bool support, uint256 votes);
     event ProposalExecuted(uint256 indexed proposalId);
+    event SecurityDepositReturned(uint256 indexed proposalId, address indexed proposer, uint256 amount);
 
     function initialize(uint256 _duration, uint256 _pricePerBillboard, uint256 _securityDeposit, address _token)
         public
@@ -45,54 +49,65 @@ contract BillboardGovernance is Initializable, OwnableUpgradeable {
         duration = _duration;
         pricePerBillboard = _pricePerBillboard;
         securityDeposit = _securityDeposit;
+        votingPeriod = 30 days;
+        minProposalTokens = 1000 * 10 ** 18;
+        minVotingTokens = 500 * 10 ** 18;
         token = BillboardToken(_token);
         lastVoteTimestamp = block.timestamp;
+        
+        // Initialize new state variables
+        proposals = new Proposal[](0);
     }
 
     function createProposal(
         uint256 _duration,
         uint256 _pricePerBillboard,
         uint256 _securityDeposit,
-        bytes32 _merkleRoot,
-        uint256 _snapshotBlock,
-        uint256 _proposerBalance,
-        bytes32[] calldata _proposerProof
+        uint256 _votingPeriod,
+        uint256 _minProposalTokens,
+        uint256 _minVotingTokens
     ) external {
-        require(block.timestamp >= lastVoteTimestamp + VOTING_PERIOD, "Voting period not ended");
-        require(!usedSnapshots[_merkleRoot], "Snapshot already used");
-        require(_proposerBalance >= MIN_PROPOSAL_TOKENS, "Insufficient tokens to create proposal");
-
-        bytes32 leaf = keccak256(abi.encodePacked(msg.sender, _proposerBalance));
-        require(MerkleProof.verify(_proposerProof, _merkleRoot, leaf), "Invalid proposer proof");
+        require(block.timestamp >= lastVoteTimestamp + votingPeriod, "Voting period not ended");
+        require(token.balanceOf(msg.sender) >= minProposalTokens, "Insufficient tokens to create proposal");
+        require(token.transferFrom(msg.sender, address(this), securityDeposit), "Security deposit transfer failed");
 
         proposals.push(
             Proposal({
                 duration: _duration,
                 pricePerBillboard: _pricePerBillboard,
                 securityDeposit: _securityDeposit,
+                votingPeriod: _votingPeriod,
+                minProposalTokens: _minProposalTokens,
+                minVotingTokens: _minVotingTokens,
                 votesFor: 0,
                 votesAgainst: 0,
                 executed: false,
-                merkleRoot: _merkleRoot,
-                snapshotBlock: _snapshotBlock
+                proposer: msg.sender,
+                depositReturned: false
             })
         );
 
-        usedSnapshots[_merkleRoot] = true;
         lastVoteTimestamp = block.timestamp;
 
-        emit ProposalCreated(proposals.length - 1, _duration, _pricePerBillboard, _securityDeposit);
+        emit ProposalCreated(
+            proposals.length - 1, 
+            _duration, 
+            _pricePerBillboard, 
+            _securityDeposit, 
+            _votingPeriod, 
+            _minProposalTokens, 
+            _minVotingTokens
+        );
     }
 
-    function vote(uint256 proposalId, bool support, uint256 amount, bytes32[] calldata proof) external {
+    function vote(uint256 proposalId, bool support, uint256 amount) external {
         require(proposalId < proposals.length, "Invalid proposal");
         require(!hasVoted[msg.sender][proposalId], "Already voted");
-        require(block.timestamp < lastVoteTimestamp + VOTING_PERIOD, "Voting period ended");
-
+        require(block.timestamp < lastVoteTimestamp + votingPeriod, "Voting period ended");
         Proposal storage proposal = proposals[proposalId];
-        bytes32 leaf = keccak256(abi.encodePacked(msg.sender, amount));
-        require(MerkleProof.verify(proof, proposal.merkleRoot, leaf), "Invalid proof");
-
+        require(!proposal.executed, "Proposal already executed");
+        require(token.balanceOf(msg.sender) >= minVotingTokens, "Insufficient tokens to vote");
+        
         hasVoted[msg.sender][proposalId] = true;
 
         if (support) {
@@ -108,15 +123,35 @@ contract BillboardGovernance is Initializable, OwnableUpgradeable {
         require(proposalId < proposals.length, "Invalid proposal");
         Proposal storage proposal = proposals[proposalId];
         require(!proposal.executed, "Proposal already executed");
-        require(block.timestamp >= lastVoteTimestamp + VOTING_PERIOD, "Voting period not ended");
+        require(block.timestamp >= lastVoteTimestamp + votingPeriod, "Voting period not ended");
         require(proposal.votesFor > proposal.votesAgainst, "Proposal not passed");
 
         duration = proposal.duration;
         pricePerBillboard = proposal.pricePerBillboard;
         securityDeposit = proposal.securityDeposit;
+        votingPeriod = proposal.votingPeriod;
+        minProposalTokens = proposal.minProposalTokens;
+        minVotingTokens = proposal.minVotingTokens;
         proposal.executed = true;
 
+        returnSecurityDeposit(proposalId);
+
         emit ProposalExecuted(proposalId);
+    }
+
+    function returnSecurityDeposit(uint256 proposalId) public {
+        require(proposalId < proposals.length, "Invalid proposal");
+        Proposal storage proposal = proposals[proposalId];
+        require(!proposal.depositReturned, "Deposit already returned");
+        require(
+            proposal.executed || block.timestamp >= lastVoteTimestamp + votingPeriod,
+            "Proposal still active"
+        );
+
+        proposal.depositReturned = true;
+        require(token.transfer(proposal.proposer, securityDeposit), "Security deposit return failed");
+        
+        emit SecurityDepositReturned(proposalId, proposal.proposer, securityDeposit);
     }
 
     function getProposal(uint256 proposalId)
@@ -128,9 +163,7 @@ contract BillboardGovernance is Initializable, OwnableUpgradeable {
             uint256 _securityDeposit,
             uint256 votesFor,
             uint256 votesAgainst,
-            bool executed,
-            bytes32 merkleRoot,
-            uint256 snapshotBlock
+            bool executed
         )
     {
         require(proposalId < proposals.length, "Invalid proposal");
@@ -141,9 +174,7 @@ contract BillboardGovernance is Initializable, OwnableUpgradeable {
             proposal.securityDeposit,
             proposal.votesFor,
             proposal.votesAgainst,
-            proposal.executed,
-            proposal.merkleRoot,
-            proposal.snapshotBlock
+            proposal.executed
         );
     }
 }

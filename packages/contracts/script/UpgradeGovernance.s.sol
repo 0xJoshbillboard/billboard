@@ -8,13 +8,15 @@ import "@openzeppelin/contracts/proxy/transparent/ProxyAdmin.sol";
 
 contract UpgradeGovernance is Script {
     address PROXY_ADDRESS = address(0x6E5f0FC82f3402c12E8d304403661B7e1CDc5067);
-    address PROXY_ADMIN = address(0x366CE779048AB65BFA009B2c0eb276d4F59f4149);
+    address PROXY_ADMIN = address(0x75482B817A6609269035E8d560Be330CDC1030e1);
 
     function run() public {
         require(PROXY_ADDRESS != address(0), "Please set the proxy address");
         require(PROXY_ADMIN != address(0), "Please set the proxy admin address");
 
-        vm.startBroadcast();
+        // Get the private key from the environment
+        uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
+        vm.startBroadcast(deployerPrivateKey);
 
         BillboardGovernance newImplementation = new BillboardGovernance();
         console.log("New Billboard Governance implementation deployed at:", address(newImplementation));

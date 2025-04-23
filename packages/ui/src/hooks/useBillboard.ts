@@ -31,8 +31,9 @@ export interface Proposal {
   votesFor: number;
   votesAgainst: number;
   executed: boolean;
-  merkleRoot: string;
-  snapshotBlock: number;
+  votingPeriod: number;
+  minProposalTokens: number;
+  minVotingTokens: number;
 }
 
 export default function useBillboard() {
@@ -45,9 +46,18 @@ export default function useBillboard() {
   );
   const [tokenContract, setTokenContract] = useState<Contract | null>(null);
   const [governanceSettings, setGovernanceSettings] = useState<{
-    price: null | number;
-    duration: null | number;
-  }>({ price: null, duration: null });
+    price: number;
+    duration: number;
+    votingPeriod: number;
+    minProposalTokens: number;
+    minVotingTokens: number;
+  }>({
+    price: 0,
+    duration: 0,
+    votingPeriod: 0,
+    minProposalTokens: 0,
+    minVotingTokens: 0,
+  });
   const [billboards, setBillboards] = useState<Billboard[]>([]);
   const [usdcBalance, setUsdcBalance] = useState<string>("0");
   const [tokenBalance, setTokenBalance] = useState<string>("0");
@@ -94,17 +104,34 @@ export default function useBillboard() {
   useEffect(() => {
     const getGovSettings = async () => {
       if (governanceContract) {
-        const [price, duration] = await Promise.all([
+        const [
+          price,
+          duration,
+          votingPeriod,
+          minProposalTokens,
+          minVotingTokens,
+        ] = await Promise.all([
           governanceContract.pricePerBillboard(),
           governanceContract.duration(),
+          governanceContract.votingPeriod(),
+          governanceContract.minProposalTokens(),
+          governanceContract.minVotingTokens(),
         ]);
 
+        console.log(votingPeriod, minProposalTokens, minVotingTokens);
+
         const readablePrice = Number(price) / 1_000_000;
-        const durationInSeconds = Number(duration);
+        const durationInSeconds = Number(duration) * 24 * 60 * 60;
+        const votingPeriodInSeconds = Number(votingPeriod) * 24 * 60 * 60;
+        const minProposalTokensReadable = Number(minProposalTokens) / 1e18;
+        const minVotingTokensReadable = Number(minVotingTokens) / 1e18;
 
         setGovernanceSettings({
           price: readablePrice,
           duration: durationInSeconds,
+          votingPeriod: votingPeriodInSeconds,
+          minProposalTokens: minProposalTokensReadable,
+          minVotingTokens: minVotingTokensReadable,
         });
       }
     };
@@ -226,8 +253,9 @@ export default function useBillboard() {
           votesFor: Number(proposal[3]),
           votesAgainst: Number(proposal[4]),
           executed: proposal[5],
-          merkleRoot: proposal[6],
-          snapshotBlock: Number(proposal[7]),
+          votingPeriod: Number(proposal[6]),
+          minProposalTokens: Number(proposal[7]),
+          minVotingTokens: Number(proposal[8]),
         });
       }
 
@@ -262,10 +290,9 @@ export default function useBillboard() {
     duration: number,
     pricePerBillboard: number,
     securityDeposit: number,
-    merkleRoot: string,
-    snapshotBlock: number,
-    proposerBalance: number,
-    proposerProof: string[],
+    votingPeriod: number,
+    minProposalTokens: number,
+    minVotingTokens: number,
   ) => {
     if (!governanceContract) throw new Error("Governance contract not defined");
     if (!wallet) throw new Error("Wallet not connected");
@@ -275,10 +302,9 @@ export default function useBillboard() {
         duration,
         pricePerBillboard,
         securityDeposit,
-        merkleRoot,
-        snapshotBlock,
-        proposerBalance,
-        proposerProof,
+        votingPeriod,
+        minProposalTokens,
+        minVotingTokens,
       );
       await tx.wait();
       await fetchProposals();
@@ -289,22 +315,12 @@ export default function useBillboard() {
     }
   };
 
-  const vote = async (
-    proposalId: number,
-    support: boolean,
-    amount: number,
-    proof: string[],
-  ) => {
+  const vote = async (proposalId: number, support: boolean, amount: number) => {
     if (!governanceContract) throw new Error("Governance contract not defined");
     if (!wallet) throw new Error("Wallet not connected");
 
     try {
-      const tx = await governanceContract.vote(
-        proposalId,
-        support,
-        amount,
-        proof,
-      );
+      const tx = await governanceContract.vote(proposalId, support, amount);
       await tx.wait();
       await fetchProposals();
       await fetchVotingStatus();
@@ -323,13 +339,25 @@ export default function useBillboard() {
       const tx = await governanceContract.executeProposal(proposalId);
       await tx.wait();
       await fetchProposals();
-      const [price, duration] = await Promise.all([
+      const [
+        price,
+        duration,
+        votingPeriod,
+        minProposalTokens,
+        minVotingTokens,
+      ] = await Promise.all([
         governanceContract.pricePerBillboard(),
         governanceContract.duration(),
+        governanceContract.votingPeriod(),
+        governanceContract.minProposalTokens(),
+        governanceContract.minVotingTokens(),
       ]);
       setGovernanceSettings({
         price: Number(price) / 1_000_000,
         duration: Number(duration),
+        votingPeriod: Number(votingPeriod) / (24 * 60 * 60),
+        minProposalTokens: Number(minProposalTokens) / 10 ** 18,
+        minVotingTokens: Number(minVotingTokens) / 10 ** 18,
       });
       return tx;
     } catch (error) {

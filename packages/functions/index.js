@@ -13,12 +13,7 @@ dotenv.config();
 
 setGlobalOptions({ region: "europe-west1" });
 initializeApp();
-const cors = [
-  "*",
-  /localhost(:\d+)?$/,
-  "billboard-a6ede.web.app",
-  "billboard-a6ede.firebaseapp.com",
-];
+const cors = [/localhost(:\d+)?$/, /web\.app$/, /firebase\.com$/];
 
 const pinata = new PinataSDK({
   pinataJwt: process.env.PINATA_API_KEY,

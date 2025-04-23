@@ -34,7 +34,6 @@ contract GovernanceTest is Test {
         user2 = address(0x2);
 
         usdc = new USDCMock();
-
         token = new BillboardToken(address(usdc));
 
         governance = new BillboardGovernance();
@@ -56,6 +55,9 @@ contract GovernanceTest is Test {
         assertEq(BillboardGovernance(address(governanceProxy)).pricePerBillboard(), initialPrice);
         assertEq(BillboardGovernance(address(governanceProxy)).securityDeposit(), securityDeposit);
         assertEq(BillboardGovernance(address(governanceProxy)).owner(), owner);
+        assertEq(BillboardGovernance(address(governanceProxy)).votingPeriod(), 30 days);
+        assertEq(BillboardGovernance(address(governanceProxy)).minProposalTokens(), 1000 * 10 ** 18);
+        assertEq(BillboardGovernance(address(governanceProxy)).minVotingTokens(), 500 * 10 ** 18);
     }
 
     function test_CreateProposal_WithSufficientTokens() public {
@@ -67,13 +69,9 @@ contract GovernanceTest is Test {
         token.buyTokens(usdcAmount);
         vm.stopPrank();
 
-        bytes32[] memory leaves = new bytes32[](1);
-        leaves[0] = keccak256(abi.encodePacked(user, expectedBbtAmount));
-        bytes32 merkleRoot = getMerkleRoot(leaves);
-
         vm.startPrank(user);
         BillboardGovernance(address(governanceProxy)).createProposal(
-            60 days, 2000e6, 15000e6, merkleRoot, block.number, expectedBbtAmount, getMerkleProof(leaves, 0)
+            60 days, 2000e6, 15000e6, 35 days, 1500 * 10 ** 18, 750 * 10 ** 18
         );
         vm.stopPrank();
 
@@ -83,9 +81,7 @@ contract GovernanceTest is Test {
             uint256 deposit,
             uint256 votesFor,
             uint256 votesAgainst,
-            bool executed,
-            bytes32 root,
-            uint256 snapshotBlock
+            bool executed
         ) = BillboardGovernance(address(governanceProxy)).getProposal(0);
 
         assertEq(duration, 60 days);
@@ -94,8 +90,6 @@ contract GovernanceTest is Test {
         assertEq(votesFor, 0);
         assertEq(votesAgainst, 0);
         assertEq(executed, false);
-        assertEq(root, merkleRoot);
-        assertEq(snapshotBlock, block.number);
     }
 
     function test_CreateProposal_RevertWhenInsufficientTokens() public {
@@ -107,14 +101,10 @@ contract GovernanceTest is Test {
         token.buyTokens(usdcAmount);
         vm.stopPrank();
 
-        bytes32[] memory leaves = new bytes32[](1);
-        leaves[0] = keccak256(abi.encodePacked(user, expectedBbtAmount));
-        bytes32 merkleRoot = getMerkleRoot(leaves);
-
         vm.startPrank(user);
         vm.expectRevert("Insufficient tokens to create proposal");
         BillboardGovernance(address(governanceProxy)).createProposal(
-            60 days, 2000e6, 15000e6, merkleRoot, block.number, expectedBbtAmount, getMerkleProof(leaves, 0)
+            60 days, 2000e6, 15000e6, 35 days, 1500 * 10 ** 18, 750 * 10 ** 18
         );
         vm.stopPrank();
     }
@@ -138,22 +128,17 @@ contract GovernanceTest is Test {
         token.buyTokens(user2UsdcAmount);
         vm.stopPrank();
 
-        bytes32[] memory leaves = new bytes32[](2);
-        leaves[0] = keccak256(abi.encodePacked(user, user1BbtAmount));
-        leaves[1] = keccak256(abi.encodePacked(user2, user2BbtAmount));
-        bytes32 merkleRoot = getMerkleRoot(leaves);
-
         vm.startPrank(user);
         BillboardGovernance(address(governanceProxy)).createProposal(
-            60 days, 2000e6, 15000e6, merkleRoot, block.number, user1BbtAmount, getMerkleProof(leaves, 0)
+            60 days, 2000e6, 15000e6, 35 days, 1500 * 10 ** 18, 750 * 10 ** 18
         );
         vm.stopPrank();
 
         vm.startPrank(user2);
-        BillboardGovernance(address(governanceProxy)).vote(0, true, user2BbtAmount, getMerkleProof(leaves, 1));
+        BillboardGovernance(address(governanceProxy)).vote(0, true, user2BbtAmount);
         vm.stopPrank();
 
-        (,,, uint256 votesFor, uint256 votesAgainst,,,) = BillboardGovernance(address(governanceProxy)).getProposal(0);
+        (,,, uint256 votesFor, uint256 votesAgainst,) = BillboardGovernance(address(governanceProxy)).getProposal(0);
         assertEq(votesFor, user2BbtAmount);
         assertEq(votesAgainst, 0);
     }
@@ -177,19 +162,14 @@ contract GovernanceTest is Test {
         token.buyTokens(user2UsdcAmount);
         vm.stopPrank();
 
-        bytes32[] memory leaves = new bytes32[](2);
-        leaves[0] = keccak256(abi.encodePacked(user, user1BbtAmount));
-        leaves[1] = keccak256(abi.encodePacked(user2, user2BbtAmount));
-        bytes32 merkleRoot = getMerkleRoot(leaves);
-
         vm.startPrank(user);
         BillboardGovernance(address(governanceProxy)).createProposal(
-            60 days, 2000e6, 15000e6, merkleRoot, block.number, user1BbtAmount, getMerkleProof(leaves, 0)
+            60 days, 2000e6, 15000e6, 35 days, 1500 * 10 ** 18, 750 * 10 ** 18
         );
         vm.stopPrank();
 
         vm.startPrank(user2);
-        BillboardGovernance(address(governanceProxy)).vote(0, true, user2BbtAmount, getMerkleProof(leaves, 1));
+        BillboardGovernance(address(governanceProxy)).vote(0, true, user2BbtAmount);
         vm.stopPrank();
 
         vm.warp(block.timestamp + 30 days + 1);
@@ -199,8 +179,11 @@ contract GovernanceTest is Test {
         assertEq(BillboardGovernance(address(governanceProxy)).duration(), 60 days);
         assertEq(BillboardGovernance(address(governanceProxy)).pricePerBillboard(), 2000e6);
         assertEq(BillboardGovernance(address(governanceProxy)).securityDeposit(), 15000e6);
+        assertEq(BillboardGovernance(address(governanceProxy)).votingPeriod(), 35 days);
+        assertEq(BillboardGovernance(address(governanceProxy)).minProposalTokens(), 1500 * 10 ** 18);
+        assertEq(BillboardGovernance(address(governanceProxy)).minVotingTokens(), 750 * 10 ** 18);
 
-        (,,,,, bool executed,,) = BillboardGovernance(address(governanceProxy)).getProposal(0);
+        (,,,,, bool executed) = BillboardGovernance(address(governanceProxy)).getProposal(0);
         assertEq(executed, true);
     }
 
@@ -220,58 +203,37 @@ contract GovernanceTest is Test {
         BillboardGovernance(address(governanceProxy)).executeProposal(0);
     }
 
-    function getMerkleRoot(bytes32[] memory leaves) internal pure returns (bytes32) {
-        if (leaves.length == 0) return bytes32(0);
-        if (leaves.length == 1) return leaves[0];
+    function test_ReturnSecurityDeposit_AfterExecution() public {
+        test_ExecuteProposal();
 
-        bytes32[] memory nodes = leaves;
-        while (nodes.length > 1) {
-            bytes32[] memory newNodes = new bytes32[]((nodes.length + 1) / 2);
-            for (uint256 i = 0; i < nodes.length; i += 2) {
-                if (i + 1 < nodes.length) {
-                    newNodes[i / 2] = keccak256(abi.encodePacked(nodes[i], nodes[i + 1]));
-                } else {
-                    newNodes[i / 2] = nodes[i];
-                }
-            }
-            nodes = newNodes;
-        }
-        return nodes[0];
+        uint256 initialBalance = token.balanceOf(user);
+        BillboardGovernance(address(governanceProxy)).returnSecurityDeposit(0);
+        assertEq(token.balanceOf(user), initialBalance + securityDeposit);
     }
 
-    function getMerkleProof(bytes32[] memory leaves, uint256 index) internal pure returns (bytes32[] memory) {
-        require(index < leaves.length, "Index out of bounds");
+    function test_ReturnSecurityDeposit_AfterVotingPeriod() public {
+        test_CreateProposal_WithSufficientTokens();
 
-        bytes32[] memory proof = new bytes32[](32);
-        uint256 proofLength = 0;
+        vm.warp(block.timestamp + 30 days + 1);
 
-        bytes32[] memory nodes = leaves;
-        uint256 currentIndex = index;
+        uint256 initialBalance = token.balanceOf(user);
+        BillboardGovernance(address(governanceProxy)).returnSecurityDeposit(0);
+        assertEq(token.balanceOf(user), initialBalance + securityDeposit);
+    }
 
-        while (nodes.length > 1) {
-            if (currentIndex % 2 == 1) {
-                proof[proofLength++] = nodes[currentIndex - 1];
-            } else if (currentIndex + 1 < nodes.length) {
-                proof[proofLength++] = nodes[currentIndex + 1];
-            }
+    function test_ReturnSecurityDeposit_RevertWhenStillActive() public {
+        test_CreateProposal_WithSufficientTokens();
 
-            bytes32[] memory newNodes = new bytes32[]((nodes.length + 1) / 2);
-            for (uint256 i = 0; i < nodes.length; i += 2) {
-                if (i + 1 < nodes.length) {
-                    newNodes[i / 2] = keccak256(abi.encodePacked(nodes[i], nodes[i + 1]));
-                } else {
-                    newNodes[i / 2] = nodes[i];
-                }
-            }
-            nodes = newNodes;
-            currentIndex = currentIndex / 2;
-        }
+        vm.expectRevert("Proposal still active");
+        BillboardGovernance(address(governanceProxy)).returnSecurityDeposit(0);
+    }
 
-        bytes32[] memory trimmedProof = new bytes32[](proofLength);
-        for (uint256 i = 0; i < proofLength; i++) {
-            trimmedProof[i] = proof[i];
-        }
+    function test_ReturnSecurityDeposit_RevertWhenAlreadyReturned() public {
+        test_ExecuteProposal();
 
-        return trimmedProof;
+        BillboardGovernance(address(governanceProxy)).returnSecurityDeposit(0);
+
+        vm.expectRevert("Deposit already returned");
+        BillboardGovernance(address(governanceProxy)).returnSecurityDeposit(0);
     }
 }

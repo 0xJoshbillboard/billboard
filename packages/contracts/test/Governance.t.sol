@@ -47,6 +47,15 @@ contract GovernanceTest is Test {
         proxy = new BillboardProxy(address(registry), owner, "");
         BillboardRegistry(address(proxy)).initialize(address(usdc), address(governanceProxy));
 
+        // Mint and approve tokens for the governance contract
+        usdc.mint(owner, 100000e6);
+        vm.startPrank(owner);
+        usdc.approve(address(token), 100000e6);
+        token.buyTokens(100000e6);
+        // Transfer some BBT to the governance contract for security deposits
+        token.transfer(address(governanceProxy), securityDeposit * 10 ** 12); // Convert USDC decimals to BBT decimals
+        vm.stopPrank();
+
         vm.warp(block.timestamp + 30 days + 1);
     }
 
@@ -67,6 +76,7 @@ contract GovernanceTest is Test {
         vm.startPrank(user);
         usdc.approve(address(token), usdcAmount);
         token.buyTokens(usdcAmount);
+        token.approve(address(governanceProxy), expectedBbtAmount);
         vm.stopPrank();
 
         vm.startPrank(user);
@@ -88,7 +98,6 @@ contract GovernanceTest is Test {
 
     function test_CreateProposal_RevertWhenInsufficientTokens() public {
         uint256 usdcAmount = 500e6;
-        uint256 expectedBbtAmount = usdcAmount * 10 ** 12;
         usdc.mint(user, usdcAmount);
         vm.startPrank(user);
         usdc.approve(address(token), usdcAmount);
@@ -115,11 +124,13 @@ contract GovernanceTest is Test {
         vm.startPrank(user);
         usdc.approve(address(token), user1UsdcAmount);
         token.buyTokens(user1UsdcAmount);
+        token.approve(address(governanceProxy), user1BbtAmount);
         vm.stopPrank();
 
         vm.startPrank(user2);
         usdc.approve(address(token), user2UsdcAmount);
         token.buyTokens(user2UsdcAmount);
+        token.approve(address(governanceProxy), user2BbtAmount);
         vm.stopPrank();
 
         vm.startPrank(user);
@@ -138,10 +149,10 @@ contract GovernanceTest is Test {
     }
 
     function test_ExecuteProposal() public {
-        uint256 user1UsdcAmount = 2000e6;
-        uint256 user2UsdcAmount = 1000e6;
-        uint256 user1BbtAmount = user1UsdcAmount * 10 ** 12;
-        uint256 user2BbtAmount = user2UsdcAmount * 10 ** 12;
+        uint256 user1UsdcAmount = 50000e6;  // Increased amount to ensure enough BBT tokens
+        uint256 user2UsdcAmount = 20000e6;  // Increased amount to ensure enough BBT tokens
+        uint256 user1BbtAmount = user1UsdcAmount * 10 ** 12;  // Convert to BBT decimals (18)
+        uint256 user2BbtAmount = user2UsdcAmount * 10 ** 12;  // Convert to BBT decimals (18)
 
         usdc.mint(user, user1UsdcAmount);
         usdc.mint(user2, user2UsdcAmount);
@@ -149,11 +160,13 @@ contract GovernanceTest is Test {
         vm.startPrank(user);
         usdc.approve(address(token), user1UsdcAmount);
         token.buyTokens(user1UsdcAmount);
+        token.approve(address(governanceProxy), user1BbtAmount);
         vm.stopPrank();
 
         vm.startPrank(user2);
         usdc.approve(address(token), user2UsdcAmount);
         token.buyTokens(user2UsdcAmount);
+        token.approve(address(governanceProxy), user2BbtAmount);
         vm.stopPrank();
 
         vm.startPrank(user);
@@ -198,11 +211,45 @@ contract GovernanceTest is Test {
     }
 
     function test_ReturnSecurityDeposit_AfterExecution() public {
-        test_ExecuteProposal();
+        uint256 user1UsdcAmount = 50000e6;  // Increased amount to ensure enough BBT tokens
+        uint256 user2UsdcAmount = 20000e6;  // Increased amount to ensure enough BBT tokens
+        uint256 user1BbtAmount = user1UsdcAmount * 10 ** 12;  // Convert to BBT decimals (18)
+        uint256 user2BbtAmount = user2UsdcAmount * 10 ** 12;  // Convert to BBT decimals (18)
 
+        usdc.mint(user, user1UsdcAmount);
+        usdc.mint(user2, user2UsdcAmount);
+
+        vm.startPrank(user);
+        usdc.approve(address(token), user1UsdcAmount);
+        token.buyTokens(user1UsdcAmount);
+        token.approve(address(governanceProxy), user1BbtAmount);
+        vm.stopPrank();
+
+        vm.startPrank(user2);
+        usdc.approve(address(token), user2UsdcAmount);
+        token.buyTokens(user2UsdcAmount);
+        token.approve(address(governanceProxy), user2BbtAmount);
+        vm.stopPrank();
+
+        vm.startPrank(user);
         uint256 initialBalance = token.balanceOf(user);
+        BillboardGovernance(address(governanceProxy)).createProposal(
+            60 days, 2000e6, 15000e6, 35 days, 1500 * 10 ** 18, 750 * 10 ** 18
+        );
+        assertEq(token.balanceOf(user), initialBalance - securityDeposit * 10 ** 12);
+        vm.stopPrank();
+
+        vm.startPrank(user2);
+        BillboardGovernance(address(governanceProxy)).vote(0, true, user2BbtAmount);
+        vm.stopPrank();
+
+        vm.warp(block.timestamp + 30 days + 1);
+
+        BillboardGovernance(address(governanceProxy)).executeProposal(0);
+        assertEq(token.balanceOf(user), initialBalance);
+
+        vm.expectRevert("Deposit already returned");
         BillboardGovernance(address(governanceProxy)).returnSecurityDeposit(0);
-        assertEq(token.balanceOf(user), initialBalance + securityDeposit);
     }
 
     function test_ReturnSecurityDeposit_AfterVotingPeriod() public {
@@ -223,10 +270,39 @@ contract GovernanceTest is Test {
     }
 
     function test_ReturnSecurityDeposit_RevertWhenAlreadyReturned() public {
-        test_ExecuteProposal();
+        uint256 user1UsdcAmount = 50000e6;  // Increased amount to ensure enough BBT tokens
+        uint256 user2UsdcAmount = 20000e6;  // Increased amount to ensure enough BBT tokens
+        uint256 user1BbtAmount = user1UsdcAmount * 10 ** 12;  // Convert to BBT decimals (18)
+        uint256 user2BbtAmount = user2UsdcAmount * 10 ** 12;  // Convert to BBT decimals (18)
 
-        BillboardGovernance(address(governanceProxy)).returnSecurityDeposit(0);
+        usdc.mint(user, user1UsdcAmount);
+        usdc.mint(user2, user2UsdcAmount);
 
+        vm.startPrank(user);
+        usdc.approve(address(token), user1UsdcAmount);
+        token.buyTokens(user1UsdcAmount);
+        token.approve(address(governanceProxy), user1BbtAmount);
+        vm.stopPrank();
+
+        vm.startPrank(user2);
+        usdc.approve(address(token), user2UsdcAmount);
+        token.buyTokens(user2UsdcAmount);
+        token.approve(address(governanceProxy), user2BbtAmount);
+        vm.stopPrank();
+
+        vm.startPrank(user);
+        BillboardGovernance(address(governanceProxy)).createProposal(
+            60 days, 2000e6, 15000e6, 35 days, 1500 * 10 ** 18, 750 * 10 ** 18
+        );
+        vm.stopPrank();
+
+        vm.startPrank(user2);
+        BillboardGovernance(address(governanceProxy)).vote(0, true, user2BbtAmount);
+        vm.stopPrank();
+
+        vm.warp(block.timestamp + 30 days + 1);
+
+        BillboardGovernance(address(governanceProxy)).executeProposal(0);
         vm.expectRevert("Deposit already returned");
         BillboardGovernance(address(governanceProxy)).returnSecurityDeposit(0);
     }

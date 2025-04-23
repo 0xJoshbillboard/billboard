@@ -371,6 +371,10 @@ export default function useBillboard() {
     return billboardSDK.getAds("billboard-ui");
   };
 
+  const getAd = async (handle: string) => {
+    return billboardSDK.showAd(handle);
+  };
+
   const uploadImage = async (image: File) => {
     if (image.size > MAX_FILE_SIZE) {
       throw new Error("File size exceeds the maximum limit of 5MB");

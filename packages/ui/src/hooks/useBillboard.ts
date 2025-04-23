@@ -214,7 +214,7 @@ export default function useBillboard() {
 
   const getUSDCMock = async () => {
     if (!wallet) throw new Error("Wallet not connected");
-    await usdcContract?.mint(wallet?.accounts[0].address, 10000e6);
+    await usdcContract?.mint(wallet?.accounts[0].address, 100000e6);
   };
 
   const approveUSDC = async (amount: string) => {
@@ -434,6 +434,34 @@ export default function useBillboard() {
     }));
   };
 
+  const registerProvider = async (handle: string) => {
+    if (!contract || !governanceContract) {
+      throw new Error("Contract not defined");
+    }
+    if (!wallet) throw new Error("Wallet not connected");
+
+    const allowance = await allowanceUSDC();
+    const securityDeposit = await governanceContract.securityDeposit();
+
+    if (getBigInt(allowance) < getBigInt(securityDeposit)) {
+      await approveUSDC(securityDeposit.toString());
+    }
+
+    try {
+      const tx = await contract.registerBillboardProvider(handle);
+      await tx.wait();
+      return tx;
+    } catch (error) {
+      console.error("Failed to register provider:", error);
+      throw error;
+    }
+  };
+
+  const getProvider = async (address: string) => {
+    if (!contract) throw new Error("Contract not defined");
+    return await contract.getBillboardProvider(address);
+  };
+
   // SDK functions
   const getAds = async () => {
     return billboardSDK.getAds("billboard-ui");
@@ -482,6 +510,8 @@ export default function useBillboard() {
     billboards,
     uploadImage,
     getAds,
+    registerProvider,
+    getProvider,
 
     // USDC operations
     approveUSDC,

@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Contract, BigNumberish, getBigInt, BrowserProvider } from "ethers";
+import { Contract, BrowserProvider } from "ethers";
 import { useConnectWallet } from "@web3-onboard/react";
 import useBillboard from "../hooks/useBillboard";
 import {
@@ -21,6 +21,7 @@ import {
   CardContent,
   CardActions,
   Alert,
+  Divider,
 } from "@mui/material";
 
 export default function Governance() {
@@ -33,6 +34,8 @@ export default function Governance() {
     createProposal,
     vote,
     executeProposal,
+    buyBBT,
+    usdcBalance,
   } = useBillboard();
   const [governanceContract, setGovernanceContract] = useState<Contract | null>(
     null,
@@ -43,6 +46,9 @@ export default function Governance() {
     pricePerBillboard: "",
     securityDeposit: "",
   });
+  const [buyAmount, setBuyAmount] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
   const theme = useTheme();
 
   useEffect(() => {
@@ -60,6 +66,28 @@ export default function Governance() {
     };
     setupContracts();
   }, [wallet]);
+
+  const handleBuyBBT = async () => {
+    if (!tokenContract || !wallet?.accounts[0].address) return;
+
+    try {
+      setIsLoading(true);
+      setErrorMessage("");
+
+      // Convert to USDC decimals (6 decimals)
+      const amount = Number(BigInt(parseFloat(buyAmount) * 1e6));
+
+      await buyBBT(amount);
+
+      // Reset input field after successful purchase
+      setBuyAmount("");
+    } catch (error) {
+      console.error("Failed to buy BBT tokens:", error);
+      setErrorMessage("Failed to buy BBT tokens. Please try again.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const handleCreateProposal = async () => {
     if (!governanceContract || !tokenContract) return;
@@ -148,6 +176,55 @@ export default function Governance() {
                 {governanceSettings.price || 0} USDC
               </Typography>
             </Box>
+          </Stack>
+        </Paper>
+
+        {/* Buy BBT Tokens */}
+        <Paper elevation={3} sx={{ p: 4 }}>
+          <Typography variant="h4" gutterBottom>
+            Governance Tokens
+          </Typography>
+          <Stack spacing={3} sx={{ mt: 2 }}>
+            <Stack direction="row" spacing={4}>
+              <Box>
+                <Typography variant="subtitle1" color="text.secondary">
+                  BBT Balance
+                </Typography>
+                <Typography variant="h6">{tokenBalance} BBT</Typography>
+              </Box>
+              <Box>
+                <Typography variant="subtitle1" color="text.secondary">
+                  USDC Balance
+                </Typography>
+                <Typography variant="h6">{usdcBalance} USDC</Typography>
+              </Box>
+            </Stack>
+            <Divider />
+            <Typography variant="h6">Buy BBT Tokens</Typography>
+            <Stack direction="row" spacing={2} alignItems="center">
+              <TextField
+                label="Amount (USDC)"
+                type="number"
+                value={buyAmount}
+                onChange={(e) => setBuyAmount(e.target.value)}
+                fullWidth
+                helperText="1 USDC = 1 BBT"
+              />
+              <Button
+                variant="contained"
+                color="primary"
+                onClick={handleBuyBBT}
+                disabled={!buyAmount || isLoading || parseFloat(buyAmount) <= 0}
+                sx={{ height: 56 }}
+              >
+                {isLoading ? "Processing..." : "Buy Tokens"}
+              </Button>
+            </Stack>
+            {errorMessage && (
+              <Alert severity="error" sx={{ mt: 2 }}>
+                {errorMessage}
+              </Alert>
+            )}
           </Stack>
         </Paper>
 

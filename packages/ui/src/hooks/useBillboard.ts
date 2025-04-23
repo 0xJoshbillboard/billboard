@@ -7,7 +7,7 @@ import {
 } from "ethers";
 import { useConnectWallet } from "@web3-onboard/react";
 import { useEffect, useState } from "react";
-import { BillboardSDK } from "billboard-sdk";
+import { BillboardSDK, Billboard } from "billboard-sdk";
 import {
   BILLBOARD_ADDRESS,
   CONTRACT_ABI,
@@ -21,14 +21,7 @@ import {
 import { chains } from "../utils/chains";
 
 const billboardSDK = new BillboardSDK();
-
-export interface Billboard {
-  owner: string;
-  expiryTime: number;
-  description: string;
-  link: string;
-  ipfsHash: string;
-}
+const MAX_FILE_SIZE = 5 * 1024 * 1024;
 
 export interface Proposal {
   id: number;
@@ -42,9 +35,8 @@ export interface Proposal {
   snapshotBlock: number;
 }
 
-const MAX_FILE_SIZE = 5 * 1024 * 1024;
-
 export default function useBillboard() {
+  // State variables
   const [{ wallet }] = useConnectWallet();
   const [contract, setContract] = useState<Contract | null>(null);
   const [usdcContract, setUsdcContract] = useState<Contract | null>(null);
@@ -62,6 +54,7 @@ export default function useBillboard() {
   const [proposals, setProposals] = useState<Proposal[]>([]);
   const [hasVoted, setHasVoted] = useState<Record<number, boolean>>({});
 
+  // Initialize contracts
   useEffect(() => {
     const setContracts = async () => {
       if (wallet?.provider) {
@@ -97,6 +90,7 @@ export default function useBillboard() {
     setContracts();
   }, [wallet]);
 
+  // Load governance settings
   useEffect(() => {
     const getGovSettings = async () => {
       if (governanceContract) {
@@ -117,6 +111,7 @@ export default function useBillboard() {
     getGovSettings();
   }, [governanceContract]);
 
+  // Load USDC balance
   useEffect(() => {
     if (wallet && usdcContract) {
       fetchUsdcBalance().then((balance) => {
@@ -125,6 +120,7 @@ export default function useBillboard() {
     }
   }, [wallet, usdcContract]);
 
+  // Load token balance
   useEffect(() => {
     if (wallet && tokenContract) {
       fetchTokenBalance().then((balance) => {
@@ -133,6 +129,7 @@ export default function useBillboard() {
     }
   }, [wallet, tokenContract]);
 
+  // Load billboards
   useEffect(() => {
     if (wallet && contract) {
       fetchBillboards().then((billboards) => {
@@ -141,6 +138,7 @@ export default function useBillboard() {
     }
   }, [wallet, contract]);
 
+  // Load proposals and voting status
   useEffect(() => {
     if (wallet && governanceContract) {
       fetchProposals();
@@ -148,6 +146,7 @@ export default function useBillboard() {
     }
   }, [wallet, governanceContract]);
 
+  // Token functions
   const fetchTokenBalance = async () => {
     if (!tokenContract || !wallet?.accounts[0].address) {
       return "0";
@@ -156,6 +155,60 @@ export default function useBillboard() {
     return (Number(balance) / 1e18).toString();
   };
 
+  const buyBBT = async (amount: number) => {
+    if (!tokenContract || !wallet?.accounts[0].address) {
+      throw new Error("Token contract or wallet not defined");
+    }
+
+    const currentAllowance = await usdcContract.allowance(
+      wallet.accounts[0].address,
+      tokenContract.target,
+    );
+    if (BigInt(currentAllowance) < BigInt(amount)) {
+      const approveTx = await usdcContract.approve(
+        tokenContract.target,
+        amount,
+      );
+      await approveTx.wait();
+    }
+
+    const tx = await tokenContract.buyTokens(amount);
+    await tx.wait();
+  };
+
+  // USDC functions
+  const fetchUsdcBalance = async () => {
+    if (!usdcContract || !wallet?.accounts[0].address) {
+      return "0";
+    }
+    const balance = await usdcContract.balanceOf(wallet?.accounts[0].address);
+    return (Number(balance) / 1_000_000).toLocaleString() + "";
+  };
+
+  const getUSDCMock = async () => {
+    if (!wallet) throw new Error("Wallet not connected");
+    await usdcContract?.mint(wallet?.accounts[0].address, 10000e6);
+  };
+
+  const approveUSDC = async (amount: string) => {
+    if (!usdcContract || !contract) {
+      throw new Error("USDC not defined");
+    }
+    if (!wallet) throw new Error("Wallet not connected");
+    await usdcContract.approve(BILLBOARD_ADDRESS, amount);
+  };
+
+  const allowanceUSDC = async () => {
+    if (!usdcContract) {
+      throw new Error("USDC not defined");
+    }
+    return (await usdcContract.allowance(
+      wallet?.accounts[0].address,
+      BILLBOARD_ADDRESS,
+    )) as BigNumberish;
+  };
+
+  // Governance functions
   const fetchProposals = async () => {
     if (!governanceContract) return;
 
@@ -285,37 +338,7 @@ export default function useBillboard() {
     }
   };
 
-  const getUSDCMock = async () => {
-    if (!wallet) throw new Error("Wallet not connected");
-    await usdcContract?.mint(wallet?.accounts[0].address, 10000e6);
-  };
-
-  const approveUSDC = async (amount: string) => {
-    if (!usdcContract || !contract) {
-      throw new Error("USDC not defined");
-    }
-    if (!wallet) throw new Error("Wallet not connected");
-    await usdcContract.approve(BILLBOARD_ADDRESS, amount);
-  };
-
-  const fetchUsdcBalance = async () => {
-    if (!usdcContract || !wallet?.accounts[0].address) {
-      return "0";
-    }
-    const balance = await usdcContract.balanceOf(wallet?.accounts[0].address);
-    return (Number(balance) / 1_000_000).toLocaleString() + "";
-  };
-
-  const allowanceUSDC = async () => {
-    if (!usdcContract) {
-      throw new Error("USDC not defined");
-    }
-    return (await usdcContract.allowance(
-      wallet?.accounts[0].address,
-      BILLBOARD_ADDRESS,
-    )) as BigNumberish;
-  };
-
+  // Billboard functions
   const buy = async (
     description: string,
     link: string,
@@ -367,6 +390,23 @@ export default function useBillboard() {
     return tx;
   };
 
+  const fetchBillboards = async () => {
+    if (!contract || !wallet?.accounts[0].address) {
+      throw new Error("Contract or wallet not defined");
+    }
+    const billboards = await contract.getBillboards(
+      wallet?.accounts[0].address,
+    );
+    return billboards.map((billboard: any) => ({
+      owner: billboard.owner,
+      expiryTime: Number(billboard.expiryTime),
+      description: billboard.description,
+      link: billboard.link,
+      ipfsHash: billboard.ipfsHash,
+    }));
+  };
+
+  // SDK functions
   const getAds = async () => {
     return billboardSDK.getAds("billboard-ui");
   };
@@ -406,34 +446,27 @@ export default function useBillboard() {
     }
   };
 
-  const fetchBillboards = async () => {
-    if (!contract || !wallet?.accounts[0].address) {
-      throw new Error("Contract or wallet not defined");
-    }
-    const billboards = await contract.getBillboards(
-      wallet?.accounts[0].address,
-    );
-    return billboards.map((billboard: any) => ({
-      owner: billboard.owner,
-      expiryTime: Number(billboard.expiryTime),
-      description: billboard.description,
-      link: billboard.link,
-      ipfsHash: billboard.ipfsHash,
-    }));
-  };
-
   return {
+    // Billboard operations
     buy,
     extend,
+    fetchBillboards,
+    billboards,
+    uploadImage,
+    getAds,
+
+    // USDC operations
     approveUSDC,
     allowanceUSDC,
     getUSDCMock,
-    getAds,
-    governanceSettings,
-    billboards,
-    fetchBillboards,
     usdcBalance,
+
+    // Token operations
     tokenBalance,
+    buyBBT,
+
+    // Governance operations
+    governanceSettings,
     proposals,
     hasVoted,
     createProposal,
@@ -441,6 +474,5 @@ export default function useBillboard() {
     executeProposal,
     fetchProposals,
     fetchVotingStatus,
-    uploadImage,
   };
 }

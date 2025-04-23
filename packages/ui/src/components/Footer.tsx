@@ -13,9 +13,11 @@ import BillboardIcon from "./Icons/Billboard";
 const FooterLink = ({
   href,
   children,
+  external,
 }: {
   href: string;
   children: React.ReactNode;
+  external?: boolean;
 }) => {
   const theme = useTheme();
   return (
@@ -23,6 +25,8 @@ const FooterLink = ({
       href={href}
       variant="body2"
       component="a"
+      target={external ? "_blank" : undefined}
+      rel={external ? "noopener noreferrer" : undefined}
       sx={{
         textDecoration: "none",
         color: "inherit",
@@ -40,7 +44,6 @@ const FooterLink = ({
 
 export default function Footer() {
   const theme = useTheme();
-  const currentYear = new Date().getFullYear();
 
   return (
     <Box
@@ -118,6 +121,25 @@ export default function Footer() {
                   fontWeight="bold"
                   gutterBottom
                 >
+                  Dev
+                </Typography>
+                <FooterLink
+                  href="https://app.gitbook.com/o/s9b1HIS6RFGC7VZo3JJL/s/zG7RGFguim2oLxZaaBT4/"
+                  external
+                >
+                  Docs
+                </FooterLink>
+              </Stack>
+              <Stack
+                spacing={2}
+                alignItems={{ xs: "center", md: "flex-start" }}
+              >
+                <Typography
+                  variant="subtitle2"
+                  color="primary"
+                  fontWeight="bold"
+                  gutterBottom
+                >
                   Community
                 </Typography>
                 <FooterLink href="https://github.com/0xJoshbillboard/billboard">
@@ -143,11 +165,13 @@ export default function Footer() {
                 >
                   Navigation
                 </Typography>
-                {menuItems.map((item) => (
-                  <FooterLink key={item.path} href={item.path}>
-                    {item.text}
-                  </FooterLink>
-                ))}
+                {menuItems
+                  .filter((item) => !item.external)
+                  .map((item) => (
+                    <FooterLink key={item.path} href={item.path}>
+                      {item.text}
+                    </FooterLink>
+                  ))}
               </Stack>
             </Stack>
           </Stack>

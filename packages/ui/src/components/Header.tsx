@@ -39,9 +39,6 @@ export default function Header({
   const [, setChain] = useSetChain();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [showMobileChainOptions, setShowMobileChainOptions] = useState(false);
-  const [chainMenuAnchor, setChainMenuAnchor] = useState<null | HTMLElement>(
-    null,
-  );
   const theme = useTheme();
   const location = useLocation();
   const [{ wallet, connecting }, connect, disconnect] = useConnectWallet();
@@ -52,7 +49,6 @@ export default function Header({
   };
 
   const handleChainMenuClose = (chainId?: string) => {
-    setChainMenuAnchor(null);
     if (chainId) {
       setChain({ chainId });
     }
@@ -110,36 +106,57 @@ export default function Header({
               gap: 3,
             }}
           >
-            {menuItems.map((item) => (
-              <Button
-                key={item.text}
-                component={Link}
-                to={item.path}
-                sx={{
-                  fontWeight: 500,
-                  position: "relative",
-                  color: theme.palette.text.primary,
-                  "&:hover": {
-                    backgroundColor: "transparent",
-                    color: theme.palette.primary.main,
-                  },
-                  "&::after":
-                    location.pathname === item.path
-                      ? {
-                          content: '""',
-                          position: "absolute",
-                          bottom: -2,
-                          left: "25%",
-                          width: "50%",
-                          height: 2,
-                          backgroundColor: theme.palette.primary.main,
-                        }
-                      : {},
-                }}
-              >
-                {item.text}
-              </Button>
-            ))}
+            {menuItems.map((item) =>
+              item.external ? (
+                <Button
+                  key={item.text}
+                  component="a"
+                  href={item.path}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  sx={{
+                    fontWeight: 500,
+                    position: "relative",
+                    color: theme.palette.text.primary,
+                    "&:hover": {
+                      backgroundColor: "transparent",
+                      color: theme.palette.primary.main,
+                    },
+                  }}
+                >
+                  {item.text}
+                </Button>
+              ) : (
+                <Button
+                  key={item.text}
+                  component={Link}
+                  to={item.path}
+                  sx={{
+                    fontWeight: 500,
+                    position: "relative",
+                    color: theme.palette.text.primary,
+                    "&:hover": {
+                      backgroundColor: "transparent",
+                      color: theme.palette.primary.main,
+                    },
+                    "&::after":
+                      location.pathname === item.path
+                        ? {
+                            content: '""',
+                            position: "absolute",
+                            bottom: -2,
+                            left: "25%",
+                            width: "50%",
+                            height: 2,
+                            backgroundColor: theme.palette.primary.main,
+                          }
+                        : {},
+                  }}
+                >
+                  {item.text}
+                </Button>
+              ),
+            )}
 
             {!!wallet?.accounts[0].address && (
               <Box sx={{ ml: 1 }}>
@@ -300,8 +317,11 @@ export default function Header({
               {menuItems.map((item) => (
                 <ListItem
                   key={item.text}
-                  component={Link}
-                  to={item.path}
+                  component={item.external ? "a" : Link}
+                  to={!item.external ? item.path : undefined}
+                  href={item.external ? item.path : undefined}
+                  target={item.external ? "_blank" : undefined}
+                  rel={item.external ? "noopener noreferrer" : undefined}
                   onClick={toggleMenu}
                   disablePadding
                 >
@@ -311,7 +331,7 @@ export default function Header({
                       borderRadius: 1,
                       mb: 0.5,
                       backgroundColor:
-                        location.pathname === item.path
+                        !item.external && location.pathname === item.path
                           ? theme.palette.action.selected
                           : "transparent",
                       "&:hover": {
@@ -322,9 +342,12 @@ export default function Header({
                     <ListItemText
                       primary={item.text}
                       primaryTypographyProps={{
-                        fontWeight: location.pathname === item.path ? 600 : 400,
+                        fontWeight:
+                          !item.external && location.pathname === item.path
+                            ? 600
+                            : 400,
                         color:
-                          location.pathname === item.path
+                          !item.external && location.pathname === item.path
                             ? theme.palette.primary.main
                             : theme.palette.text.primary,
                       }}

@@ -1,13 +1,4 @@
-import {
-  getDoc,
-  setDoc,
-  updateDoc,
-  doc,
-  collection,
-  getDocs,
-} from "firebase/firestore";
-import { db } from "./firebase";
-import { getImage, uploadImage } from "./utils/api";
+import { getAds } from "./utils/api";
 
 export interface Billboard {
   link: string;
@@ -17,85 +8,65 @@ export interface Billboard {
   url: string;
 }
 
-interface Ad {
-  link: string;
-  description: string;
-  ipfsHash: string;
-  expiryTime: number;
-  url?: string;
-  id?: string;
-  cid?: string;
-}
-
-const MAX_FILE_SIZE = 5 * 1024 * 1024;
-
 export class BillboardSDK {
-  public async getAds(handle?: string) {
+  public async showAd(handle: string): Promise<Billboard | null> {
     try {
-      if (handle) {
-        const handleCounter = await getDoc(doc(db, "providers", handle));
-        if (handleCounter) {
-          await updateDoc(doc(db, "providers", handle), {
-            counter: handleCounter.data()?.counter + 1,
-          });
-        }
-      } else {
-        await setDoc(doc(db, "providers", "handle"), {
-          counter: 1,
-        });
-      }
-      const ads = await getDocs(collection(db, "active_ads"));
-      const adsWithCids = ads.docs.map((ad) => ({
-        link: ad.data().link,
-        description: ad.data().description,
-        ipfsHash: ad.data().ipfsHash,
-        expiryTime: ad.data().expiryTime,
-      }));
-      const withImages = await Promise.all(
-        adsWithCids.map(async (ad: Ad) => {
-          const response = await fetch(getImage, {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({ cid: ad.ipfsHash }),
-          });
-          const imageUrl = (await response.json()) as { result?: string };
-          return { ...ad, url: imageUrl.result || "" };
-        }),
-      );
-      return withImages;
-    } catch (error) {
-      console.error(error);
-      throw new Error(`Error while fetching for ads: ${error}`);
-    }
-  }
-
-  public async uploadImage(image: File) {
-    if (image.size > MAX_FILE_SIZE) {
-      throw new Error("File size exceeds the maximum limit of 5MB");
-    }
-    try {
-      const arrayBuffer = await image.arrayBuffer();
-      const bytes = new Uint8Array(arrayBuffer);
-      const binary = bytes.reduce(
-        (acc, byte) => acc + String.fromCharCode(byte),
-        "",
-      );
-      const imageBase64 = btoa(binary);
-
-      const response = await fetch(uploadImage, {
+      const response = await fetch(getAds, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ imageData: imageBase64 }),
+        body: JSON.stringify({ handle }),
       });
+
       const data = await response.json();
-      return data as { success: boolean; cid: string };
+
+      if (!data.success || !data.result) {
+        return null;
+      }
+
+      return {
+        ipfsHash: data.result.cid,
+        url: data.result.url,
+        link: data.result.link,
+        description: data.result.description,
+        expiryTime: data.result.expiryTime,
+      };
     } catch (error) {
       console.error(error);
-      throw new Error(`Error while uploading image: ${error}`);
+      throw new Error(`Error while fetching ad: ${error}`);
+    }
+  }
+
+  public async getAds(handle: string): Promise<Billboard[]> {
+    try {
+      const response = await fetch(getAds, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          handle,
+          getAllAds: true,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!data.success || !data.ads) {
+        return [];
+      }
+
+      return data.ads.map((ad: Billboard) => ({
+        ipfsHash: ad.ipfsHash,
+        url: ad.url,
+        link: ad.link,
+        description: ad.description,
+        expiryTime: ad.expiryTime,
+      }));
+    } catch (error) {
+      console.error(error);
+      throw new Error(`Error while fetching ads: ${error}`);
     }
   }
 }

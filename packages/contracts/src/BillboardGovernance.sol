@@ -13,7 +13,7 @@ contract BillboardGovernance is Initializable, OwnableUpgradeable {
     BillboardToken public token;
 
     uint256 public constant VOTING_PERIOD = 30 days;
-    uint256 public constant MIN_PROPOSAL_TOKENS = 1000 * 10 ** 18; // 1000 tokens with 18 decimals
+    uint256 public constant MIN_PROPOSAL_TOKENS = 1000 * 10 ** 18;
     uint256 public lastVoteTimestamp;
 
     struct Proposal {
@@ -62,7 +62,6 @@ contract BillboardGovernance is Initializable, OwnableUpgradeable {
         require(!usedSnapshots[_merkleRoot], "Snapshot already used");
         require(_proposerBalance >= MIN_PROPOSAL_TOKENS, "Insufficient tokens to create proposal");
 
-        // Verify proposer's token balance at snapshot
         bytes32 leaf = keccak256(abi.encodePacked(msg.sender, _proposerBalance));
         require(MerkleProof.verify(_proposerProof, _merkleRoot, leaf), "Invalid proposer proof");
 

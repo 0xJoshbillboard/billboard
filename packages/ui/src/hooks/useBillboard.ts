@@ -42,6 +42,8 @@ export interface Proposal {
   snapshotBlock: number;
 }
 
+const MAX_FILE_SIZE = 5 * 1024 * 1024;
+
 export default function useBillboard() {
   const [{ wallet }] = useConnectWallet();
   const [contract, setContract] = useState<Contract | null>(null);
@@ -330,7 +332,7 @@ export default function useBillboard() {
     }
     let url;
     if (file) {
-      url = await billboardSDK.uploadImage(file);
+      url = await uploadImage(file);
     } else if (cid) {
       url = { cid };
     } else {
@@ -366,7 +368,38 @@ export default function useBillboard() {
   };
 
   const getAds = async () => {
-    return billboardSDK.getAds();
+    return billboardSDK.getAds("billboard-ui");
+  };
+
+  const uploadImage = async (image: File) => {
+    if (image.size > MAX_FILE_SIZE) {
+      throw new Error("File size exceeds the maximum limit of 5MB");
+    }
+    try {
+      const arrayBuffer = await image.arrayBuffer();
+      const bytes = new Uint8Array(arrayBuffer);
+      const binary = bytes.reduce(
+        (acc, byte) => acc + String.fromCharCode(byte),
+        "",
+      );
+      const imageBase64 = btoa(binary);
+
+      const response = await fetch(
+        "https://uploadimagetoipfs-pe2o27xb6q-ew.a.run.app",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ imageData: imageBase64 }),
+        },
+      );
+      const data = await response.json();
+      return data as { success: boolean; cid: string };
+    } catch (error) {
+      console.error(error);
+      throw new Error(`Error while uploading image: ${error}`);
+    }
   };
 
   const fetchBillboards = async () => {
@@ -404,5 +437,6 @@ export default function useBillboard() {
     executeProposal,
     fetchProposals,
     fetchVotingStatus,
+    uploadImage,
   };
 }

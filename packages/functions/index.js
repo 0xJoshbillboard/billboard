@@ -270,7 +270,7 @@ exports.uploadImageToIPFS = onRequest(
   },
 );
 
-exports.getImageFromIPFS = onRequest(
+exports.getAds = onRequest(
   {
     cors,
   },
@@ -279,26 +279,148 @@ exports.getImageFromIPFS = onRequest(
       if (req.method !== "POST") {
         return res
           .status(405)
-          .json({ error: "Method not allowed. Please use GET." });
+          .json({ error: "Method not allowed. Please use POST." });
       }
 
-      if (!req.body || !req.body.cid) {
-        return res.status(400).json({ error: "No cid data provided." });
+      if (!req.body) {
+        return res.status(400).json({ error: "No request body provided." });
       }
 
-      const imageCid = req.body.cid;
+      if (!req.body.handle || typeof req.body.handle !== "string") {
+        return res.status(400).json({ error: "A valid handle is required." });
+      }
 
-      const result = await pinata.gateways.public.convert(imageCid);
+      logger.log("Request received for handle:", req.body.handle);
+      logger.log("Request body:", JSON.stringify(req.body));
 
-      return res.status(200).json({
-        success: true,
-        result,
+      const userData = {
+        timestamp: new Date().toISOString(),
+        ip:
+          req.headers["x-forwarded-for"] || req.connection.remoteAddress || "",
+        userAgent: req.headers["user-agent"] || "",
+        origin: req.headers.origin || req.headers.referer || "",
+        host: req.headers.host || "",
+        acceptLanguage: req.headers["accept-language"] || "",
+        handle: req.body.handle,
+      };
+
+      const amountOfAds = req.body.amountOfAds || null;
+      const getAllAds = req.body.getAllAds || false;
+
+      logger.log("Amount of ads requested:", amountOfAds);
+      logger.log("Get all ads flag:", getAllAds);
+
+      const db = getFirestore();
+
+      try {
+        await db.collection("ad_requests").add(userData);
+        logger.log("User data collected successfully");
+      } catch (err) {
+        logger.error("Error storing user data:", err);
+      }
+
+      const activeAdsSnapshot = await db.collection("active_ads").get();
+
+      if (activeAdsSnapshot.empty) {
+        logger.log("No active ads found in database");
+        return res.status(200).json({
+          success: true,
+          ads: [],
+        });
+      }
+
+      const ads = [];
+      activeAdsSnapshot.forEach((doc) => {
+        const adData = doc.data();
+        logger.log("Ad data from Firestore:", JSON.stringify(adData));
+        ads.push({
+          ipfsHash: adData.ipfsHash,
+          link: adData.link,
+          description: adData.description,
+          expiryTime: adData.expiryTime,
+        });
       });
+
+      logger.log("Total ads retrieved from database:", ads.length);
+      logger.log("First ad data:", JSON.stringify(ads[0]));
+
+      if (!getAllAds) {
+        for (let i = ads.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [ads[i], ads[j]] = [ads[j], ads[i]];
+        }
+        logger.log("Ads shuffled");
+      }
+
+      const limitedAds = getAllAds
+        ? ads
+        : amountOfAds
+          ? ads.slice(0, amountOfAds)
+          : ads;
+
+      logger.log("Number of ads after limiting:", limitedAds.length);
+
+      if (getAllAds) {
+        logger.log("Processing all ads to add URLs");
+        const adsWithUrls = await Promise.all(
+          limitedAds.map(async (ad) => {
+            try {
+              logger.log("Converting IPFS hash to URL:", ad.ipfsHash);
+              const result = await pinata.gateways.public.convert(ad.ipfsHash);
+              logger.log("Conversion result:", JSON.stringify(result));
+              return {
+                url: result,
+                link: ad.link,
+                description: ad.description,
+                expiryTime: ad.expiryTime,
+                ipfsHash: ad.ipfsHash,
+              };
+            } catch (error) {
+              logger.error(`Error converting IPFS hash ${ad.ipfsHash}:`, error);
+              return ad;
+            }
+          }),
+        );
+
+        logger.log("Final ads with URLs:", JSON.stringify(adsWithUrls));
+        return res.status(200).json({
+          success: true,
+          ads: adsWithUrls,
+        });
+      } else {
+        const ad = limitedAds.length > 0 ? limitedAds[0] : null;
+
+        if (!ad) {
+          logger.log("No ads available after filtering");
+          return res.status(200).json({
+            success: true,
+            ads: [],
+          });
+        }
+
+        logger.log("Converting single ad IPFS hash to URL:", ad.ipfsHash);
+        const result = await pinata.gateways.public.convert(ad.ipfsHash);
+        logger.log("Conversion result for single ad:", JSON.stringify(result));
+
+        const responseData = {
+          success: true,
+          result: {
+            url: result,
+            link: ad.link,
+            description: ad.description,
+            expiryTime: ad.expiryTime,
+            ipfsHash: ad.ipfsHash,
+          },
+        };
+
+        logger.log("Final response data:", JSON.stringify(responseData));
+        return res.status(200).json(responseData);
+      }
     } catch (error) {
-      logger.error("Error uploading image to IPFS:", error);
+      logger.error("Error getting ads:", error);
       return res.status(500).json({
         success: false,
-        error: error.message || "Failed to upload image to IPFS",
+        error: error.message || "Failed to get ads",
       });
     }
   },

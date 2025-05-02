@@ -18,7 +18,7 @@ import {
   BILLBOARD_TOKEN_ADDRESS,
   BILLBOARD_TOKEN_ABI,
 } from "../utils/contracts";
-import { chains } from "../utils/chains";
+import { chains, defaultProvider } from "../utils/chains";
 
 const billboardSDK = new BillboardSDK();
 const MAX_FILE_SIZE = 5 * 1024 * 1024;
@@ -68,21 +68,39 @@ export default function useBillboard() {
   useEffect(() => {
     const setContracts = async () => {
       if (wallet?.provider) {
-        const provider = new BrowserProvider(wallet.provider);
-        const signer = await provider.getSigner();
-        const govContract = new Contract(
-          GOVERNANCE_ADDRESS,
-          GOVERNANCE_ABI,
-          signer,
-        );
-        setContract(new Contract(BILLBOARD_ADDRESS, CONTRACT_ABI, signer));
-        setUsdcContract(new Contract(USDC_ADDRESS, USDC_MOCK_ABI, signer));
-        setGovernanceContract(govContract);
-        setTokenContract(
-          new Contract(BILLBOARD_TOKEN_ADDRESS, BILLBOARD_TOKEN_ABI, signer),
-        );
+        const chainId = wallet.chains[0].id;
+        const supportedChain = chains.find(chain => chain.id === chainId);
+        
+        if (supportedChain) {
+          const provider = new BrowserProvider(wallet.provider);
+          const signer = await provider.getSigner();
+          const govContract = new Contract(
+            GOVERNANCE_ADDRESS,
+            GOVERNANCE_ABI,
+            signer,
+          );
+          setContract(new Contract(BILLBOARD_ADDRESS, CONTRACT_ABI, signer));
+          setUsdcContract(new Contract(USDC_ADDRESS, USDC_MOCK_ABI, signer));
+          setGovernanceContract(govContract);
+          setTokenContract(
+            new Contract(BILLBOARD_TOKEN_ADDRESS, BILLBOARD_TOKEN_ABI, signer),
+          );
+        } else {
+          const provider = new JsonRpcProvider(defaultProvider);
+          const govContract = new Contract(
+            GOVERNANCE_ADDRESS,
+            GOVERNANCE_ABI,
+            provider,
+          );
+          setContract(new Contract(BILLBOARD_ADDRESS, CONTRACT_ABI, provider));
+          setUsdcContract(new Contract(USDC_ADDRESS, USDC_MOCK_ABI, provider));
+          setGovernanceContract(govContract);
+          setTokenContract(
+            new Contract(BILLBOARD_TOKEN_ADDRESS, BILLBOARD_TOKEN_ABI, provider),
+          );
+        }
       } else {
-        const provider = new JsonRpcProvider(chains[0].rpcUrl);
+        const provider = new JsonRpcProvider(defaultProvider);
         const govContract = new Contract(
           GOVERNANCE_ADDRESS,
           GOVERNANCE_ABI,

@@ -14,7 +14,7 @@ export default function Layout({
   const [{ connectedChain }] = useSetChain();
   const [isUnsupportedNetwork, setIsUnsupportedNetwork] = useState(false);
   
-  const requiredChainId = 11155111; 
+  const requiredChainId = 11155420; 
   const requiredChainName = "Optimism Sepolia";
   const requiredChainIdHex = `0x${requiredChainId.toString(16)}`;
   

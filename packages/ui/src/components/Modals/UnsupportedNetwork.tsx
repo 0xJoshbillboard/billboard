@@ -26,7 +26,6 @@ const UnsupportedNetwork: React.FC<UnsupportedNetworkProps> = ({
   requiredChainName,
 }) => {
   const [{ wallet }] = useConnectWallet();
-  console.log(requiredChainId, requiredChainName);
   const handleSwitchNetwork = async () => {
     if (!wallet) return;
 

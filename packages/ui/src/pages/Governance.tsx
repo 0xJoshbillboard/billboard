@@ -16,7 +16,6 @@ import {
   Stack,
   TextField,
   Button,
-  useTheme,
   Card,
   CardContent,
   CardActions,
@@ -45,14 +44,12 @@ export default function Governance() {
     duration: "",
     pricePerBillboard: "",
     securityDeposit: "",
-    votingPeriod: "",
     minProposalTokens: "",
     minVotingTokens: "",
   });
   const [buyAmount, setBuyAmount] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
-  const theme = useTheme();
 
   useEffect(() => {
     const setupContracts = async () => {
@@ -103,7 +100,6 @@ export default function Governance() {
         Number(BigInt(newProposal.duration) * BigInt(86400)), // Convert days to seconds
         Number(BigInt(newProposal.pricePerBillboard) * BigInt(1e6)), // Convert to USDC decimals
         Number(BigInt(newProposal.securityDeposit) * BigInt(1e6)), // Convert to USDC decimals
-        Number(BigInt(newProposal.votingPeriod) * BigInt(86400)), // Convert days to seconds
         Number(BigInt(newProposal.minProposalTokens) * BigInt(1e18)), // Convert to token decimals
         Number(BigInt(newProposal.minVotingTokens) * BigInt(1e18)), // Convert to token decimals
       );
@@ -112,7 +108,6 @@ export default function Governance() {
         duration: "",
         pricePerBillboard: "",
         securityDeposit: "",
-        votingPeriod: "",
         minProposalTokens: "",
         minVotingTokens: "",
       });
@@ -182,17 +177,6 @@ export default function Governance() {
               </Typography>
               <Typography variant="h6">
                 {governanceSettings.price || 0} USDC
-              </Typography>
-            </Box>
-            <Box>
-              <Typography variant="subtitle1" color="text.secondary">
-                Voting Period
-              </Typography>
-              <Typography variant="h6">
-                {governanceSettings.votingPeriod
-                  ? governanceSettings.votingPeriod
-                  : 0}{" "}
-                days
               </Typography>
             </Box>
             <Box>
@@ -309,18 +293,6 @@ export default function Governance() {
               fullWidth
             />
             <TextField
-              label="Voting Period (days)"
-              type="number"
-              value={newProposal.votingPeriod}
-              onChange={(e) =>
-                setNewProposal({
-                  ...newProposal,
-                  votingPeriod: e.target.value,
-                })
-              }
-              fullWidth
-            />
-            <TextField
               label="Minimum Proposal Tokens (BBT)"
               type="number"
               value={newProposal.minProposalTokens}
@@ -352,7 +324,6 @@ export default function Governance() {
                 !newProposal.duration ||
                 !newProposal.pricePerBillboard ||
                 !newProposal.securityDeposit ||
-                !newProposal.votingPeriod ||
                 !newProposal.minProposalTokens ||
                 !newProposal.minVotingTokens ||
                 isLoading
@@ -402,7 +373,10 @@ export default function Governance() {
                         Voting Period
                       </Typography>
                       <Typography variant="h6">
-                        {proposal.votingPeriod / 86400} days
+                        {Math.floor(
+                          (Date.now() / 1000 - proposal.createdAt) / 86400,
+                        )}{" "}
+                        days
                       </Typography>
                     </Box>
                     <Box>

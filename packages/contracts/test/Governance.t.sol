@@ -67,7 +67,7 @@ contract GovernanceTest is Test {
         vm.startPrank(user);
         token.approve(address(governanceProxy), 1000 * 10 ** 18);
         BillboardGovernance(address(governanceProxy)).createProposal(
-            60 days, 2000e6, 15000e6, 1500 * 10 ** 18, 750 * 10 ** 18
+            60 days, 2000e6, 15000 * 10 ** 18, 1500 * 10 ** 18, 750 * 10 ** 18
         );
         vm.stopPrank();
 
@@ -85,7 +85,7 @@ contract GovernanceTest is Test {
 
         assertEq(duration, 60 days);
         assertEq(price, 2000e6);
-        assertEq(deposit, 15000e6);
+        assertEq(deposit, 15000 * 10 ** 18);
         assertEq(initialSecurityDeposit, 1000 * 10 ** 18);
         assertEq(minProposalTokens, 1500 * 10 ** 18);
         assertEq(minVotingTokens, 750 * 10 ** 18);
@@ -99,7 +99,7 @@ contract GovernanceTest is Test {
         token.approve(address(governanceProxy), 1000 * 10 ** 18);
         vm.expectRevert("Insufficient tokens to create proposal");
         BillboardGovernance(address(governanceProxy)).createProposal(
-            60 days, 2000e6, 15000e6, 1500 * 10 ** 18, 750 * 10 ** 18
+            60 days, 2000e6, 15000 * 10 ** 18, 1500 * 10 ** 18, 750 * 10 ** 18
         );
         vm.stopPrank();
     }
@@ -127,7 +127,7 @@ contract GovernanceTest is Test {
 
         vm.startPrank(user);
         BillboardGovernance(address(governanceProxy)).createProposal(
-            60 days, 2000e6, 15000e6, 1500 * 10 ** 18, 750 * 10 ** 18
+            60 days, 2000e6, 15000 * 10 ** 18, 1500 * 10 ** 18, 750 * 10 ** 18
         );
         vm.stopPrank();
 
@@ -163,7 +163,7 @@ contract GovernanceTest is Test {
 
         vm.startPrank(user);
         BillboardGovernance(address(governanceProxy)).createProposal(
-            60 days, 2000e6, 15000e6, 1500 * 10 ** 18, 750 * 10 ** 18
+            60 days, 2000e6, 15000 * 10 ** 18, 1500 * 10 ** 18, 750 * 10 ** 18
         );
         vm.stopPrank();
 
@@ -177,7 +177,7 @@ contract GovernanceTest is Test {
 
         assertEq(BillboardGovernance(address(governanceProxy)).duration(), 60 days);
         assertEq(BillboardGovernance(address(governanceProxy)).pricePerBillboard(), 2000e6);
-        assertEq(BillboardGovernance(address(governanceProxy)).securityDeposit(), 15000e6);
+        assertEq(BillboardGovernance(address(governanceProxy)).securityDeposit(), 15000 * 10 ** 18);
         assertEq(BillboardGovernance(address(governanceProxy)).minProposalTokens(), 1500 * 10 ** 18);
         assertEq(BillboardGovernance(address(governanceProxy)).minVotingTokens(), 750 * 10 ** 18);
 
@@ -217,7 +217,7 @@ contract GovernanceTest is Test {
         token.approve(address(governanceProxy), 1000 * 10 ** 18);
         uint256 initialBalance = token.balanceOf(user);
         BillboardGovernance(address(governanceProxy)).createProposal(
-            60 days, 2000e6, 15000e6, 1500 * 10 ** 18, 750 * 10 ** 18
+            60 days, 2000e6, 15000 * 10 ** 18, 1500 * 10 ** 18, 750 * 10 ** 18
         );
         assertEq(token.balanceOf(user), initialBalance - securityDeposit);
         vm.stopPrank();
@@ -275,7 +275,7 @@ contract GovernanceTest is Test {
 
         vm.startPrank(user);
         BillboardGovernance(address(governanceProxy)).createProposal(
-            60 days, 2000e6, 15000e6, 1500 * 10 ** 18, 750 * 10 ** 18
+            60 days, 2000e6, 15000 * 10 ** 18, 1500 * 10 ** 18, 750 * 10 ** 18
         );
         vm.stopPrank();
 

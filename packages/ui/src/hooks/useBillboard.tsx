@@ -29,6 +29,7 @@ export interface Proposal {
   duration: number;
   pricePerBillboard: number;
   securityDeposit: number;
+  initialSecurityDeposit: number;
   votesFor: number;
   votesAgainst: number;
   executed: boolean;
@@ -178,11 +179,11 @@ export default function useBillboard() {
 
   // Load proposals and voting status
   useEffect(() => {
-    if (wallet && governanceContract) {
+    if (governanceContract) {
       fetchProposals();
       fetchVotingStatus();
     }
-  }, [wallet, governanceContract]);
+  }, [governanceContract]);
 
   // Token functions
   const fetchTokenBalance = async () => {
@@ -251,7 +252,7 @@ export default function useBillboard() {
     if (!governanceContract) return;
 
     try {
-      const proposalCount = await governanceContract.proposals.length;
+      const proposalCount = await governanceContract.proposalCount();
       const fetchedProposals: Proposal[] = [];
 
       for (let i = 0; i < proposalCount; i++) {
@@ -261,12 +262,13 @@ export default function useBillboard() {
           duration: Number(proposal[0]),
           pricePerBillboard: Number(proposal[1]),
           securityDeposit: Number(proposal[2]),
-          votesFor: Number(proposal[3]),
-          votesAgainst: Number(proposal[4]),
-          executed: proposal[5],
-          minProposalTokens: Number(proposal[6]),
-          minVotingTokens: Number(proposal[7]),
-          createdAt: Number(proposal[8]),
+          initialSecurityDeposit: Number(proposal[3]),
+          minProposalTokens: Number(proposal[4]),
+          minVotingTokens: Number(proposal[5]),
+          votesFor: Number(proposal[6]),
+          votesAgainst: Number(proposal[7]),
+          executed: proposal[8],
+          createdAt: Number(proposal[9]),
         });
       }
 
@@ -298,16 +300,32 @@ export default function useBillboard() {
   };
 
   const createProposal = async (
-    duration: number,
-    pricePerBillboard: number,
-    securityDeposit: number,
-    minProposalTokens: number,
-    minVotingTokens: number,
+    duration: bigint,
+    pricePerBillboard: bigint,
+    securityDeposit: bigint,
+    minProposalTokens: bigint,
+    minVotingTokens: bigint,
   ) => {
     if (!governanceContract) throw new Error("Governance contract not defined");
+    if (!tokenContract) throw new Error("Token contract not defined");
     if (!wallet) throw new Error("Wallet not connected");
 
     try {
+      const minProposalTokensRequired =
+        await governanceContract.minProposalTokens();
+      const currentAllowance = await tokenContract.allowance(
+        wallet.accounts[0].address,
+        GOVERNANCE_ADDRESS,
+      );
+
+      if (BigInt(currentAllowance) < BigInt(minProposalTokensRequired)) {
+        const approveTx = await tokenContract.approve(
+          GOVERNANCE_ADDRESS,
+          minProposalTokensRequired,
+        );
+        await approveTx.wait();
+      }
+
       const tx = await governanceContract.createProposal(
         duration,
         pricePerBillboard,

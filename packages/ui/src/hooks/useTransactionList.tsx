@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
-import { BigNumberish } from 'ethers';
+import { useState, useEffect } from "react";
+import { BigNumberish } from "ethers";
 
 interface Transaction {
   hash: string;
@@ -25,19 +25,21 @@ interface UseTransactionListResult {
 
 const useTransactionList = ({
   transactions,
-  storageKey = 'executedTransactions',
+  storageKey = "executedTransactions",
 }: UseTransactionListProps): UseTransactionListResult => {
-  const [executedTransactionHashes, setExecutedTransactionHashes] = useState<string[]>(() => {
+  const [executedTransactionHashes, setExecutedTransactionHashes] = useState<
+    string[]
+  >(() => {
     const savedData = localStorage.getItem(storageKey);
     return savedData ? JSON.parse(savedData) : [];
   });
 
-  const executedTransactions = transactions.filter(tx => 
-    executedTransactionHashes.includes(tx.hash)
+  const executedTransactions = transactions.filter((tx) =>
+    executedTransactionHashes.includes(tx.hash),
   );
-  
-  const pendingTransactions = transactions.filter(tx => 
-    !executedTransactionHashes.includes(tx.hash)
+
+  const pendingTransactions = transactions.filter(
+    (tx) => !executedTransactionHashes.includes(tx.hash),
   );
 
   useEffect(() => {
@@ -45,15 +47,15 @@ const useTransactionList = ({
   }, [executedTransactionHashes, storageKey]);
 
   const markAsExecuted = (transactionHash: string) => {
-    setExecutedTransactionHashes(prev => {
+    setExecutedTransactionHashes((prev) => {
       if (prev.includes(transactionHash)) return prev;
       return [...prev, transactionHash];
     });
   };
 
   const markAsPending = (transactionHash: string) => {
-    setExecutedTransactionHashes(prev => 
-      prev.filter(hash => hash !== transactionHash)
+    setExecutedTransactionHashes((prev) =>
+      prev.filter((hash) => hash !== transactionHash),
     );
   };
 
@@ -71,4 +73,3 @@ const useTransactionList = ({
 };
 
 export default useTransactionList;
-

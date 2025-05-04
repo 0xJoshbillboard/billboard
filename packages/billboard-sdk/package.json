@@ -1,6 +1,6 @@
 {
   "name": "billboard-sdk",
-  "version": "0.1.8",
+  "version": "0.2.0",
   "description": "Billboard SDK for interacting with billboard protocol",
   "main": "./build/index.js",
   "types": "./build/src/index.d.ts",

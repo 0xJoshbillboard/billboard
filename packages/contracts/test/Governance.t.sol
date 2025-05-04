@@ -26,7 +26,7 @@ contract GovernanceTest is Test {
     address public user2;
     uint256 public initialDuration = 30 days;
     uint256 public initialPrice = 1000e6;
-    uint256 public securityDeposit = 10000e6;
+    uint256 public securityDeposit = 1000 * 10 ** 18;
 
     function setUp() public {
         owner = address(this);
@@ -47,16 +47,11 @@ contract GovernanceTest is Test {
         proxy = new BillboardProxy(address(registry), owner, "");
         BillboardRegistry(address(proxy)).initialize(address(usdc), address(governanceProxy));
 
-        // Mint and approve tokens for the governance contract
-        usdc.mint(owner, 100000e6);
-        vm.startPrank(owner);
-        usdc.approve(address(token), 100000e6);
-        token.buyTokens(100000e6);
-        // Transfer some BBT to the governance contract for security deposits
-        token.transfer(address(governanceProxy), securityDeposit * 10 ** 12); // Convert USDC decimals to BBT decimals
+        usdc.mint(user, 10_0000e6);
+        vm.startPrank(user);
+        usdc.approve(address(token), 10_0000e6);
+        token.buyTokens(10_0000e6);
         vm.stopPrank();
-
-        vm.warp(block.timestamp + 30 days + 1);
     }
 
     function test_Initialization() public view {
@@ -64,50 +59,47 @@ contract GovernanceTest is Test {
         assertEq(BillboardGovernance(address(governanceProxy)).pricePerBillboard(), initialPrice);
         assertEq(BillboardGovernance(address(governanceProxy)).securityDeposit(), securityDeposit);
         assertEq(BillboardGovernance(address(governanceProxy)).owner(), owner);
-        assertEq(BillboardGovernance(address(governanceProxy)).votingPeriod(), 30 days);
         assertEq(BillboardGovernance(address(governanceProxy)).minProposalTokens(), 1000 * 10 ** 18);
         assertEq(BillboardGovernance(address(governanceProxy)).minVotingTokens(), 500 * 10 ** 18);
     }
 
     function test_CreateProposal_WithSufficientTokens() public {
-        uint256 usdcAmount = 2000e6;
-        uint256 expectedBbtAmount = usdcAmount * 10 ** 12;
-        usdc.mint(user, usdcAmount);
         vm.startPrank(user);
-        usdc.approve(address(token), usdcAmount);
-        token.buyTokens(usdcAmount);
-        token.approve(address(governanceProxy), expectedBbtAmount);
-        vm.stopPrank();
-
-        vm.startPrank(user);
+        token.approve(address(governanceProxy), 1000 * 10 ** 18);
         BillboardGovernance(address(governanceProxy)).createProposal(
-            60 days, 2000e6, 15000e6, 35 days, 1500 * 10 ** 18, 750 * 10 ** 18
+            60 days, 2000e6, 15000e6, 1500 * 10 ** 18, 750 * 10 ** 18
         );
         vm.stopPrank();
 
-        (uint256 duration, uint256 price, uint256 deposit, uint256 votesFor, uint256 votesAgainst, bool executed) =
-            BillboardGovernance(address(governanceProxy)).getProposal(0);
+        (
+            uint256 duration,
+            uint256 price,
+            uint256 deposit,
+            uint256 initialSecurityDeposit,
+            uint256 minProposalTokens,
+            uint256 minVotingTokens,
+            uint256 votesFor,
+            uint256 votesAgainst,
+            bool executed,
+        ) = BillboardGovernance(address(governanceProxy)).getProposal(0);
 
         assertEq(duration, 60 days);
         assertEq(price, 2000e6);
         assertEq(deposit, 15000e6);
+        assertEq(initialSecurityDeposit, 1000 * 10 ** 18);
+        assertEq(minProposalTokens, 1500 * 10 ** 18);
+        assertEq(minVotingTokens, 750 * 10 ** 18);
         assertEq(votesFor, 0);
         assertEq(votesAgainst, 0);
         assertEq(executed, false);
     }
 
     function test_CreateProposal_RevertWhenInsufficientTokens() public {
-        uint256 usdcAmount = 500e6;
-        usdc.mint(user, usdcAmount);
-        vm.startPrank(user);
-        usdc.approve(address(token), usdcAmount);
-        token.buyTokens(usdcAmount);
-        vm.stopPrank();
-
-        vm.startPrank(user);
+        vm.startPrank(user2);
+        token.approve(address(governanceProxy), 1000 * 10 ** 18);
         vm.expectRevert("Insufficient tokens to create proposal");
         BillboardGovernance(address(governanceProxy)).createProposal(
-            60 days, 2000e6, 15000e6, 35 days, 1500 * 10 ** 18, 750 * 10 ** 18
+            60 days, 2000e6, 15000e6, 1500 * 10 ** 18, 750 * 10 ** 18
         );
         vm.stopPrank();
     }
@@ -135,7 +127,7 @@ contract GovernanceTest is Test {
 
         vm.startPrank(user);
         BillboardGovernance(address(governanceProxy)).createProposal(
-            60 days, 2000e6, 15000e6, 35 days, 1500 * 10 ** 18, 750 * 10 ** 18
+            60 days, 2000e6, 15000e6, 1500 * 10 ** 18, 750 * 10 ** 18
         );
         vm.stopPrank();
 
@@ -143,7 +135,7 @@ contract GovernanceTest is Test {
         BillboardGovernance(address(governanceProxy)).vote(0, true, user2BbtAmount);
         vm.stopPrank();
 
-        (,,, uint256 votesFor, uint256 votesAgainst,) = BillboardGovernance(address(governanceProxy)).getProposal(0);
+        (,,,,,, uint256 votesFor, uint256 votesAgainst,,) = BillboardGovernance(address(governanceProxy)).getProposal(0);
         assertEq(votesFor, user2BbtAmount);
         assertEq(votesAgainst, 0);
     }
@@ -171,7 +163,7 @@ contract GovernanceTest is Test {
 
         vm.startPrank(user);
         BillboardGovernance(address(governanceProxy)).createProposal(
-            60 days, 2000e6, 15000e6, 35 days, 1500 * 10 ** 18, 750 * 10 ** 18
+            60 days, 2000e6, 15000e6, 1500 * 10 ** 18, 750 * 10 ** 18
         );
         vm.stopPrank();
 
@@ -186,18 +178,17 @@ contract GovernanceTest is Test {
         assertEq(BillboardGovernance(address(governanceProxy)).duration(), 60 days);
         assertEq(BillboardGovernance(address(governanceProxy)).pricePerBillboard(), 2000e6);
         assertEq(BillboardGovernance(address(governanceProxy)).securityDeposit(), 15000e6);
-        assertEq(BillboardGovernance(address(governanceProxy)).votingPeriod(), 35 days);
         assertEq(BillboardGovernance(address(governanceProxy)).minProposalTokens(), 1500 * 10 ** 18);
         assertEq(BillboardGovernance(address(governanceProxy)).minVotingTokens(), 750 * 10 ** 18);
 
-        (,,,,, bool executed) = BillboardGovernance(address(governanceProxy)).getProposal(0);
-        assertEq(executed, true);
+        (,,,,,,,, bool _executed,) = BillboardGovernance(address(governanceProxy)).getProposal(0);
+        assertEq(_executed, true);
     }
 
     function test_ExecuteProposal_RevertWhenVotingPeriodNotEnded() public {
         test_CreateProposal_WithSufficientTokens();
 
-        vm.expectRevert("Voting period not ended");
+        vm.expectRevert("Proposal voting not done");
         BillboardGovernance(address(governanceProxy)).executeProposal(0);
     }
 
@@ -211,19 +202,10 @@ contract GovernanceTest is Test {
     }
 
     function test_ReturnSecurityDeposit_AfterExecution() public {
-        uint256 user1UsdcAmount = 50000e6; // Increased amount to ensure enough BBT tokens
-        uint256 user2UsdcAmount = 20000e6; // Increased amount to ensure enough BBT tokens
-        uint256 user1BbtAmount = user1UsdcAmount * 10 ** 12; // Convert to BBT decimals (18)
-        uint256 user2BbtAmount = user2UsdcAmount * 10 ** 12; // Convert to BBT decimals (18)
+        uint256 user2UsdcAmount = 20000e6;
+        uint256 user2BbtAmount = user2UsdcAmount * 10 ** 12;
 
-        usdc.mint(user, user1UsdcAmount);
         usdc.mint(user2, user2UsdcAmount);
-
-        vm.startPrank(user);
-        usdc.approve(address(token), user1UsdcAmount);
-        token.buyTokens(user1UsdcAmount);
-        token.approve(address(governanceProxy), user1BbtAmount);
-        vm.stopPrank();
 
         vm.startPrank(user2);
         usdc.approve(address(token), user2UsdcAmount);
@@ -232,11 +214,12 @@ contract GovernanceTest is Test {
         vm.stopPrank();
 
         vm.startPrank(user);
+        token.approve(address(governanceProxy), 1000 * 10 ** 18);
         uint256 initialBalance = token.balanceOf(user);
         BillboardGovernance(address(governanceProxy)).createProposal(
-            60 days, 2000e6, 15000e6, 35 days, 1500 * 10 ** 18, 750 * 10 ** 18
+            60 days, 2000e6, 15000e6, 1500 * 10 ** 18, 750 * 10 ** 18
         );
-        assertEq(token.balanceOf(user), initialBalance - securityDeposit * 10 ** 12);
+        assertEq(token.balanceOf(user), initialBalance - securityDeposit);
         vm.stopPrank();
 
         vm.startPrank(user2);
@@ -265,7 +248,7 @@ contract GovernanceTest is Test {
     function test_ReturnSecurityDeposit_RevertWhenStillActive() public {
         test_CreateProposal_WithSufficientTokens();
 
-        vm.expectRevert("Proposal still active");
+        vm.expectRevert("Proposal voting not done");
         BillboardGovernance(address(governanceProxy)).returnSecurityDeposit(0);
     }
 
@@ -292,7 +275,7 @@ contract GovernanceTest is Test {
 
         vm.startPrank(user);
         BillboardGovernance(address(governanceProxy)).createProposal(
-            60 days, 2000e6, 15000e6, 35 days, 1500 * 10 ** 18, 750 * 10 ** 18
+            60 days, 2000e6, 15000e6, 1500 * 10 ** 18, 750 * 10 ** 18
         );
         vm.stopPrank();
 

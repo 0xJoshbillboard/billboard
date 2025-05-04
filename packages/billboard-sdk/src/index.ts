@@ -1,4 +1,5 @@
 import { getAds } from "./utils/api";
+import { BillboardCache } from "./cache";
 
 export interface Billboard {
   link: string;
@@ -10,6 +11,13 @@ export interface Billboard {
 
 export class BillboardSDK {
   public async showAd(handle: string): Promise<Billboard | null> {
+    const cacheKey = `showAd_${handle}`;
+    const cachedAd = BillboardCache.get<Billboard>(cacheKey);
+
+    if (cachedAd) {
+      return cachedAd;
+    }
+
     try {
       const response = await fetch(getAds, {
         method: "POST",
@@ -25,13 +33,17 @@ export class BillboardSDK {
         return null;
       }
 
-      return {
+      const ad = {
         ipfsHash: data.result.cid,
         url: data.result.url,
         link: data.result.link,
         description: data.result.description,
         expiryTime: data.result.expiryTime,
       };
+
+      BillboardCache.set(cacheKey, ad);
+
+      return ad;
     } catch (error) {
       console.error(error);
       throw new Error(`Error while fetching ad: ${error}`);
@@ -39,6 +51,13 @@ export class BillboardSDK {
   }
 
   public async getAds(handle: string): Promise<Billboard[]> {
+    const cacheKey = `getAds_${handle}`;
+    const cachedAds = BillboardCache.get<Billboard[]>(cacheKey);
+
+    if (cachedAds) {
+      return cachedAds;
+    }
+
     try {
       const response = await fetch(getAds, {
         method: "POST",
@@ -57,13 +76,17 @@ export class BillboardSDK {
         return [];
       }
 
-      return data.ads.map((ad: Billboard) => ({
+      const ads = data.ads.map((ad: Billboard) => ({
         ipfsHash: ad.ipfsHash,
         url: ad.url,
         link: ad.link,
         description: ad.description,
         expiryTime: ad.expiryTime,
       }));
+
+      BillboardCache.set(cacheKey, ads);
+
+      return ads;
     } catch (error) {
       console.error(error);
       throw new Error(`Error while fetching ads: ${error}`);

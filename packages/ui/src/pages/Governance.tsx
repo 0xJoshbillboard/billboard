@@ -24,7 +24,7 @@ import {
 } from "@mui/material";
 
 export default function Governance() {
-  const [{ wallet }] = useConnectWallet();
+  const [{ wallet }, connect] = useConnectWallet();
   const {
     governanceSettings,
     tokenBalance,
@@ -90,6 +90,10 @@ export default function Governance() {
   };
 
   const handleCreateProposal = async () => {
+    if (!wallet) {
+      await connect();
+      return;
+    }
     if (!governanceContract || !tokenContract) return;
 
     try {
@@ -97,11 +101,11 @@ export default function Governance() {
       setErrorMessage("");
 
       const tx = await createProposal(
-        Number(BigInt(newProposal.duration) * BigInt(86400)), // Convert days to seconds
-        Number(BigInt(newProposal.pricePerBillboard) * BigInt(1e6)), // Convert to USDC decimals
-        Number(BigInt(newProposal.securityDeposit) * BigInt(1e6)), // Convert to USDC decimals
-        Number(BigInt(newProposal.minProposalTokens) * BigInt(1e18)), // Convert to token decimals
-        Number(BigInt(newProposal.minVotingTokens) * BigInt(1e18)), // Convert to token decimals
+        BigInt(newProposal.duration) * BigInt(86400), // Convert days to seconds
+        BigInt(newProposal.pricePerBillboard) * BigInt(1e6), // Convert to USDC decimals
+        BigInt(newProposal.securityDeposit) * BigInt(1e18), // Convert to BBT decimals
+        BigInt(newProposal.minProposalTokens) * BigInt(1e18), // Convert to BBT decimals
+        BigInt(newProposal.minVotingTokens) * BigInt(1e18), // Convert to BBT decimals
       );
       await tx.wait();
       setNewProposal({
@@ -245,11 +249,6 @@ export default function Governance() {
                 {isLoading ? "Processing..." : "Buy Tokens"}
               </Button>
             </Stack>
-            {errorMessage && (
-              <Alert severity="error" sx={{ mt: 2 }}>
-                {errorMessage}
-              </Alert>
-            )}
           </Stack>
         </Paper>
 
@@ -281,7 +280,7 @@ export default function Governance() {
               fullWidth
             />
             <TextField
-              label="Security Deposit (USDC)"
+              label="Security Deposit (BBT)"
               type="number"
               value={newProposal.securityDeposit}
               onChange={(e) =>
@@ -329,8 +328,17 @@ export default function Governance() {
                 isLoading
               }
             >
-              {isLoading ? "Creating..." : "Create Proposal"}
+              {!wallet
+                ? "Connect Wallet"
+                : isLoading
+                  ? "Creating..."
+                  : "Create Proposal"}
             </Button>
+            {errorMessage && (
+              <Alert severity="error" sx={{ mt: 2 }}>
+                {errorMessage}
+              </Alert>
+            )}
           </Stack>
         </Paper>
 
@@ -365,7 +373,7 @@ export default function Governance() {
                         Security Deposit
                       </Typography>
                       <Typography variant="h6">
-                        {proposal.securityDeposit / 1e6} USDC
+                        {proposal.securityDeposit / 1e18} BBT
                       </Typography>
                     </Box>
                     <Box>
@@ -373,10 +381,15 @@ export default function Governance() {
                         Voting Period
                       </Typography>
                       <Typography variant="h6">
+                        {new Date(
+                          (proposal.createdAt + 7 * 86400) * 1000,
+                        ).toLocaleDateString()}{" "}
+                        (
                         {Math.floor(
-                          (Date.now() / 1000 - proposal.createdAt) / 86400,
+                          (proposal.createdAt + 7 * 86400 - Date.now() / 1000) /
+                            86400,
                         )}{" "}
-                        days
+                        days remaining)
                       </Typography>
                     </Box>
                     <Box>

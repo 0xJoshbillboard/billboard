@@ -7,7 +7,7 @@ const chainNames = {
   local: "local",
 };
 
-export const defaultProvider = 'https://sepolia.optimism.io'
+export const defaultProvider = "https://sepolia.optimism.io";
 
 export const chains = [
   {

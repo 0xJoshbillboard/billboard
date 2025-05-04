@@ -13,11 +13,11 @@ export default function Layout({
 }) {
   const [{ connectedChain }] = useSetChain();
   const [isUnsupportedNetwork, setIsUnsupportedNetwork] = useState(false);
-  
-  const requiredChainId = 11155420; 
+
+  const requiredChainId = 11155420;
   const requiredChainName = "Optimism Sepolia";
   const requiredChainIdHex = `0x${requiredChainId.toString(16)}`;
-  
+
   useEffect(() => {
     if (connectedChain && connectedChain.id !== requiredChainIdHex) {
       setIsUnsupportedNetwork(true);
@@ -25,7 +25,7 @@ export default function Layout({
       setIsUnsupportedNetwork(false);
     }
   }, [connectedChain]);
-  
+
   const handleCloseNetworkModal = () => {
     setIsUnsupportedNetwork(false);
   };
@@ -38,8 +38,8 @@ export default function Layout({
       justifyContent="space-between"
       alignItems="center"
     >
-      <UnsupportedNetwork 
-        open={isUnsupportedNetwork} 
+      <UnsupportedNetwork
+        open={isUnsupportedNetwork}
         onClose={handleCloseNetworkModal}
         requiredChainId={requiredChainId}
         requiredChainName={requiredChainName}

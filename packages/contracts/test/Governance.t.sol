@@ -149,10 +149,10 @@ contract GovernanceTest is Test {
     }
 
     function test_ExecuteProposal() public {
-        uint256 user1UsdcAmount = 50000e6;  // Increased amount to ensure enough BBT tokens
-        uint256 user2UsdcAmount = 20000e6;  // Increased amount to ensure enough BBT tokens
-        uint256 user1BbtAmount = user1UsdcAmount * 10 ** 12;  // Convert to BBT decimals (18)
-        uint256 user2BbtAmount = user2UsdcAmount * 10 ** 12;  // Convert to BBT decimals (18)
+        uint256 user1UsdcAmount = 50000e6; // Increased amount to ensure enough BBT tokens
+        uint256 user2UsdcAmount = 20000e6; // Increased amount to ensure enough BBT tokens
+        uint256 user1BbtAmount = user1UsdcAmount * 10 ** 12; // Convert to BBT decimals (18)
+        uint256 user2BbtAmount = user2UsdcAmount * 10 ** 12; // Convert to BBT decimals (18)
 
         usdc.mint(user, user1UsdcAmount);
         usdc.mint(user2, user2UsdcAmount);
@@ -211,10 +211,10 @@ contract GovernanceTest is Test {
     }
 
     function test_ReturnSecurityDeposit_AfterExecution() public {
-        uint256 user1UsdcAmount = 50000e6;  // Increased amount to ensure enough BBT tokens
-        uint256 user2UsdcAmount = 20000e6;  // Increased amount to ensure enough BBT tokens
-        uint256 user1BbtAmount = user1UsdcAmount * 10 ** 12;  // Convert to BBT decimals (18)
-        uint256 user2BbtAmount = user2UsdcAmount * 10 ** 12;  // Convert to BBT decimals (18)
+        uint256 user1UsdcAmount = 50000e6; // Increased amount to ensure enough BBT tokens
+        uint256 user2UsdcAmount = 20000e6; // Increased amount to ensure enough BBT tokens
+        uint256 user1BbtAmount = user1UsdcAmount * 10 ** 12; // Convert to BBT decimals (18)
+        uint256 user2BbtAmount = user2UsdcAmount * 10 ** 12; // Convert to BBT decimals (18)
 
         usdc.mint(user, user1UsdcAmount);
         usdc.mint(user2, user2UsdcAmount);
@@ -270,10 +270,10 @@ contract GovernanceTest is Test {
     }
 
     function test_ReturnSecurityDeposit_RevertWhenAlreadyReturned() public {
-        uint256 user1UsdcAmount = 50000e6;  // Increased amount to ensure enough BBT tokens
-        uint256 user2UsdcAmount = 20000e6;  // Increased amount to ensure enough BBT tokens
-        uint256 user1BbtAmount = user1UsdcAmount * 10 ** 12;  // Convert to BBT decimals (18)
-        uint256 user2BbtAmount = user2UsdcAmount * 10 ** 12;  // Convert to BBT decimals (18)
+        uint256 user1UsdcAmount = 50000e6; // Increased amount to ensure enough BBT tokens
+        uint256 user2UsdcAmount = 20000e6; // Increased amount to ensure enough BBT tokens
+        uint256 user1BbtAmount = user1UsdcAmount * 10 ** 12; // Convert to BBT decimals (18)
+        uint256 user2BbtAmount = user2UsdcAmount * 10 ** 12; // Convert to BBT decimals (18)
 
         usdc.mint(user, user1UsdcAmount);
         usdc.mint(user2, user2UsdcAmount);

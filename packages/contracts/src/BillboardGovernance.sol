@@ -147,10 +147,7 @@ contract BillboardGovernance is Initializable, OwnableUpgradeable {
         require(proposalId < proposalCount, "Invalid proposal");
         Proposal storage proposal = proposals[proposalId];
         require(!proposal.depositReturned, "Deposit already returned");
-        require(
-            proposal.executed || block.timestamp >= lastVoteTimestamp + votingPeriod,
-            "Proposal still active"
-        );
+        require(proposal.executed || block.timestamp >= lastVoteTimestamp + votingPeriod, "Proposal still active");
 
         proposal.depositReturned = true;
         require(token.transfer(proposal.proposer, securityDeposit), "Security deposit return failed");

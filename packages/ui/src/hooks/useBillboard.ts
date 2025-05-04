@@ -69,8 +69,8 @@ export default function useBillboard() {
     const setContracts = async () => {
       if (wallet?.provider) {
         const chainId = wallet.chains[0].id;
-        const supportedChain = chains.find(chain => chain.id === chainId);
-        
+        const supportedChain = chains.find((chain) => chain.id === chainId);
+
         if (supportedChain) {
           const provider = new BrowserProvider(wallet.provider);
           const signer = await provider.getSigner();
@@ -96,7 +96,11 @@ export default function useBillboard() {
           setUsdcContract(new Contract(USDC_ADDRESS, USDC_MOCK_ABI, provider));
           setGovernanceContract(govContract);
           setTokenContract(
-            new Contract(BILLBOARD_TOKEN_ADDRESS, BILLBOARD_TOKEN_ABI, provider),
+            new Contract(
+              BILLBOARD_TOKEN_ADDRESS,
+              BILLBOARD_TOKEN_ABI,
+              provider,
+            ),
           );
         }
       } else {

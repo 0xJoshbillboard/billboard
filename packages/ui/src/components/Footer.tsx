@@ -23,7 +23,7 @@ const FooterLink = ({
   return (
     <Link
       href={href}
-      variant="body2"
+      variant="body1"
       component="a"
       target={external ? "_blank" : undefined}
       rel={external ? "noopener noreferrer" : undefined}
@@ -51,10 +51,6 @@ export default function Footer() {
       sx={{
         width: "100%",
         maxWidth: "1440px",
-        backgroundColor:
-          theme.palette.mode === "light"
-            ? "rgba(245, 245, 245, 0.8)"
-            : "rgba(30, 30, 30, 0.8)",
         paddingY: 4,
         marginTop: "auto",
       }}
@@ -84,28 +80,9 @@ export default function Footer() {
             width="100%"
             spacing={4}
           >
-            <Stack alignItems={{ xs: "center", md: "flex-start" }} spacing={2}>
-              <Box sx={{ display: "flex", alignItems: "center", mb: 1 }}>
-                <BillboardIcon />
-                <Typography
-                  ml={1}
-                  variant="h6"
-                  component="div"
-                  sx={{ fontWeight: "bold" }}
-                  color={theme.palette.mode === "light" ? "black" : "primary"}
-                >
-                  Billboard
-                </Typography>
-              </Box>
-              <Typography
-                variant="body2"
-                color="text.secondary"
-                sx={{ maxWidth: 300, textAlign: { xs: "center", md: "left" } }}
-              >
-                Reach the right audience with your ads through our decentralized
-                billboard network.
-              </Typography>
-            </Stack>
+            <Box sx={{ display: "flex", alignItems: "center", mb: 1 }}>
+              <BillboardIcon />
+            </Box>
 
             <Stack
               direction={{ xs: "column", sm: "row" }}
@@ -116,7 +93,7 @@ export default function Footer() {
                 alignItems={{ xs: "center", md: "flex-start" }}
               >
                 <Typography
-                  variant="subtitle2"
+                  variant="body1"
                   color="primary"
                   fontWeight="bold"
                   gutterBottom
@@ -135,7 +112,7 @@ export default function Footer() {
                 alignItems={{ xs: "center", md: "flex-start" }}
               >
                 <Typography
-                  variant="subtitle2"
+                  variant="body1"
                   color="primary"
                   fontWeight="bold"
                   gutterBottom
@@ -158,7 +135,7 @@ export default function Footer() {
                 alignItems={{ xs: "center", md: "flex-start" }}
               >
                 <Typography
-                  variant="subtitle2"
+                  variant="body1"
                   color="primary"
                   fontWeight="bold"
                   gutterBottom

@@ -1,19 +1,25 @@
 import useBillboard from "../hooks/useBillboard";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Button,
   Box,
   Typography,
   CircularProgress,
-  Switch,
   FormControlLabel,
   TextField,
   Paper,
   Divider,
   Alert,
   Container,
+  Radio,
+  RadioGroup,
+  Stepper,
+  Step,
+  StepLabel,
+  StepButton,
 } from "@mui/material";
 import CloudUploadIcon from "@mui/icons-material/CloudUpload";
+import { useConnectWallet } from "@web3-onboard/react";
 
 export default function Buy() {
   // State management
@@ -25,9 +31,26 @@ export default function Buy() {
   const [description, setDescription] = useState("");
   const [link, setLink] = useState("");
   const [linkError, setLinkError] = useState<string | null>(null);
+  const [allowance, setAllowance] = useState<number | null>(null);
 
   // Hooks
-  const { buy, getUSDCMock, governanceSettings } = useBillboard();
+  const {
+    buy,
+    getUSDCMock,
+    governanceSettings,
+    allowanceUSDC,
+    transactionStatus,
+    approveUSDC,
+  } = useBillboard();
+  const [{ wallet }, connect] = useConnectWallet();
+
+  useEffect(() => {
+    if (wallet) {
+      allowanceUSDC().then((allowance) => {
+        setAllowance(Number(allowance));
+      });
+    }
+  }, [wallet]);
 
   // File handling
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -61,67 +84,71 @@ export default function Buy() {
 
   // Form submission
   const handleUpload = async () => {
-    // Validate inputs
-    if (!description.trim()) {
-      setError("Please enter a description");
-      return;
-    }
-
-    if (!link.trim()) {
-      setError("Please enter a link");
-      return;
-    }
-
-    if (!validateLink(link)) {
-      setError("Please enter a valid URL");
-      return;
-    }
-
-    // Handle custom CID path
-    if (useCustomCID) {
-      if (!customCID.trim()) {
-        setError("Please enter a CID");
+    if (!wallet) {
+      connect();
+    } else {
+      // Validate inputs
+      if (!description.trim()) {
+        setError("Please enter a description");
         return;
       }
 
-      try {
-        setIsUploading(true);
-        await buy(description, link, null, customCID);
-        setError(null);
-      } catch (err) {
-        setError(
-          "Failed to process with custom CID: " +
-            (err instanceof Error ? err.message : String(err)),
-        );
-      } finally {
-        setIsUploading(false);
-      }
-    }
-    // Handle file upload path
-    else {
-      if (!selectedFile) {
-        setError("Please select a file first");
+      if (!link.trim()) {
+        setError("Please enter a link");
         return;
       }
 
-      try {
-        setIsUploading(true);
-        await buy(description, link, selectedFile);
-        setError(null);
-      } catch (err) {
-        setError(
-          "Failed to upload image: " +
-            (err instanceof Error ? err.message : String(err)),
-        );
-      } finally {
-        setIsUploading(false);
+      if (!validateLink(link)) {
+        setError("Please enter a valid URL");
+        return;
+      }
+
+      // Handle custom CID path
+      if (useCustomCID) {
+        if (!customCID.trim()) {
+          setError("Please enter a CID");
+          return;
+        }
+
+        try {
+          setIsUploading(true);
+          await buy(description, link, null, customCID);
+          setError(null);
+        } catch (err) {
+          setError(
+            "Failed to process with custom CID: " +
+              (err instanceof Error ? err.message : String(err)),
+          );
+        } finally {
+          setIsUploading(false);
+        }
+      }
+      // Handle file upload path
+      else {
+        if (!selectedFile) {
+          setError("Please select a file first");
+          return;
+        }
+
+        try {
+          setIsUploading(true);
+          await buy(description, link, selectedFile);
+          setError(null);
+        } catch (err) {
+          setError(
+            "Failed to upload image: " +
+              (err instanceof Error ? err.message : String(err)),
+          );
+        } finally {
+          setIsUploading(false);
+        }
       }
     }
   };
 
   return (
     <Container maxWidth="md">
-      <Paper elevation={3} sx={{ p: 4, my: 4 }}>
+      <Box sx={{ p: 4, my: 4 }}>
         <Typography variant="h4" gutterBottom align="center" sx={{ mb: 3 }}>
           Buy Billboard
         </Typography>
@@ -141,7 +168,7 @@ export default function Buy() {
               align="center"
               sx={{ mb: 3 }}
             >
-              Duration: {governanceSettings?.duration} seconds
+              Duration: {Math.floor(governanceSettings?.duration / 86400)} days
             </Typography>
           </>
         )}
@@ -150,14 +177,16 @@ export default function Buy() {
 
         <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
           {/* Development helper */}
-          <Button
-            variant="outlined"
-            color="secondary"
-            onClick={() => getUSDCMock()}
-            sx={{ alignSelf: "flex-start" }}
-          >
-            Get Mock USDC
-          </Button>
+          {wallet && wallet.chains[0].id === "0xaa37dc" && (
+            <Button
+              variant="outlined"
+              color="secondary"
+              onClick={() => getUSDCMock()}
+              sx={{ alignSelf: "flex-start" }}
+            >
+              Get Mock USDC
+            </Button>
+          )}
 
           {/* Form fields */}
           <TextField
@@ -183,16 +212,21 @@ export default function Buy() {
           />
 
           {/* Upload method selection */}
-          <FormControlLabel
-            control={
-              <Switch
-                checked={useCustomCID}
-                onChange={(e) => setUseCustomCID(e.target.checked)}
-                name="useCustomCID"
-              />
-            }
-            label="Use custom CID instead of uploading"
-          />
+          <RadioGroup
+            value={useCustomCID ? "customCID" : "uploadImage"}
+            onChange={(e) => setUseCustomCID(e.target.value === "customCID")}
+          >
+            <FormControlLabel
+              value="uploadImage"
+              control={<Radio />}
+              label="Upload an image"
+            />
+            <FormControlLabel
+              value="customCID"
+              control={<Radio />}
+              label="Use custom IPFS CID"
+            />
+          </RadioGroup>
 
           {/* Conditional rendering based on upload method */}
           {useCustomCID ? (
@@ -230,21 +264,156 @@ export default function Buy() {
             </Box>
           )}
 
+          {/* Transaction steps */}
+          <Box sx={{ mt: 3, mb: 2 }}>
+            <Typography variant="body1" gutterBottom>
+              Transaction Steps
+            </Typography>
+            <Paper variant="outlined" sx={{ p: 2 }}>
+              {/* Approve USDC if needed */}
+              {governanceSettings && (
+                <Stepper
+                  activeStep={
+                    (allowance !== null &&
+                      allowance >= governanceSettings.price) ||
+                    transactionStatus?.approveUSDC.completed
+                      ? 1
+                      : 0
+                  }
+                  orientation="vertical"
+                  sx={{ mb: 2 }}
+                >
+                  <Step
+                    completed={
+                      (allowance !== null &&
+                        allowance >= governanceSettings.price) ||
+                      transactionStatus?.approveUSDC.completed
+                    }
+                  >
+                    <StepButton
+                      onClick={async () => {
+                        if (
+                          wallet &&
+                          governanceSettings &&
+                          !transactionStatus?.approveUSDC.pending &&
+                          !transactionStatus?.approveUSDC.completed &&
+                          !(
+                            allowance !== null &&
+                            allowance >= governanceSettings.price
+                          )
+                        ) {
+                          await approveUSDC(
+                            governanceSettings.price.toString(),
+                          );
+                          const newAllowance = await allowanceUSDC();
+                          setAllowance(Number(newAllowance));
+                        }
+                      }}
+                      disabled={
+                        transactionStatus?.approveUSDC.pending ||
+                        transactionStatus?.approveUSDC.completed ||
+                        (allowance !== null &&
+                          allowance >= governanceSettings.price)
+                      }
+                    >
+                      <StepLabel>
+                        <Box>
+                          <Typography variant="body2">
+                            {transactionStatus?.approveUSDC.label ||
+                              `Approve USDC (${governanceSettings?.price} USDC)`}
+                          </Typography>
+                          {transactionStatus?.approveUSDC.pending && (
+                            <Typography variant="caption" color="primary">
+                              Processing...
+                            </Typography>
+                          )}
+                          {(transactionStatus?.approveUSDC.completed ||
+                            (allowance !== null &&
+                              allowance >= governanceSettings.price)) && (
+                            <Typography variant="caption" color="success.main">
+                              ✓ Approved
+                            </Typography>
+                          )}
+                          {transactionStatus?.approveUSDC.error && (
+                            <Typography
+                              variant="caption"
+                              color="error"
+                              sx={{ overflow: "scroll" }}
+                            >
+                              Error: {transactionStatus.approveUSDC.error}
+                            </Typography>
+                          )}
+                        </Box>
+                      </StepLabel>
+                    </StepButton>
+                  </Step>
+                  <Step completed={transactionStatus?.buyBillboard.completed}>
+                    <StepButton
+                      disabled={
+                        transactionStatus?.buyBillboard.pending ||
+                        transactionStatus?.buyBillboard.completed ||
+                        !(
+                          allowance !== null &&
+                          allowance >= governanceSettings?.price
+                        )
+                      }
+                    >
+                      <StepLabel>
+                        <Box>
+                          <Typography variant="body2">
+                            {transactionStatus?.buyBillboard.label ||
+                              "Buy Billboard"}
+                          </Typography>
+                          {transactionStatus?.buyBillboard.pending && (
+                            <Typography variant="caption" color="primary">
+                              Processing...
+                            </Typography>
+                          )}
+                          {transactionStatus?.buyBillboard.completed && (
+                            <Typography variant="caption" color="success.main">
+                              ✓ Complete
+                            </Typography>
+                          )}
+                          {transactionStatus?.buyBillboard.error && (
+                            <Typography
+                              variant="caption"
+                              color="error"
+                              sx={{ overflow: "scroll" }}
+                            >
+                              Error: {transactionStatus.buyBillboard.error}
+                            </Typography>
+                          )}
+                        </Box>
+                      </StepLabel>
+                    </StepButton>
+                  </Step>
+                </Stepper>
+              )}
+            </Paper>
+          </Box>
+
           {/* Submit button */}
           <Button
             variant="contained"
             size="large"
             onClick={handleUpload}
             disabled={
-              (useCustomCID ? !customCID : !selectedFile) ||
-              !description ||
-              !link ||
-              !!linkError ||
+              (wallet &&
+                ((useCustomCID ? !customCID : !selectedFile) ||
+                  !description ||
+                  !link ||
+                  !!linkError)) ||
               isUploading
             }
             sx={{ mt: 2 }}
           >
-            {isUploading ? <CircularProgress size={24} /> : "Buy Billboard"}
+            {!wallet ? (
+              "Connect Wallet"
+            ) : isUploading ? (
+              <CircularProgress size={24} />
+            ) : (
+              "Buy Billboard"
+            )}
           </Button>
 
           {/* Error display */}
@@ -282,7 +451,7 @@ export default function Buy() {
             </Box>
           )}
         </Box>
-      </Paper>
+      </Box>
     </Container>
   );
 }

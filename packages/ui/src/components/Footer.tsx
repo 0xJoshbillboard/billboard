@@ -23,7 +23,7 @@ const FooterLink = ({
   return (
     <Link
       href={href}
-      variant="body2"
+      variant="body1"
       component="a"
       target={external ? "_blank" : undefined}
       rel={external ? "noopener noreferrer" : undefined}
@@ -80,19 +80,9 @@ export default function Footer() {
             width="100%"
             spacing={4}
           >
-            <Stack alignItems={{ xs: "center", md: "flex-start" }} spacing={2}>
-              <Box sx={{ display: "flex", alignItems: "center", mb: 1 }}>
-                <BillboardIcon />
-              </Box>
-              <Typography
-                variant="body2"
-                color="text.secondary"
-                sx={{ maxWidth: 300, textAlign: { xs: "center", md: "left" } }}
-              >
-                Reach the right audience with your ads through our decentralized
-                billboard network.
-              </Typography>
-            </Stack>
+            <Box sx={{ display: "flex", alignItems: "center", mb: 1 }}>
+              <BillboardIcon />
+            </Box>
 
             <Stack
               direction={{ xs: "column", sm: "row" }}
@@ -103,7 +93,7 @@ export default function Footer() {
                 alignItems={{ xs: "center", md: "flex-start" }}
               >
                 <Typography
-                  variant="subtitle2"
+                  variant="body1"
                   color="primary"
                   fontWeight="bold"
                   gutterBottom
@@ -122,7 +112,7 @@ export default function Footer() {
                 alignItems={{ xs: "center", md: "flex-start" }}
               >
                 <Typography
-                  variant="subtitle2"
+                  variant="body1"
                   color="primary"
                   fontWeight="bold"
                   gutterBottom
@@ -145,7 +135,7 @@ export default function Footer() {
                 alignItems={{ xs: "center", md: "flex-start" }}
               >
                 <Typography
-                  variant="subtitle2"
+                  variant="body1"
                   color="primary"
                   fontWeight="bold"
                   gutterBottom

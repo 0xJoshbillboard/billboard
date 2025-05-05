@@ -1,6 +1,4 @@
 import { createRoot } from "react-dom/client";
-import "@fontsource/roboto/400.css";
-import "@fontsource/roboto/700.css";
 import React, { useMemo, useState } from "react";
 import { BrowserRouter, Route, Routes } from "react-router";
 import Home from "./pages/Home";
@@ -14,6 +12,7 @@ import Buy from "./pages/Buy";
 import SDK from "./pages/SDK";
 import Dashboard from "./pages/Dashboard";
 import Governance from "./pages/Governance";
+import "./index.css";
 
 const injected = injectedModule();
 
@@ -21,8 +20,8 @@ const onboard = init({
   wallets: [injected],
   chains,
   appMetadata: {
-    name: "Web3 Utilities",
-    description: "A collection of tools for the web3 ecosystem",
+    name: "Billboard",
+    description: "Save your ad space on the Billboard",
     icon: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>',
   },
   accountCenter: {
@@ -50,9 +49,9 @@ function App() {
         palette: {
           mode,
           primary: {
-            main: mode === "dark" ? "#ffeb3b" : "#ff5722", // Yellow for dark, Orange-red for light
-            light: mode === "dark" ? "#fff176" : "#ff8a65",
-            dark: mode === "dark" ? "#ffd600" : "#d84315",
+            main: mode === "dark" ? "#F37021" : "#ff5722",
+            light: mode === "dark" ? "#F37021" : "#ff8a65",
+            dark: mode === "dark" ? "#F37021" : "#d84315",
             contrastText: mode === "dark" ? "#000000" : "#ffffff",
           },
           secondary: {
@@ -62,11 +61,11 @@ function App() {
             contrastText: mode === "dark" ? "#000000" : "#ffffff",
           },
           background: {
-            default: mode === "light" ? "#f5f5f5" : "#121212",
-            paper: mode === "light" ? "#ffffff" : "#1e1e1e",
+            default: mode === "light" ? "#1E1E1E" : "#121212",
+            paper: mode === "light" ? "#1E1E1E" : "#1e1e1e",
           },
           text: {
-            primary: mode === "light" ? "#212121" : "#ffffff",
+            primary: mode === "light" ? "#FFFFFF" : "#ffffff",
             secondary: mode === "light" ? "#757575" : "#b0b0b0",
           },
           divider:
@@ -116,14 +115,24 @@ function App() {
           },
         },
         typography: {
-          fontFamily: '"Roboto", "Helvetica", "Arial", sans-serif',
+          fontFamily:
+            '"FuturaCondensedPT-Medium", "Helvetica", "Arial", sans-serif',
           h1: {
-            fontWeight: 700,
+            fontWeight: 800,
           },
           h2: {
             fontWeight: 700,
           },
+          h6: {
+            fontFamily: "FuturaPT-Book",
+            fontWeight: 400,
+          },
+          body1: {
+            fontFamily: "FuturaPT-Medium",
+            fontWeight: 400,
+          },
           button: {
+            fontFamily: "FuturaPT-Medium",
             fontWeight: 600,
           },
         },

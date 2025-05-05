@@ -51,10 +51,6 @@ export default function Footer() {
       sx={{
         width: "100%",
         maxWidth: "1440px",
-        backgroundColor:
-          theme.palette.mode === "light"
-            ? "rgba(245, 245, 245, 0.8)"
-            : "rgba(30, 30, 30, 0.8)",
         paddingY: 4,
         marginTop: "auto",
       }}
@@ -87,15 +83,6 @@ export default function Footer() {
             <Stack alignItems={{ xs: "center", md: "flex-start" }} spacing={2}>
               <Box sx={{ display: "flex", alignItems: "center", mb: 1 }}>
                 <BillboardIcon />
-                <Typography
-                  ml={1}
-                  variant="h6"
-                  component="div"
-                  sx={{ fontWeight: "bold" }}
-                  color={theme.palette.mode === "light" ? "black" : "primary"}
-                >
-                  Billboard
-                </Typography>
               </Box>
               <Typography
                 variant="body2"

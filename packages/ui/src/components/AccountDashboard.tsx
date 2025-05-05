@@ -50,6 +50,7 @@ export const AccountDashboard = () => {
         onClick={handleAccountMenuOpen}
         variant="outlined"
         startIcon={<WalletRounded />}
+        size="small"
         sx={{
           borderRadius: 2,
           fontWeight: 600,
@@ -63,7 +64,7 @@ export const AccountDashboard = () => {
           transition: "all 0.3s ease",
         }}
       >
-        {wallet.accounts[0].address.slice(0, 6)}...
+        {wallet.accounts[0].address.slice(0, 4)}...
         {wallet.accounts[0].address.slice(-4)}
       </Button>
       <Menu

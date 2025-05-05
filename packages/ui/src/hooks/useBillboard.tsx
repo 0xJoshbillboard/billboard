@@ -38,6 +38,63 @@ export interface Proposal {
   createdAt: number;
 }
 
+export interface TransactionStatus {
+  approveUSDC: {
+    pending: boolean;
+    completed: boolean;
+    error: string | null;
+    label: string;
+  };
+  buyBillboard: {
+    pending: boolean;
+    completed: boolean;
+    error: string | null;
+    label: string;
+  };
+  extendBillboard: {
+    pending: boolean;
+    completed: boolean;
+    error: string | null;
+    label: string;
+  };
+  registerProvider: {
+    pending: boolean;
+    completed: boolean;
+    error: string | null;
+    label: string;
+  };
+  approveTokens: {
+    pending: boolean;
+    completed: boolean;
+    error: string | null;
+    label: string;
+  };
+  buyTokens: {
+    pending: boolean;
+    completed: boolean;
+    error: string | null;
+    label: string;
+  };
+  createProposal: {
+    pending: boolean;
+    completed: boolean;
+    error: string | null;
+    label: string;
+  };
+  vote: {
+    pending: boolean;
+    completed: boolean;
+    error: string | null;
+    label: string;
+  };
+  executeProposal: {
+    pending: boolean;
+    completed: boolean;
+    error: string | null;
+    label: string;
+  };
+}
+
 export default function useBillboard() {
   // State variables
   const [{ wallet }] = useConnectWallet();
@@ -63,6 +120,64 @@ export default function useBillboard() {
   const [tokenBalance, setTokenBalance] = useState<string>("0");
   const [proposals, setProposals] = useState<Proposal[]>([]);
   const [hasVoted, setHasVoted] = useState<Record<number, boolean>>({});
+  const [transactionStatus, setTransactionStatus] = useState<TransactionStatus>(
+    {
+      approveUSDC: {
+        pending: false,
+        completed: false,
+        error: null,
+        label: "Approve USDC",
+      },
+      buyBillboard: {
+        pending: false,
+        completed: false,
+        error: null,
+        label: "Buy Billboard",
+      },
+      extendBillboard: {
+        pending: false,
+        completed: false,
+        error: null,
+        label: "Extend Billboard",
+      },
+      registerProvider: {
+        pending: false,
+        completed: false,
+        error: null,
+        label: "Register Provider",
+      },
+      approveTokens: {
+        pending: false,
+        completed: false,
+        error: null,
+        label: "Approve Tokens",
+      },
+      buyTokens: {
+        pending: false,
+        completed: false,
+        error: null,
+        label: "Buy Tokens",
+      },
+      createProposal: {
+        pending: false,
+        completed: false,
+        error: null,
+        label: "Create Proposal",
+      },
+      vote: {
+        pending: false,
+        completed: false,
+        error: null,
+        label: "Vote on Proposal",
+      },
+      executeProposal: {
+        pending: false,
+        completed: false,
+        error: null,
+        label: "Execute Proposal",
+      },
+    },
+  );
 
   // Initialize contracts
   useEffect(() => {
@@ -199,20 +314,65 @@ export default function useBillboard() {
       throw new Error("Token contract or wallet not defined");
     }
 
-    const currentAllowance = await usdcContract.allowance(
-      wallet.accounts[0].address,
-      tokenContract.target,
-    );
-    if (BigInt(currentAllowance) < BigInt(amount)) {
-      const approveTx = await usdcContract.approve(
-        tokenContract.target,
-        amount,
-      );
-      await approveTx.wait();
-    }
+    try {
+      setTransactionStatus((prev) => ({
+        ...prev,
+        approveTokens: { ...prev.approveTokens, pending: true, error: null },
+      }));
 
-    const tx = await tokenContract.buyTokens(amount);
-    await tx.wait();
+      const currentAllowance = await usdcContract.allowance(
+        wallet.accounts[0].address,
+        tokenContract.target,
+      );
+      if (BigInt(currentAllowance) < BigInt(amount)) {
+        const approveTx = await usdcContract.approve(
+          tokenContract.target,
+          amount,
+        );
+        await approveTx.wait();
+      }
+
+      setTransactionStatus((prev) => ({
+        ...prev,
+        approveTokens: {
+          ...prev.approveTokens,
+          pending: false,
+          completed: true,
+        },
+      }));
+
+      setTransactionStatus((prev) => ({
+        ...prev,
+        buyTokens: { ...prev.buyTokens, pending: true, error: null },
+      }));
+
+      const tx = await tokenContract.buyTokens(amount);
+      await tx.wait();
+
+      setTransactionStatus((prev) => ({
+        ...prev,
+        buyTokens: { ...prev.buyTokens, pending: false, completed: true },
+      }));
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
+      if (transactionStatus.approveTokens.pending) {
+        setTransactionStatus((prev) => ({
+          ...prev,
+          approveTokens: {
+            ...prev.approveTokens,
+            pending: false,
+            error: errorMessage,
+          },
+        }));
+      } else {
+        setTransactionStatus((prev) => ({
+          ...prev,
+          buyTokens: { ...prev.buyTokens, pending: false, error: errorMessage },
+        }));
+      }
+      throw error;
+    }
   };
 
   // USDC functions
@@ -234,15 +394,42 @@ export default function useBillboard() {
       throw new Error("USDC not defined");
     }
     if (!wallet) throw new Error("Wallet not connected");
-    await usdcContract.approve(BILLBOARD_ADDRESS, amount);
+
+    try {
+      setTransactionStatus((prev) => ({
+        ...prev,
+        approveUSDC: { ...prev.approveUSDC, pending: true, error: null },
+      }));
+
+      const tx = await usdcContract.approve(BILLBOARD_ADDRESS, amount);
+      await tx.wait();
+
+      setTransactionStatus((prev) => ({
+        ...prev,
+        approveUSDC: { ...prev.approveUSDC, pending: false, completed: true },
+      }));
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
+      setTransactionStatus((prev) => ({
+        ...prev,
+        approveUSDC: {
+          ...prev.approveUSDC,
+          pending: false,
+          error: errorMessage,
+        },
+      }));
+      throw error;
+    }
   };
 
   const allowanceUSDC = async () => {
-    if (!usdcContract) {
-      throw new Error("USDC not defined");
+    if (!usdcContract || !wallet?.accounts[0].address) {
+      console.error("USDC not defined");
+      return 0 as BigNumberish;
     }
     return (await usdcContract.allowance(
-      wallet?.accounts[0].address,
+      wallet.accounts[0].address,
       BILLBOARD_ADDRESS,
     )) as BigNumberish;
   };
@@ -311,6 +498,11 @@ export default function useBillboard() {
     if (!wallet) throw new Error("Wallet not connected");
 
     try {
+      setTransactionStatus((prev) => ({
+        ...prev,
+        approveTokens: { ...prev.approveTokens, pending: true, error: null },
+      }));
+
       const minProposalTokensRequired =
         await governanceContract.minProposalTokens();
       const currentAllowance = await tokenContract.allowance(
@@ -326,6 +518,20 @@ export default function useBillboard() {
         await approveTx.wait();
       }
 
+      setTransactionStatus((prev) => ({
+        ...prev,
+        approveTokens: {
+          ...prev.approveTokens,
+          pending: false,
+          completed: true,
+        },
+      }));
+
+      setTransactionStatus((prev) => ({
+        ...prev,
+        createProposal: { ...prev.createProposal, pending: true, error: null },
+      }));
+
       const tx = await governanceContract.createProposal(
         duration,
         pricePerBillboard,
@@ -334,9 +540,40 @@ export default function useBillboard() {
         minVotingTokens,
       );
       await tx.wait();
+
+      setTransactionStatus((prev) => ({
+        ...prev,
+        createProposal: {
+          ...prev.createProposal,
+          pending: false,
+          completed: true,
+        },
+      }));
+
       await fetchProposals();
       return tx;
     } catch (error) {
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
+      if (transactionStatus.approveTokens.pending) {
+        setTransactionStatus((prev) => ({
+          ...prev,
+          approveTokens: {
+            ...prev.approveTokens,
+            pending: false,
+            error: errorMessage,
+          },
+        }));
+      } else {
+        setTransactionStatus((prev) => ({
+          ...prev,
+          createProposal: {
+            ...prev.createProposal,
+            pending: false,
+            error: errorMessage,
+          },
+        }));
+      }
       console.error("Failed to create proposal:", error);
       throw error;
     }
@@ -347,12 +584,29 @@ export default function useBillboard() {
     if (!wallet) throw new Error("Wallet not connected");
 
     try {
+      setTransactionStatus((prev) => ({
+        ...prev,
+        vote: { ...prev.vote, pending: true, error: null },
+      }));
+
       const tx = await governanceContract.vote(proposalId, support, amount);
       await tx.wait();
+
+      setTransactionStatus((prev) => ({
+        ...prev,
+        vote: { ...prev.vote, pending: false, completed: true },
+      }));
+
       await fetchProposals();
       await fetchVotingStatus();
       return tx;
     } catch (error) {
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
+      setTransactionStatus((prev) => ({
+        ...prev,
+        vote: { ...prev.vote, pending: false, error: errorMessage },
+      }));
       console.error("Failed to vote:", error);
       throw error;
     }
@@ -363,8 +617,27 @@ export default function useBillboard() {
     if (!wallet) throw new Error("Wallet not connected");
 
     try {
+      setTransactionStatus((prev) => ({
+        ...prev,
+        executeProposal: {
+          ...prev.executeProposal,
+          pending: true,
+          error: null,
+        },
+      }));
+
       const tx = await governanceContract.executeProposal(proposalId);
       await tx.wait();
+
+      setTransactionStatus((prev) => ({
+        ...prev,
+        executeProposal: {
+          ...prev.executeProposal,
+          pending: false,
+          completed: true,
+        },
+      }));
+
       await fetchProposals();
       const [price, duration, minProposalTokens, minVotingTokens] =
         await Promise.all([
@@ -383,6 +656,16 @@ export default function useBillboard() {
       });
       return tx;
     } catch (error) {
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
+      setTransactionStatus((prev) => ({
+        ...prev,
+        executeProposal: {
+          ...prev.executeProposal,
+          pending: false,
+          error: errorMessage,
+        },
+      }));
       console.error("Failed to execute proposal:", error);
       throw error;
     }
@@ -399,26 +682,71 @@ export default function useBillboard() {
       throw new Error("Contract not defined");
     }
     if (!wallet) throw new Error("Wallet not connected");
-    const allowance = await allowanceUSDC();
-    if (getBigInt(allowance) < getBigInt("1000000000")) {
-      await approveUSDC("1000000000");
-    }
-    let url;
-    if (file) {
-      url = await uploadImage(file);
-    } else if (cid) {
-      url = { cid };
-    } else {
-      throw new Error("No file or CID provided");
-    }
-    if (!url?.cid) {
-      throw new Error("url not defined");
-    }
+
     try {
+      setTransactionStatus((prev) => ({
+        ...prev,
+        approveUSDC: { ...prev.approveUSDC, pending: true, error: null },
+      }));
+
+      const allowance = await allowanceUSDC();
+      if (getBigInt(allowance) < getBigInt("1000000000")) {
+        await approveUSDC("1000000000");
+      }
+
+      setTransactionStatus((prev) => ({
+        ...prev,
+        approveUSDC: { ...prev.approveUSDC, pending: false, completed: true },
+      }));
+
+      let url;
+      if (file) {
+        url = await uploadImage(file);
+      } else if (cid) {
+        url = { cid };
+      } else {
+        throw new Error("No file or CID provided");
+      }
+      if (!url?.cid) {
+        throw new Error(`url not defined: ${url}`);
+      }
+
+      setTransactionStatus((prev) => ({
+        ...prev,
+        buyBillboard: { ...prev.buyBillboard, pending: true, error: null },
+      }));
+
       const tx = await contract.purchaseBillboard(description, link, url.cid);
       await tx.wait();
+
+      setTransactionStatus((prev) => ({
+        ...prev,
+        buyBillboard: { ...prev.buyBillboard, pending: false, completed: true },
+      }));
+
       return { cid: url.cid, tx };
     } catch (error) {
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
+      if (transactionStatus.approveUSDC.pending) {
+        setTransactionStatus((prev) => ({
+          ...prev,
+          approveUSDC: {
+            ...prev.approveUSDC,
+            pending: false,
+            error: errorMessage,
+          },
+        }));
+      } else {
+        setTransactionStatus((prev) => ({
+          ...prev,
+          buyBillboard: {
+            ...prev.buyBillboard,
+            pending: false,
+            error: errorMessage,
+          },
+        }));
+      }
       console.error(error);
       throw new Error("Failed to purchase billboard");
     }
@@ -429,15 +757,71 @@ export default function useBillboard() {
       throw new Error("Contract not defined");
     }
     if (!wallet) throw new Error("Wallet not connected");
-    const allowance = await allowanceUSDC();
-    const governancePrice = await governanceContract.pricePerBillboard();
 
-    if (getBigInt(allowance) < getBigInt(governancePrice)) {
-      await approveUSDC(governancePrice.toString());
+    try {
+      setTransactionStatus((prev) => ({
+        ...prev,
+        approveUSDC: { ...prev.approveUSDC, pending: true, error: null },
+      }));
+
+      const allowance = await allowanceUSDC();
+      const governancePrice = await governanceContract.pricePerBillboard();
+
+      if (getBigInt(allowance) < getBigInt(governancePrice)) {
+        await approveUSDC(governancePrice.toString());
+      }
+
+      setTransactionStatus((prev) => ({
+        ...prev,
+        approveUSDC: { ...prev.approveUSDC, pending: false, completed: true },
+      }));
+
+      setTransactionStatus((prev) => ({
+        ...prev,
+        extendBillboard: {
+          ...prev.extendBillboard,
+          pending: true,
+          error: null,
+        },
+      }));
+
+      const tx = await contract.extendBillboard(index);
+      await tx.wait();
+
+      setTransactionStatus((prev) => ({
+        ...prev,
+        extendBillboard: {
+          ...prev.extendBillboard,
+          pending: false,
+          completed: true,
+        },
+      }));
+
+      return tx;
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
+      if (transactionStatus.approveUSDC.pending) {
+        setTransactionStatus((prev) => ({
+          ...prev,
+          approveUSDC: {
+            ...prev.approveUSDC,
+            pending: false,
+            error: errorMessage,
+          },
+        }));
+      } else {
+        setTransactionStatus((prev) => ({
+          ...prev,
+          extendBillboard: {
+            ...prev.extendBillboard,
+            pending: false,
+            error: errorMessage,
+          },
+        }));
+      }
+      throw error;
     }
-    const tx = await contract.extendBillboard(index);
-    await tx.wait();
-    return tx;
   };
 
   const fetchBillboards = async () => {
@@ -462,18 +846,68 @@ export default function useBillboard() {
     }
     if (!wallet) throw new Error("Wallet not connected");
 
-    const allowance = await allowanceUSDC();
-    const securityDeposit = await governanceContract.securityDeposit();
-
-    if (getBigInt(allowance) < getBigInt(securityDeposit)) {
-      await approveUSDC(securityDeposit.toString());
-    }
-
     try {
+      setTransactionStatus((prev) => ({
+        ...prev,
+        approveUSDC: { ...prev.approveUSDC, pending: true, error: null },
+      }));
+
+      const allowance = await allowanceUSDC();
+      const securityDeposit = await governanceContract.securityDeposit();
+
+      if (getBigInt(allowance) < getBigInt(securityDeposit)) {
+        await approveUSDC(securityDeposit.toString());
+      }
+
+      setTransactionStatus((prev) => ({
+        ...prev,
+        approveUSDC: { ...prev.approveUSDC, pending: false, completed: true },
+      }));
+
+      setTransactionStatus((prev) => ({
+        ...prev,
+        registerProvider: {
+          ...prev.registerProvider,
+          pending: true,
+          error: null,
+        },
+      }));
+
       const tx = await contract.registerBillboardProvider(handle);
       await tx.wait();
+
+      setTransactionStatus((prev) => ({
+        ...prev,
+        registerProvider: {
+          ...prev.registerProvider,
+          pending: false,
+          completed: true,
+        },
+      }));
+
       return tx;
     } catch (error) {
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
+      if (transactionStatus.approveUSDC.pending) {
+        setTransactionStatus((prev) => ({
+          ...prev,
+          approveUSDC: {
+            ...prev.approveUSDC,
+            pending: false,
+            error: errorMessage,
+          },
+        }));
+      } else {
+        setTransactionStatus((prev) => ({
+          ...prev,
+          registerProvider: {
+            ...prev.registerProvider,
+            pending: false,
+            error: errorMessage,
+          },
+        }));
+      }
       console.error("Failed to register provider:", error);
       throw error;
     }
@@ -554,5 +988,8 @@ export default function useBillboard() {
     executeProposal,
     fetchProposals,
     fetchVotingStatus,
+
+    // Transaction status tracking
+    transactionStatus,
   };
 }

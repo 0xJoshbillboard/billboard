@@ -27,7 +27,6 @@ contract BillboardTokenTest is Test {
         usdc = new USDCMock();
         token = new BillboardToken(address(usdc));
 
-        // Mint USDC to buyer for testing
         usdc.mint(buyer, 1_000_000 * 10 ** USDC_DECIMALS);
         vm.startPrank(buyer);
         usdc.approve(address(token), type(uint256).max);
@@ -65,38 +64,35 @@ contract BillboardTokenTest is Test {
 
     function test_BuyTokens_RevertWhenExceedsOneMillion() public {
         uint256 usdcAmount = 1_000_001 * 10 ** USDC_DECIMALS;
-        
+
         vm.startPrank(buyer);
-        // The ERC20 balance check will fail before our custom check
-        vm.expectRevert(abi.encodeWithSelector(
-            IERC20Errors.ERC20InsufficientBalance.selector,
-            buyer,
-            1_000_000 * 10 ** USDC_DECIMALS,
-            1_000_001 * 10 ** USDC_DECIMALS
-        ));
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                IERC20Errors.ERC20InsufficientBalance.selector,
+                buyer,
+                1_000_000 * 10 ** USDC_DECIMALS,
+                1_000_001 * 10 ** USDC_DECIMALS
+            )
+        );
         token.buyTokens(usdcAmount);
         vm.stopPrank();
     }
 
     function test_BuyTokens_RevertWhenTransferFails() public {
         uint256 usdcAmount = 1000 * 10 ** USDC_DECIMALS;
-        
+
         vm.startPrank(buyer);
         usdc.approve(address(token), 0); // Revoke approval
-        vm.expectRevert(abi.encodeWithSelector(
-            IERC20Errors.ERC20InsufficientAllowance.selector,
-            address(token),
-            0,
-            usdcAmount
-        ));
+        vm.expectRevert(
+            abi.encodeWithSelector(IERC20Errors.ERC20InsufficientAllowance.selector, address(token), 0, usdcAmount)
+        );
         token.buyTokens(usdcAmount);
         vm.stopPrank();
     }
 
     function test_WithdrawUSDC() public {
         uint256 usdcAmount = 1000 * 10 ** USDC_DECIMALS;
-        
-        // First buy some tokens to get USDC in the contract
+
         vm.startPrank(buyer);
         token.buyTokens(usdcAmount);
         vm.stopPrank();
@@ -116,7 +112,7 @@ contract BillboardTokenTest is Test {
 
     function test_WithdrawUSDC_RevertWhenNotOwner() public {
         uint256 usdcAmount = 1000 * 10 ** USDC_DECIMALS;
-        
+
         vm.startPrank(buyer);
         vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, buyer));
         token.withdrawUSDC(usdcAmount);
@@ -125,13 +121,10 @@ contract BillboardTokenTest is Test {
 
     function test_WithdrawUSDC_RevertWhenInsufficientBalance() public {
         uint256 usdcAmount = 1000 * 10 ** USDC_DECIMALS;
-        
-        vm.expectRevert(abi.encodeWithSelector(
-            IERC20Errors.ERC20InsufficientBalance.selector,
-            address(token),
-            0,
-            usdcAmount
-        ));
+
+        vm.expectRevert(
+            abi.encodeWithSelector(IERC20Errors.ERC20InsufficientBalance.selector, address(token), 0, usdcAmount)
+        );
         token.withdrawUSDC(usdcAmount);
     }
 
@@ -162,4 +155,4 @@ contract BillboardTokenTest is Test {
         assertEq(token.soldTokens(), expectedBbtAmount);
         assertEq(usdc.balanceOf(address(token)), usdcAmount);
     }
-} 
+}

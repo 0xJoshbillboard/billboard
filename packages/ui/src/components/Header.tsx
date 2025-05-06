@@ -73,7 +73,7 @@ export default function Header(
         <Box
           component={Link}
           to="/"
-          borderRight="1px solid #444"
+          borderRight={{ xs: "none", md: "1px solid #444" }}
           display="flex"
           alignItems="center"
           justifyContent="center"
@@ -150,7 +150,11 @@ export default function Header(
             </IconButton> */}
         </Box>
 
-        <Box borderLeft="1px solid #444" p={4} height="100%">
+        <Box
+          borderLeft={{ xs: "none", md: "1px solid #444" }}
+          p={4}
+          height="100%"
+        >
           {!wallet && (
             <Button
               onClick={() => connect()}
@@ -179,18 +183,6 @@ export default function Header(
             alignItems: "center",
           }}
         >
-          {wallet?.accounts[0].address && (
-            <Chip
-              avatar={
-                <Avatar sx={{ bgcolor: theme.palette.primary.main }}>W</Avatar>
-              }
-              label={`${wallet.accounts[0].address.slice(0, 4)}...${wallet.accounts[0].address.slice(-4)}`}
-              variant="outlined"
-              size="small"
-              sx={{ mr: 1 }}
-            />
-          )}
-
           {/* <IconButton
               onClick={toggleColorMode}
               color="inherit"
@@ -241,37 +233,7 @@ export default function Header(
         >
           <Box sx={{ p: 3, display: "flex", alignItems: "center" }}>
             <BillboardIcon />
-            <Typography
-              ml={1}
-              variant="h6"
-              component="div"
-              sx={{ fontWeight: 700 }}
-              color={theme.palette.mode === "light" ? "black" : "primary"}
-            >
-              Billboard
-            </Typography>
           </Box>
-
-          <Divider sx={{ mb: 2 }} />
-
-          {wallet?.accounts[0].address && (
-            <Box sx={{ px: 3, py: 2, bgcolor: theme.palette.action.hover }}>
-              <Typography variant="subtitle2" color="text.secondary">
-                Connected Wallet
-              </Typography>
-              <Typography
-                variant="body2"
-                sx={{ wordBreak: "break-all", mt: 0.5 }}
-              >
-                {wallet.accounts[0].address}
-              </Typography>
-              <Box sx={{ display: "flex", alignItems: "center", mt: 1 }}>
-                <Typography variant="body1" color="primary" fontWeight={600}>
-                  {usdcBalance} USDC
-                </Typography>
-              </Box>
-            </Box>
-          )}
 
           <List sx={{ px: 1 }}>
             {menuItems.map((item) => (

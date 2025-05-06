@@ -47,10 +47,8 @@ export default function Home() {
           <Box
             component="img"
             src="/assets/billboard-ad-example.svg"
-            sx={{
-              height: "430px",
-              width: "auto",
-            }}
+            height="auto"
+            width={{ xs: "100%", lg: "auto" }}
           />
         </Stack>
 

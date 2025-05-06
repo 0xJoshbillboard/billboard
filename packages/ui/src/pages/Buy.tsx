@@ -108,7 +108,7 @@ export default function Buy() {
       }
 
       // Handle custom CID path
-      if (useCustomCID) {
+      if (useCustomCID === "cid") {
         if (!customCID.trim()) {
           setError("Please enter a CID");
           return;
@@ -460,7 +460,9 @@ export default function Buy() {
                 }}
                 disabled={
                   (wallet &&
-                    ((useCustomCID ? !customCID : !selectedFile) ||
+                    ((useCustomCID === "cid" && !customCID) ||
+                      (useCustomCID === "upload" && !selectedFile) ||
+                      !useCustomCID ||
                       !description ||
                       !link ||
                       !!linkError)) ||
@@ -484,7 +486,7 @@ export default function Buy() {
               )}
 
               {/* Image preview */}
-              {!useCustomCID && selectedFile && (
+              {useCustomCID === "upload" && selectedFile && (
                 <Box
                   sx={{
                     mt: 3,

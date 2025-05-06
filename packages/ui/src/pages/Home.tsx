@@ -15,10 +15,10 @@ export default function Home() {
         }}
       >
         <Stack
-          direction="row"
+          direction={{ xs: "column", lg: "row" }}
           alignItems="center"
+          justifyContent="space-between"
           spacing={2}
-          flexWrap="wrap"
           py={8}
         >
           <Stack
@@ -44,6 +44,14 @@ export default function Home() {
               seamless marketplace for digital ad space.
             </Typography>
           </Stack>
+          <Box
+            component="img"
+            src="/assets/billboard-ad-example.svg"
+            sx={{
+              height: "430px",
+              width: "auto",
+            }}
+          />
         </Stack>
 
         <Ticker />

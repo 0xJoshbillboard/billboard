@@ -89,19 +89,19 @@ export default function Home() {
 
 const USP_ITEMS = [
   {
-    headline: "PUBLISHERS: BUY AD SPACE",
+    headline: "PUBLISHERS:\nBUY AD SPACE",
     description:
       "Publishers purchase a billboard—an ad placement—through our platform to promote their brand on crypto-focused websites.",
     image: "/assets/publisher.svg",
   },
   {
-    headline: "ADVERTISERS: INTEGRATE & EARN",
+    headline: "ADVERTISERS:\nINTEGRATE & EARN",
     description:
       "Advertisers add our SDK to their site or app. Once integrated, they can start earning by displaying ads from publishers.",
     image: "/assets/advertiser.svg",
   },
   {
-    headline: "A WIN-WIN SYSTEM",
+    headline: "A WIN-WIN\nSYSTEM",
     description:
       "When a publisher buys ad space, their payment goes directly to the advertiser. This means advertisers are rewarded for hosting ads, and publishers get real exposure.",
     image: "/assets/win-win.svg",
@@ -123,14 +123,18 @@ const USPBox = ({
     <Box
       maxWidth="400px"
       minWidth="400px"
-      maxHeight="430px"
-      minHeight="430px"
+      maxHeight="480px"
+      minHeight="480px"
       display="flex"
       flexDirection="column"
       justifyContent="space-between"
       alignItems="center"
     >
-      <Typography variant="h1" fontSize="48px">
+      <Typography
+        variant="h1"
+        fontSize="48px"
+        sx={{ whiteSpace: "pre-line", textAlign: "center" }}
+      >
         {headline}
       </Typography>
       <img src={image} alt={headline} />

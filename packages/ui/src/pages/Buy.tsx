@@ -454,6 +454,10 @@ export default function Buy() {
                 variant="contained"
                 size="large"
                 onClick={handleUpload}
+                sx={{
+                  color: "white",
+                  mt: 2,
+                }}
                 disabled={
                   (wallet &&
                     ((useCustomCID ? !customCID : !selectedFile) ||
@@ -462,7 +466,6 @@ export default function Buy() {
                       !!linkError)) ||
                   isUploading
                 }
-                sx={{ mt: 2 }}
               >
                 {!wallet ? (
                   "Connect Wallet"

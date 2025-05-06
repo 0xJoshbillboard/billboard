@@ -49,17 +49,29 @@ export default function Home() {
         <Ticker />
 
         <Stack
-          direction={{ xs: "column", xl: "row" }}
-          justifyContent="center"
+          direction={{ xs: "column", lg: "row" }}
+          justifyContent="space-between"
           alignItems="center"
           spacing={2}
         >
           {USP_ITEMS.map((item, index) => (
-            <USPBox
-              key={item.headline}
-              {...item}
-              isLast={index === USP_ITEMS.length - 1}
-            />
+            <>
+              <USPBox
+                key={item.headline}
+                {...item}
+                isLast={index === USP_ITEMS.length - 1}
+              />
+              {index < 2 && (
+                <Box
+                  sx={{
+                    height: "430px",
+                    width: "1px",
+                    bgcolor: "divider",
+                    display: { xs: "none", lg: "block" },
+                  }}
+                />
+              )}
+            </>
           ))}
         </Stack>
       </Box>
@@ -101,16 +113,14 @@ const USPBox = ({
 }) => {
   return (
     <Box
-      maxWidth="470px"
-      minWidth="470px"
+      maxWidth="400px"
+      minWidth="400px"
       maxHeight="430px"
       minHeight="430px"
       display="flex"
       flexDirection="column"
       justifyContent="space-between"
       alignItems="center"
-      borderRight={{ xs: "none", lg: isLast ? "none" : "1px solid #444" }}
-      paddingRight={{ xs: 0, lg: isLast ? 0 : 2 }}
     >
       <Typography variant="h1" fontSize="48px">
         {headline}

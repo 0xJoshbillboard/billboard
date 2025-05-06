@@ -109,11 +109,13 @@ export default function useBillboard() {
     duration: number;
     minProposalTokens: number;
     minVotingTokens: number;
+    securityDeposit: number;
   }>({
     price: 0,
     duration: 0,
     minProposalTokens: 0,
     minVotingTokens: 0,
+    securityDeposit: 0,
   });
   const [billboards, setBillboards] = useState<Billboard[]>([]);
   const [usdcBalance, setUsdcBalance] = useState<string>("0");
@@ -241,24 +243,31 @@ export default function useBillboard() {
   useEffect(() => {
     const getGovSettings = async () => {
       if (governanceContract) {
-        const [price, duration, minProposalTokens, minVotingTokens] =
-          await Promise.all([
-            governanceContract.pricePerBillboard(),
-            governanceContract.duration(),
-            governanceContract.minProposalTokens(),
-            governanceContract.minVotingTokens(),
-          ]);
+        const [
+          price,
+          duration,
+          minProposalTokens,
+          minVotingTokens,
+          securityDeposit,
+        ] = await Promise.all([
+          governanceContract.pricePerBillboard(),
+          governanceContract.duration(),
+          governanceContract.minProposalTokens(),
+          governanceContract.minVotingTokens(),
+          governanceContract.securityDeposit(),
+        ]);
 
         const readablePrice = Number(price) / 1_000_000;
         const durationInSeconds = Number(duration);
         const minProposalTokensReadable = Number(minProposalTokens) / 1e18;
         const minVotingTokensReadable = Number(minVotingTokens) / 1e18;
-
+        const securityDepositReadable = Number(securityDeposit) / 1e6;
         setGovernanceSettings({
           price: readablePrice,
           duration: durationInSeconds,
           minProposalTokens: minProposalTokensReadable,
           minVotingTokens: minVotingTokensReadable,
+          securityDeposit: securityDepositReadable,
         });
       }
     };
@@ -639,20 +648,27 @@ export default function useBillboard() {
       }));
 
       await fetchProposals();
-      const [price, duration, minProposalTokens, minVotingTokens] =
-        await Promise.all([
-          governanceContract.pricePerBillboard(),
-          governanceContract.duration(),
-          governanceContract.votingPeriod(),
-          governanceContract.minProposalTokens(),
-          governanceContract.minVotingTokens(),
-        ]);
+      const [
+        price,
+        duration,
+        minProposalTokens,
+        minVotingTokens,
+        securityDeposit,
+      ] = await Promise.all([
+        governanceContract.pricePerBillboard(),
+        governanceContract.duration(),
+        governanceContract.votingPeriod(),
+        governanceContract.minProposalTokens(),
+        governanceContract.minVotingTokens(),
+        governanceContract.securityDeposit(),
+      ]);
 
       setGovernanceSettings({
         price: Number(price) / 1_000_000,
         duration: Number(duration),
         minProposalTokens: Number(minProposalTokens),
         minVotingTokens: Number(minVotingTokens),
+        securityDeposit: Number(securityDeposit) / 1e6,
       });
       return tx;
     } catch (error) {

@@ -90,6 +90,7 @@ export default function Header(
                 href={item.path}
                 target="_blank"
                 rel="noopener noreferrer"
+                size="large"
                 sx={{
                   fontWeight: 500,
                   position: "relative",
@@ -103,6 +104,7 @@ export default function Header(
                 key={item.text}
                 component={Link}
                 to={item.path}
+                size="large"
                 sx={{
                   fontWeight: 500,
                   position: "relative",

@@ -19,7 +19,7 @@ import {
 } from "@mui/material";
 
 export default function SDK() {
-  const { getAds, registerProvider } = useBillboard();
+  const { getAds, registerProvider, governanceSettings } = useBillboard();
   const [ads, setAds] = useState<Billboard[]>([]);
   const [randomAd, setRandomAd] = useState<Billboard | null>(null);
   const [loading, setLoading] = useState(false);
@@ -139,7 +139,11 @@ export default function SDK() {
         >
           Register as a Billboard Provider
         </Typography>
-        <Typography variant="body2" color="text.secondary" sx={{ mb: 4 }}>
+        <Typography variant="body1">
+          Current security deposit:{" "}
+          {governanceSettings?.securityDeposit.toLocaleString()} USDC
+        </Typography>
+        <Typography variant="body1" color="text.secondary" sx={{ mb: 4 }}>
           Join our network of providers and start earning USDC by displaying
           advertisements on your platform.
         </Typography>

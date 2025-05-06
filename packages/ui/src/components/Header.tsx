@@ -70,7 +70,15 @@ export default function Header(
           justifyContent: "space-between",
         }}
       >
-        <Box component={Link} to="/" borderRight="1px solid #444" p={4}>
+        <Box
+          component={Link}
+          to="/"
+          borderRight="1px solid #444"
+          display="flex"
+          alignItems="center"
+          justifyContent="center"
+          height="100%"
+        >
           <BillboardIcon />
         </Box>
 

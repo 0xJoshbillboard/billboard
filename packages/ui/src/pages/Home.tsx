@@ -3,6 +3,7 @@ import { Ticker } from "../components/Ticker";
 
 export default function Home() {
   const theme = useTheme();
+
   return (
     <Container maxWidth={false}>
       <Box
@@ -71,7 +72,7 @@ const USP_ITEMS = [
     headline: "PUBLISHERS: BUY AD SPACE",
     description:
       "Publishers purchase a billboard—an ad placement—through our platform to promote their brand on crypto-focused websites.",
-    image: "",
+    image: "/assets/publisher.svg",
   },
   {
     headline: "ADVERTISERS: INTEGRATE & EARN",
@@ -83,7 +84,7 @@ const USP_ITEMS = [
     headline: "A WIN-WIN SYSTEM",
     description:
       "When a publisher buys ad space, their payment goes directly to the advertiser. This means advertisers are rewarded for hosting ads, and publishers get real exposure.",
-    image: "",
+    image: "/assets/win-win.svg",
   },
 ];
 

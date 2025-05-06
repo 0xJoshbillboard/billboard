@@ -53,7 +53,7 @@ export const Ticker = () => {
                 px: 2,
                 fontWeight: "bold",
                 fontStyle: "italic",
-                color: theme.palette.primary.contrastText,
+                color: "white",
               }}
             >
               {item}

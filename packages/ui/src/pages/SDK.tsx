@@ -16,10 +16,14 @@ import {
   TextField,
   Alert,
   CircularProgress,
+  Stepper,
+  Step,
+  StepLabel,
 } from "@mui/material";
 
 export default function SDK() {
-  const { getAds, registerProvider, governanceSettings } = useBillboard();
+  const { getAds, registerProvider, governanceSettings, transactionStatus } =
+    useBillboard();
   const [ads, setAds] = useState<Billboard[]>([]);
   const [randomAd, setRandomAd] = useState<Billboard | null>(null);
   const [loading, setLoading] = useState(false);
@@ -147,6 +151,46 @@ export default function SDK() {
           Join our network of providers and start earning USDC by displaying
           advertisements on your platform.
         </Typography>
+
+        {/* Transaction Steps */}
+        <Stepper
+          activeStep={
+            transactionStatus.registerProvider.completed
+              ? 2
+              : transactionStatus.approveUSDC.completed
+                ? 1
+                : transactionStatus.approveUSDC.pending
+                  ? 0
+                  : -1
+          }
+          sx={{ mb: 4 }}
+        >
+          <Step>
+            <StepLabel>Approve USDC</StepLabel>
+          </Step>
+          <Step>
+            <StepLabel>Register Provider</StepLabel>
+          </Step>
+        </Stepper>
+
+        {transactionStatus.approveUSDC.error && (
+          <Alert severity="error" sx={{ mb: 2 }}>
+            {transactionStatus.approveUSDC.error}
+          </Alert>
+        )}
+
+        {transactionStatus.registerProvider.error && (
+          <Alert severity="error" sx={{ mb: 2 }}>
+            {transactionStatus.registerProvider.error}
+          </Alert>
+        )}
+
+        {transactionStatus.registerProvider.completed && (
+          <Alert severity="success" sx={{ mb: 2 }}>
+            Successfully registered as a billboard provider!
+          </Alert>
+        )}
+
         <Stack spacing={3} sx={{ maxWidth: 450, mx: "auto" }}>
           <TextField
             label="Provider Handle"
@@ -162,7 +206,11 @@ export default function SDK() {
           <Button
             variant="contained"
             onClick={handleRegisterProvider}
-            disabled={loading}
+            disabled={
+              loading ||
+              transactionStatus.approveUSDC.pending ||
+              transactionStatus.registerProvider.pending
+            }
             sx={{
               py: 1.2,
               fontWeight: 600,
@@ -174,20 +222,29 @@ export default function SDK() {
               },
             }}
             startIcon={
-              loading ? <CircularProgress size={20} color="inherit" /> : null
+              transactionStatus.approveUSDC.pending ||
+              transactionStatus.registerProvider.pending ? (
+                <CircularProgress size={20} color="inherit" />
+              ) : null
             }
           >
-            {loading ? "Processing Registration..." : "Register as Provider"}
+            {transactionStatus.approveUSDC.pending
+              ? "Approving USDC..."
+              : transactionStatus.registerProvider.pending
+                ? "Registering Provider..."
+                : "Register as Provider"}
           </Button>
-          {registrationStatus && (
-            <Alert
-              severity={registrationStatus.success ? "success" : "error"}
-              variant="filled"
-              sx={{ borderRadius: 1.5 }}
-            >
-              {registrationStatus.message}
-            </Alert>
-          )}
+          {registrationStatus &&
+            !transactionStatus.approveUSDC.pending &&
+            !transactionStatus.registerProvider.pending && (
+              <Alert
+                severity={registrationStatus.success ? "success" : "error"}
+                variant="filled"
+                sx={{ borderRadius: 1.5 }}
+              >
+                {registrationStatus.message}
+              </Alert>
+            )}
         </Stack>
       </Box>
 

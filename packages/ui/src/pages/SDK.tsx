@@ -19,11 +19,14 @@ import {
   Stepper,
   Step,
   StepLabel,
+  StepButton,
+  Paper,
 } from "@mui/material";
+import { useConnectWallet } from "@web3-onboard/react";
+import { Ticker } from "../components/Ticker";
 
 export default function SDK() {
-  const { getAds, registerProvider, governanceSettings, transactionStatus } =
-    useBillboard();
+  // State management
   const [ads, setAds] = useState<Billboard[]>([]);
   const [randomAd, setRandomAd] = useState<Billboard | null>(null);
   const [loading, setLoading] = useState(false);
@@ -32,6 +35,11 @@ export default function SDK() {
     success: boolean;
     message: string;
   } | null>(null);
+
+  // Hooks
+  const { getAds, registerProvider, governanceSettings, transactionStatus } =
+    useBillboard();
+  const [{ wallet }, connect] = useConnectWallet();
   const theme = useTheme();
 
   useEffect(() => {
@@ -46,21 +54,13 @@ export default function SDK() {
     fetchingAds();
   }, []);
 
-  const showRandomAd = async () => {
-    setLoading(true);
-    try {
-      if (ads.length > 0) {
-        const randomIndex = Math.floor(Math.random() * ads.length);
-        setRandomAd(ads[randomIndex]);
-      }
-    } catch (error) {
-      console.error("Error showing random ad:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
+  // Provider registration
   const handleRegisterProvider = async () => {
+    if (!wallet) {
+      connect();
+      return;
+    }
+
     if (!providerHandle.trim()) {
       setRegistrationStatus({
         success: false,
@@ -88,390 +88,391 @@ export default function SDK() {
   };
 
   return (
-    <Container
-      maxWidth="lg"
-      sx={{ py: 6, backgroundColor: theme.palette.background.paper }}
-    >
-      <Box sx={{ textAlign: "center", mb: 4 }}>
-        <Typography variant="h4" sx={{ mb: 4 }}>
-          Integrate our SDK to earn USDC
-        </Typography>
-        <Link
-          href="https://www.npmjs.com/package/billboard-sdk"
-          target="_blank"
-          rel="noopener noreferrer"
-          sx={{
-            display: "block",
-            mb: 2,
-            color: "primary.main",
-            fontWeight: 600,
-          }}
-        >
-          Billboard SDK
-        </Link>
-      </Box>
-
-      {/* Provider Registration Section */}
-      <Box
-        sx={{
-          mb: 6,
-          p: 4,
-          border: `1px solid ${theme.palette.divider}`,
-          borderRadius: 2,
-          boxShadow: "0 4px 20px rgba(0,0,0,0.05)",
-          background: `linear-gradient(to right bottom, ${theme.palette.background.paper}, ${theme.palette.background.default})`,
-        }}
-      >
-        <Typography
-          variant="h5"
-          sx={{
-            mb: 3,
-            fontWeight: 600,
-            position: "relative",
-            display: "inline-block",
-            "&:after": {
-              content: '""',
-              position: "absolute",
-              bottom: -8,
-              left: 0,
-              width: 60,
-              height: 3,
-              backgroundColor: theme.palette.primary.main,
-              borderRadius: 1,
-            },
-          }}
-        >
-          Register as a Billboard Provider
-        </Typography>
-        <Typography variant="body1">
-          Current security deposit:{" "}
-          {governanceSettings?.securityDeposit.toLocaleString()} USDC
-        </Typography>
-        <Typography variant="body1" color="text.secondary" sx={{ mb: 4 }}>
+    <Container maxWidth={false} sx={{ maxWidth: "1440px" }}>
+      <Box sx={{ p: 4, my: 4 }}>
+        <Typography variant="h1">Sell Space</Typography>
+        <Typography variant="h6">
           Join our network of providers and start earning USDC by displaying
           advertisements on your platform.
         </Typography>
 
-        {/* Transaction Steps */}
-        <Stepper
-          activeStep={
-            transactionStatus.registerProvider.completed
-              ? 2
-              : transactionStatus.approveUSDC.completed
-                ? 1
-                : transactionStatus.approveUSDC.pending
-                  ? 0
-                  : -1
-          }
-          sx={{ mb: 4 }}
-        >
-          <Step>
-            <StepLabel>Approve USDC</StepLabel>
-          </Step>
-          <Step>
-            <StepLabel>Register Provider</StepLabel>
-          </Step>
-        </Stepper>
-
-        {transactionStatus.approveUSDC.error && (
-          <Alert severity="error" sx={{ mb: 2 }}>
-            {transactionStatus.approveUSDC.error}
-          </Alert>
-        )}
-
-        {transactionStatus.registerProvider.error && (
-          <Alert severity="error" sx={{ mb: 2 }}>
-            {transactionStatus.registerProvider.error}
-          </Alert>
-        )}
-
-        {transactionStatus.registerProvider.completed && (
-          <Alert severity="success" sx={{ mb: 2 }}>
-            Successfully registered as a billboard provider!
-          </Alert>
-        )}
-
-        <Stack spacing={3} sx={{ maxWidth: 450, mx: "auto" }}>
-          <TextField
-            label="Provider Handle"
-            value={providerHandle}
-            onChange={(e) => setProviderHandle(e.target.value)}
-            fullWidth
-            placeholder="Enter your unique provider identifier"
-            variant="outlined"
-            InputProps={{
-              sx: { borderRadius: 1.5 },
-            }}
-          />
-          <Button
-            variant="contained"
-            onClick={handleRegisterProvider}
-            disabled={
-              loading ||
-              transactionStatus.approveUSDC.pending ||
-              transactionStatus.registerProvider.pending
-            }
-            sx={{
-              py: 1.2,
-              fontWeight: 600,
-              borderRadius: 1.5,
-              textTransform: "none",
-              boxShadow: "0 4px 10px rgba(0,0,0,0.1)",
-              "&:hover": {
-                boxShadow: "0 6px 15px rgba(0,0,0,0.15)",
-              },
-            }}
-            startIcon={
-              transactionStatus.approveUSDC.pending ||
-              transactionStatus.registerProvider.pending ? (
-                <CircularProgress size={20} color="inherit" />
-              ) : null
-            }
-          >
-            {transactionStatus.approveUSDC.pending
-              ? "Approving USDC..."
-              : transactionStatus.registerProvider.pending
-                ? "Registering Provider..."
-                : "Register as Provider"}
-          </Button>
-          {registrationStatus &&
-            !transactionStatus.approveUSDC.pending &&
-            !transactionStatus.registerProvider.pending && (
-              <Alert
-                severity={registrationStatus.success ? "success" : "error"}
-                variant="filled"
-                sx={{ borderRadius: 1.5 }}
-              >
-                {registrationStatus.message}
-              </Alert>
-            )}
-        </Stack>
-      </Box>
-
-      <Typography
-        variant="h4"
-        component="h1"
-        align="center"
-        gutterBottom
-        sx={{ mb: 4, fontWeight: 600 }}
-      >
-        Advertisements
-      </Typography>
-
-      <Box sx={{ textAlign: "center", mb: 4 }}>
-        <Button
-          variant="contained"
-          color="primary"
-          onClick={showRandomAd}
-          disabled={loading || ads.length === 0}
-          sx={{ mb: 3 }}
-        >
-          {loading ? "Loading..." : "Show Random Advertisement"}
-        </Button>
-
-        {randomAd && (
-          <Box sx={{ mt: 2, display: "flex", justifyContent: "center" }}>
-            <Card
-              sx={{
-                width: 320,
-                height: 380,
-                display: "flex",
-                flexDirection: "column",
-                boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
-                borderRadius: 2,
-                overflow: "hidden",
-              }}
-            >
-              <Box
-                sx={{
-                  height: 200,
-                  backgroundColor: theme.palette.grey[100],
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                }}
-              >
-                <CardMedia
-                  component="img"
-                  height="200"
-                  image={randomAd.url}
-                  alt={randomAd.description}
-                  sx={{
-                    objectFit: "contain",
-                    width: "100%",
-                  }}
-                />
-              </Box>
-              <CardContent
-                sx={{
-                  flexGrow: 1,
-                  display: "flex",
-                  flexDirection: "column",
-                  justifyContent: "space-between",
-                  p: 3,
-                }}
-              >
-                <Typography
-                  variant="h6"
-                  sx={{
-                    fontWeight: 600,
-                    mb: 2,
-                    height: 56,
-                    overflow: "hidden",
-                    textOverflow: "ellipsis",
-                    display: "-webkit-box",
-                    WebkitLineClamp: 2,
-                    WebkitBoxOrient: "vertical",
-                  }}
-                >
-                  {randomAd.description}
-                </Typography>
-                <Box sx={{ mt: "auto" }}>
-                  <Typography
-                    variant="body2"
-                    color="text.secondary"
-                    sx={{ mb: 1.5 }}
-                  >
-                    Expires:{" "}
-                    {new Date(randomAd.expiryTime * 1000).toLocaleDateString()}
-                  </Typography>
-                  <Link
-                    href={randomAd.link}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    sx={{
-                      display: "inline-block",
-                      color: "primary.main",
-                      fontWeight: 500,
-                      textDecoration: "none",
-                      "&:hover": {
-                        textDecoration: "underline",
-                      },
-                    }}
-                  >
-                    Visit Website →
-                  </Link>
-                </Box>
-              </CardContent>
-            </Card>
-          </Box>
-        )}
-      </Box>
-
-      <Divider sx={{ my: 4 }} />
-
-      <Typography
-        variant="h5"
-        component="h2"
-        align="center"
-        gutterBottom
-        sx={{ mb: 4, fontWeight: 600 }}
-      >
-        All Advertisements
-      </Typography>
-      <Box sx={{ display: "flex", justifyContent: "center" }}>
         <Stack
-          direction="row"
-          flexWrap="wrap"
-          spacing={0}
-          sx={{
-            gap: 4,
-            justifyContent: "center",
-          }}
+          direction={{ xs: "column", lg: "row" }}
+          spacing={16}
+          justifyContent="space-between"
+          alignItems={{ xs: "center", lg: "flex-start" }}
+          mt={8}
         >
-          {ads.map((ad) => (
-            <Card
-              key={ad.ipfsHash.concat(ad.link)}
-              sx={{
-                width: 320,
-                height: 380,
-                display: "flex",
-                flexDirection: "column",
-                transition: "transform 0.3s, box-shadow 0.3s",
-                boxShadow: "0 4px 12px rgba(0,0,0,0.08)",
-                borderRadius: 2,
-                overflow: "hidden",
-                "&:hover": {
-                  transform: "translateY(-5px)",
-                  boxShadow: "0 12px 20px rgba(0,0,0,0.15)",
-                },
-              }}
-            >
-              <Box
-                sx={{
-                  height: 200,
-                  backgroundColor: theme.palette.grey[100],
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                }}
+          <Box
+            component="img"
+            width="100%"
+            style={{ maxWidth: "400px" }}
+            height="auto"
+            src="../assets/advertiser.svg"
+            alt="Billboard SDK"
+          />
+
+          <Stack
+            direction="column"
+            spacing={1}
+            width={{ xs: "100%", lg: "500px" }}
+            justifyContent="center"
+            alignItems="center"
+          >
+            <Typography variant="h1" position="relative">
+              {governanceSettings?.securityDeposit.toLocaleString()} USDC
+              <Typography
+                variant="h4"
+                fontWeight="bold"
+                position="absolute"
+                top={10}
+                left="-10px"
               >
-                <CardMedia
-                  component="img"
-                  height="200"
-                  image={ad.url}
-                  alt={ad.description}
-                  sx={{
-                    objectFit: "contain",
-                    width: "100%",
-                  }}
-                />
+                $
+              </Typography>
+            </Typography>
+
+            <Typography variant="body1" textAlign="center" mb={2}>
+              Security deposit required to join our network of advertisers
+            </Typography>
+
+            <Box
+              sx={{ display: "flex", flexDirection: "column", width: "100%" }}
+            >
+              <Typography variant="h6" fontSize="medium">
+                Advertiser Handle
+              </Typography>
+              <TextField
+                size="small"
+                variant="outlined"
+                value={providerHandle}
+                onChange={(e) => setProviderHandle(e.target.value)}
+                fullWidth
+                placeholder="Enter your unique advertiser identifier"
+                required
+              />
+
+              {/* Transaction steps */}
+              <Box sx={{ mt: 3 }}>
+                <Typography variant="body1" gutterBottom>
+                  Transaction Steps
+                </Typography>
+                <Paper variant="outlined" sx={{ p: 2 }}>
+                  <Stepper
+                    activeStep={
+                      transactionStatus.registerProvider.completed
+                        ? 2
+                        : transactionStatus.approveUSDC.completed
+                          ? 1
+                          : transactionStatus.approveUSDC.pending
+                            ? 0
+                            : -1
+                    }
+                    orientation="vertical"
+                  >
+                    <Step>
+                      <StepButton
+                        disabled={
+                          transactionStatus.approveUSDC.pending ||
+                          transactionStatus.approveUSDC.completed
+                        }
+                      >
+                        <StepLabel>
+                          <Box>
+                            <Typography variant="body2">
+                              {transactionStatus.approveUSDC.label ||
+                                "Approve USDC"}
+                            </Typography>
+                            {transactionStatus.approveUSDC.pending && (
+                              <Typography variant="caption" color="primary">
+                                Processing...
+                              </Typography>
+                            )}
+                            {transactionStatus.approveUSDC.completed && (
+                              <Typography
+                                variant="caption"
+                                color="success.main"
+                              >
+                                ✓ Approved
+                              </Typography>
+                            )}
+                            {transactionStatus.approveUSDC.error && (
+                              <Typography variant="caption" color="error">
+                                Error: {transactionStatus.approveUSDC.error}
+                              </Typography>
+                            )}
+                          </Box>
+                        </StepLabel>
+                      </StepButton>
+                    </Step>
+                    <Step>
+                      <StepButton
+                        disabled={
+                          !transactionStatus.approveUSDC.completed ||
+                          transactionStatus.registerProvider.pending ||
+                          transactionStatus.registerProvider.completed
+                        }
+                      >
+                        <StepLabel>
+                          <Box>
+                            <Typography variant="body2">
+                              {transactionStatus.registerProvider.label ||
+                                "Register Provider"}
+                            </Typography>
+                            {transactionStatus.registerProvider.pending && (
+                              <Typography variant="caption" color="primary">
+                                Processing...
+                              </Typography>
+                            )}
+                            {transactionStatus.registerProvider.completed && (
+                              <Typography
+                                variant="caption"
+                                color="success.main"
+                              >
+                                ✓ Complete
+                              </Typography>
+                            )}
+                            {transactionStatus.registerProvider.error && (
+                              <Typography variant="caption" color="error">
+                                Error:{" "}
+                                {transactionStatus.registerProvider.error}
+                              </Typography>
+                            )}
+                          </Box>
+                        </StepLabel>
+                      </StepButton>
+                    </Step>
+                  </Stepper>
+                </Paper>
               </Box>
-              <CardContent
+
+              {/* Submit button */}
+              <Button
+                variant="contained"
+                size="large"
+                onClick={handleRegisterProvider}
                 sx={{
-                  flexGrow: 1,
+                  color: "white",
+                  mt: 2,
+                }}
+                disabled={
+                  loading ||
+                  transactionStatus.approveUSDC.pending ||
+                  transactionStatus.registerProvider.pending
+                }
+                startIcon={
+                  transactionStatus.approveUSDC.pending ||
+                  transactionStatus.registerProvider.pending ? (
+                    <CircularProgress size={20} color="inherit" />
+                  ) : null
+                }
+              >
+                {!wallet
+                  ? "Connect Wallet"
+                  : transactionStatus.approveUSDC.pending
+                    ? "Approving USDC..."
+                    : transactionStatus.registerProvider.pending
+                      ? "Registering Provider..."
+                      : "Register as Provider"}
+              </Button>
+
+              {/* Status display */}
+              {registrationStatus &&
+                !transactionStatus.approveUSDC.pending &&
+                !transactionStatus.registerProvider.pending && (
+                  <Alert
+                    severity={registrationStatus.success ? "success" : "error"}
+                    sx={{ mt: 2 }}
+                  >
+                    {registrationStatus.message}
+                  </Alert>
+                )}
+            </Box>
+          </Stack>
+        </Stack>
+
+        <Divider sx={{ my: 6 }} />
+
+        <Box sx={{ textAlign: "center", mb: 4 }}>
+          {randomAd && (
+            <Box sx={{ mt: 2, display: "flex", justifyContent: "center" }}>
+              <Card
+                sx={{
+                  width: 320,
+                  height: 380,
                   display: "flex",
                   flexDirection: "column",
-                  justifyContent: "space-between",
-                  p: 3,
+                  boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
+                  borderRadius: 2,
+                  overflow: "hidden",
                 }}
               >
-                <Typography
-                  variant="h6"
+                <Box
                   sx={{
-                    fontWeight: 600,
-                    mb: 2,
-                    height: 56,
-                    overflow: "hidden",
-                    textOverflow: "ellipsis",
-                    display: "-webkit-box",
-                    WebkitLineClamp: 2,
-                    WebkitBoxOrient: "vertical",
+                    height: 200,
+                    backgroundColor: theme.palette.grey[100],
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
                   }}
                 >
-                  {ad.description}
-                </Typography>
-                <Box sx={{ mt: "auto" }}>
-                  <Typography
-                    variant="body2"
-                    color="text.secondary"
-                    sx={{ mb: 1.5 }}
-                  >
-                    Expires:{" "}
-                    {new Date(ad.expiryTime * 1000).toLocaleDateString()}
-                  </Typography>
-                  <Link
-                    href={ad.link}
-                    target="_blank"
-                    rel="noopener noreferrer"
+                  <CardMedia
+                    component="img"
+                    height="200"
+                    image={randomAd.url}
+                    alt={randomAd.description}
                     sx={{
-                      display: "inline-block",
-                      color: "primary.main",
-                      fontWeight: 500,
-                      textDecoration: "none",
-                      "&:hover": {
-                        textDecoration: "underline",
-                      },
+                      objectFit: "contain",
+                      width: "100%",
+                    }}
+                  />
+                </Box>
+                <CardContent
+                  sx={{
+                    flexGrow: 1,
+                    display: "flex",
+                    flexDirection: "column",
+                    justifyContent: "space-between",
+                    p: 3,
+                  }}
+                >
+                  <Typography
+                    variant="h6"
+                    sx={{
+                      fontWeight: 600,
+                      mb: 2,
+                      height: 56,
+                      overflow: "hidden",
+                      textOverflow: "ellipsis",
+                      display: "-webkit-box",
+                      WebkitLineClamp: 2,
+                      WebkitBoxOrient: "vertical",
                     }}
                   >
-                    Visit Website →
-                  </Link>
+                    {randomAd.description}
+                  </Typography>
+                  <Box sx={{ mt: "auto" }}>
+                    <Typography
+                      variant="body2"
+                      color="text.secondary"
+                      sx={{ mb: 1.5 }}
+                    >
+                      Expires:{" "}
+                      {new Date(
+                        randomAd.expiryTime * 1000,
+                      ).toLocaleDateString()}
+                    </Typography>
+                    <Link
+                      href={randomAd.link}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      sx={{
+                        display: "inline-block",
+                        color: "primary.main",
+                        fontWeight: 500,
+                        textDecoration: "none",
+                        "&:hover": {
+                          textDecoration: "underline",
+                        },
+                      }}
+                    >
+                      Visit Website →
+                    </Link>
+                  </Box>
+                </CardContent>
+              </Card>
+            </Box>
+          )}
+        </Box>
+
+        <Typography variant="h2" component="h2" gutterBottom>
+          ALL ADS
+        </Typography>
+        <Box sx={{ display: "flex", justifyContent: "center" }}>
+          <Stack
+            direction="row"
+            flexWrap="wrap"
+            spacing={0}
+            sx={{
+              gap: 4,
+              justifyContent: "center",
+            }}
+          >
+            {ads.map((ad) => (
+              <Card
+                key={ad.ipfsHash.concat(ad.link)}
+                onClick={() => {
+                  window.open(ad.link, "_blank", "noopener,noreferrer");
+                }}
+                sx={{
+                  cursor: "pointer",
+                  width: 320,
+                  height: 300,
+                  padding: 2,
+                  display: "flex",
+                  flexDirection: "column",
+                  transition: "transform 0.3s, box-shadow 0.3s",
+                  boxShadow: "0 4px 12px rgba(0,0,0,0.08)",
+                  borderRadius: 2,
+                  overflow: "hidden",
+                  "&:hover": {
+                    transform: "translateY(-5px)",
+                    boxShadow: "0 12px 20px rgba(0,0,0,0.15)",
+                  },
+                }}
+              >
+                <Box
+                  sx={{
+                    height: 200,
+                    backgroundColor: theme.palette.grey[100],
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                  }}
+                >
+                  <CardMedia
+                    component="img"
+                    height="200"
+                    image={ad.url}
+                    alt={ad.description}
+                    sx={{
+                      objectFit: "cover",
+                      width: "100%",
+                      background: theme.palette.background.default,
+                    }}
+                  />
                 </Box>
-              </CardContent>
-            </Card>
-          ))}
-        </Stack>
+                <CardContent
+                  sx={{
+                    flexGrow: 1,
+                    display: "flex",
+                    flexDirection: "column",
+                    justifyContent: "space-between",
+                    p: 3,
+                  }}
+                >
+                  <Typography
+                    variant="h6"
+                    sx={{
+                      fontWeight: 600,
+                      mb: 2,
+                      height: 56,
+                      overflow: "hidden",
+                      textOverflow: "ellipsis",
+                      display: "-webkit-box",
+                      WebkitLineClamp: 2,
+                      WebkitBoxOrient: "vertical",
+                    }}
+                  >
+                    {ad.description}
+                  </Typography>
+                </CardContent>
+              </Card>
+            ))}
+          </Stack>
+        </Box>
       </Box>
+      <Ticker />
     </Container>
   );
 }

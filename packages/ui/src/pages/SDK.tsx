@@ -177,7 +177,13 @@ export default function SDK() {
                           transactionStatus.approveUSDC.completed
                         }
                       >
-                        <StepLabel>
+                        <StepLabel
+                          sx={{
+                            overflow: "auto",
+                            textOverflow: "ellipsis",
+                            maxWidth: "100%",
+                          }}
+                        >
                           <Box>
                             <Typography variant="body2">
                               {transactionStatus.approveUSDC.label ||
@@ -213,7 +219,13 @@ export default function SDK() {
                           transactionStatus.registerProvider.completed
                         }
                       >
-                        <StepLabel>
+                        <StepLabel
+                          sx={{
+                            overflow: "auto",
+                            textOverflow: "ellipsis",
+                            maxWidth: "100%",
+                          }}
+                        >
                           <Box>
                             <Typography variant="body2">
                               {transactionStatus.registerProvider.label ||
@@ -256,6 +268,7 @@ export default function SDK() {
                   mt: 2,
                 }}
                 disabled={
+                  providerHandle.length < 3 ||
                   loading ||
                   transactionStatus.approveUSDC.pending ||
                   transactionStatus.registerProvider.pending

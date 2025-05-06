@@ -42,7 +42,7 @@ export const Ticker = () => {
         }}
       >
         {Array(10)
-          .fill(["BUY NOW", "-", "SELL NOW", "-"])
+          .fill(["BUY NOW", "-", "EARN NOW", "-"])
           .flat()
           .map((item, index) => (
             <Typography

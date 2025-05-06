@@ -58,7 +58,6 @@ export default function Footer() {
       <Container maxWidth={false}>
         <Stack
           direction="column"
-          justifyContent="space-between"
           alignItems="center"
           maxWidth="1440px"
           margin="0 auto"
@@ -75,7 +74,7 @@ export default function Footer() {
 
           <Stack
             direction={{ xs: "column", md: "row" }}
-            justifyContent="space-between"
+            justifyContent="space-evenly"
             alignItems={{ xs: "center", md: "flex-start" }}
             width="100%"
             spacing={4}

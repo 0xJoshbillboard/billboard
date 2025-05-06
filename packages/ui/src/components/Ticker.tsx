@@ -26,7 +26,7 @@ export const Ticker = () => {
   return (
     <Box
       sx={{
-        width: "100%",
+        minWidth: "100%",
         overflow: "hidden",
         backgroundColor: theme.palette.primary.main,
         py: 1,

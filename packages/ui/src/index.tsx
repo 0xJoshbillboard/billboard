@@ -55,7 +55,7 @@ function App() {
             contrastText: mode === "dark" ? "#000000" : "#ffffff",
           },
           secondary: {
-            main: mode === "dark" ? "#ff9800" : "#009688", // Orange for dark, Teal for light
+            main: mode === "dark" ? "#ff9800" : "#009688",
             light: mode === "dark" ? "#ffb74d" : "#4db6ac",
             dark: mode === "dark" ? "#f57c00" : "#00796b",
             contrastText: mode === "dark" ? "#000000" : "#ffffff",

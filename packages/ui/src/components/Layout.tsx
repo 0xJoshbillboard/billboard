@@ -1,5 +1,5 @@
 import { Outlet } from "react-router";
-import { Stack } from "@mui/material";
+import { Box, Stack, Typography, useTheme } from "@mui/material";
 import { useState, useEffect } from "react";
 import { useSetChain } from "@web3-onboard/react";
 import Header from "./Header";
@@ -13,6 +13,7 @@ export default function Layout({
 }) {
   const [{ connectedChain }] = useSetChain();
   const [isUnsupportedNetwork, setIsUnsupportedNetwork] = useState(false);
+  const theme = useTheme();
 
   const requiredChainId = 11155420;
   const requiredChainName = "Optimism Sepolia";
@@ -32,6 +33,19 @@ export default function Layout({
 
   return (
     <Stack direction="column" spacing={2} minHeight="100vh" alignItems="center">
+      <Box
+        sx={{
+          width: "100%",
+          backgroundColor: theme.palette.primary.main,
+          py: 1,
+          textAlign: "center",
+        }}
+      >
+        <Typography variant="body1" fontWeight="bold">
+          BETA VERSION - PROCEED WITH CAUTION
+        </Typography>
+      </Box>
+
       <UnsupportedNetwork
         open={isUnsupportedNetwork}
         onClose={handleCloseNetworkModal}

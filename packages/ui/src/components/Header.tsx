@@ -155,8 +155,10 @@ export default function Header(
             <Button
               onClick={() => connect()}
               variant="contained"
-              color="primary"
               size="small"
+              sx={{
+                color: "white",
+              }}
             >
               {connecting ? "Connecting..." : "Connect Wallet"}
             </Button>
@@ -264,7 +266,7 @@ export default function Header(
                 {wallet.accounts[0].address}
               </Typography>
               <Box sx={{ display: "flex", alignItems: "center", mt: 1 }}>
-                <Typography variant="body2" color="primary" fontWeight={600}>
+                <Typography variant="body1" color="primary" fontWeight={600}>
                   {usdcBalance} USDC
                 </Typography>
               </Box>

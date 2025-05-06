@@ -151,8 +151,8 @@ export default function Buy() {
   };
 
   return (
-    <Container maxWidth={false}>
-      <Box sx={{ p: 4, my: 4, maxWidth: "1440px" }}>
+    <Container maxWidth={false} sx={{ maxWidth: "1440px" }}>
+      <Box sx={{ p: 4, my: 4 }}>
         <Typography variant="h1">Buy Billboard</Typography>
         <Typography variant="h6">
           Purchase a billboard—an ad placement—through our platform to promote
@@ -160,18 +160,27 @@ export default function Buy() {
         </Typography>
 
         <Stack
-          direction="row"
+          direction={{ xs: "column", lg: "row" }}
           spacing={16}
           justifyContent="space-between"
+          alignItems={{ xs: "center", lg: "flex-start" }}
           mt={8}
         >
-          <img
+          <Box
+            component="img"
             width="100%"
+            style={{ maxWidth: "400px" }}
             height="auto"
             src="../assets/publisher.svg"
             alt="Billboard"
           />
-          <Stack direction="column" spacing={1} minWidth="400px" width="100%">
+          <Stack
+            direction="column"
+            spacing={1}
+            width={{ xs: "100%", lg: "500px" }}
+            justifyContent="center"
+            alignItems="center"
+          >
             <Typography
               variant="h6"
               px={2}
@@ -196,7 +205,9 @@ export default function Buy() {
                 $
               </Typography>
             </Typography>
-            <Box sx={{ display: "flex", flexDirection: "column" }}>
+            <Box
+              sx={{ display: "flex", flexDirection: "column", width: "100%" }}
+            >
               {/* Development helper */}
               {wallet && wallet.chains[0].id === "0xaa37dc" && (
                 <Button

@@ -49,7 +49,7 @@ export default function Home() {
         <Ticker />
 
         <Stack
-          direction={{ xs: "column", lg: "row" }}
+          direction={{ xs: "column", xl: "row" }}
           justifyContent="center"
           alignItems="center"
           spacing={2}
@@ -78,7 +78,7 @@ const USP_ITEMS = [
     headline: "ADVERTISERS: INTEGRATE & EARN",
     description:
       "Advertisers add our SDK to their site or app. Once integrated, they can start earning by displaying ads from publishers.",
-    image: "",
+    image: "/assets/advertiser.svg",
   },
   {
     headline: "A WIN-WIN SYSTEM",
@@ -101,9 +101,9 @@ const USPBox = ({
 }) => {
   return (
     <Box
-      maxWidth="480px"
+      maxWidth="470px"
+      minWidth="470px"
       maxHeight="430px"
-      minWidth="480px"
       minHeight="430px"
       display="flex"
       flexDirection="column"

@@ -102,10 +102,18 @@ const USPBox = ({
     <Box
       maxWidth="480px"
       maxHeight="430px"
+      minWidth="480px"
+      minHeight="430px"
+      display="flex"
+      flexDirection="column"
+      justifyContent="space-between"
+      alignItems="center"
       borderRight={{ xs: "none", lg: isLast ? "none" : "1px solid #444" }}
       paddingRight={{ xs: 0, lg: isLast ? 0 : 2 }}
     >
-      <Typography variant="h1">{headline}</Typography>
+      <Typography variant="h1" fontSize="48px">
+        {headline}
+      </Typography>
       <img src={image} alt={headline} />
       <Typography variant="h6">{description}</Typography>
     </Box>

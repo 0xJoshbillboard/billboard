@@ -31,13 +31,7 @@ export default function Layout({
   };
 
   return (
-    <Stack
-      direction="column"
-      spacing={2}
-      minHeight="100vh"
-      justifyContent="space-between"
-      alignItems="center"
-    >
+    <Stack direction="column" spacing={2} minHeight="100vh" alignItems="center">
       <UnsupportedNetwork
         open={isUnsupportedNetwork}
         onClose={handleCloseNetworkModal}

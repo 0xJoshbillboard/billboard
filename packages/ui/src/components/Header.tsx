@@ -53,19 +53,21 @@ export default function Header(
   return (
     <AppBar
       position="sticky"
+      elevation={0}
       sx={{
         color: theme.palette.text.primary,
         backgroundColor: theme.palette.background.default,
         height: "100px",
+        borderBottom: "1px solid #444",
       }}
     >
       <Container
         maxWidth={false}
         sx={{
           maxWidth: "1440px",
+          height: "100px",
           display: "flex",
           justifyContent: "space-between",
-          border: "1px solid #444",
         }}
       >
         <Box component={Link} to="/" borderRight="1px solid #444" p={4}>

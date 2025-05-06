@@ -29,9 +29,6 @@ module.exports = {
     ],
   },
   resolve: {
-    alias: {
-      process: "process/browser",
-    },
     extensions: [".tsx", ".ts", ".js", ".jsx"],
   },
   devServer: {
@@ -53,7 +50,10 @@ module.exports = {
       template: path.resolve(__dirname, "src/index.html"),
     }),
     new webpack.ProvidePlugin({
-      process: "process/browser",
+      process: "process/browser.js",
+    }),
+    new webpack.DefinePlugin({
+      "process.env": JSON.stringify(process.env),
     }),
     new CopyWebpackPlugin({
       patterns: [
@@ -81,7 +81,6 @@ module.exports = {
             return `vendor.${packageName.replace("@", "")}`;
           },
         },
-        // Specific group for MUI packages
         mui: {
           test: /[\\/]node_modules[\\/]@mui[\\/]/,
           name: "mui-vendor",

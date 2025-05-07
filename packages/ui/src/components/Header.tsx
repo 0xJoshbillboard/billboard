@@ -2,7 +2,6 @@ import { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import {
   AppBar,
-  Typography,
   Button,
   IconButton,
   Drawer,
@@ -14,8 +13,7 @@ import {
   useTheme,
   Container,
   Divider,
-  Avatar,
-  Chip,
+  Typography,
 } from "@mui/material";
 import { Menu as MenuIcon, KeyboardArrowDown } from "@mui/icons-material";
 import { useConnectWallet, useSetChain } from "@web3-onboard/react";
@@ -372,6 +370,19 @@ export default function Header(
           </List>
         </Drawer>
       </Container>
+      <Box
+        sx={{
+          width: "100%",
+          backgroundColor: theme.palette.primary.main,
+          py: 1,
+          textAlign: "center",
+          height: "40px",
+        }}
+      >
+        <Typography variant="body1" fontWeight="bold" fontSize="small">
+          BETA VERSION - PROCEED WITH CAUTION
+        </Typography>
+      </Box>
     </AppBar>
   );
 }

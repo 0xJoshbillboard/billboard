@@ -33,19 +33,6 @@ export default function Layout({
 
   return (
     <Stack direction="column" spacing={2} minHeight="100vh" alignItems="center">
-      <Box
-        sx={{
-          width: "100%",
-          backgroundColor: theme.palette.primary.main,
-          py: 1,
-          textAlign: "center",
-        }}
-      >
-        <Typography variant="body1" fontWeight="bold">
-          BETA VERSION - PROCEED WITH CAUTION
-        </Typography>
-      </Box>
-
       <UnsupportedNetwork
         open={isUnsupportedNetwork}
         onClose={handleCloseNetworkModal}

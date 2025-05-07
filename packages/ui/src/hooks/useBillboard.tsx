@@ -95,6 +95,14 @@ export interface TransactionStatus {
   };
 }
 
+export interface RawBillboard {
+  owner: string;
+  expiryTime: number;
+  description: string;
+  link: string;
+  ipfsHash: string;
+}
+
 export default function useBillboard() {
   // State variables
   const [{ wallet }] = useConnectWallet();
@@ -291,15 +299,6 @@ export default function useBillboard() {
       });
     }
   }, [wallet, tokenContract]);
-
-  // Load billboards
-  useEffect(() => {
-    if (wallet && contract) {
-      fetchBillboards().then((billboards) => {
-        setBillboards(billboards);
-      });
-    }
-  }, [wallet, contract]);
 
   // Load proposals and voting status
   useEffect(() => {
@@ -853,7 +852,7 @@ export default function useBillboard() {
       description: billboard.description,
       link: billboard.link,
       ipfsHash: billboard.ipfsHash,
-    }));
+    })) as RawBillboard[];
   };
 
   const registerProvider = async (handle: string) => {

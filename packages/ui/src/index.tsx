@@ -92,6 +92,7 @@ function App() {
                 borderRadius: 8,
                 textTransform: "none",
                 fontWeight: 600,
+                color: "white",
               },
             },
           },

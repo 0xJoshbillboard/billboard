@@ -72,7 +72,9 @@ contract BillboardRegistry is Initializable, OwnableUpgradeable {
     function registerBillboardProvider(string memory handle) external {
         require(address(governance) != address(0), "Governance not initialized");
         require(bytes(billboardProviders[msg.sender]).length == 0, "Provider already registered");
-        require(usdc.transferFrom(msg.sender, address(this), governance.securityDepositProvider()), "USDC transfer failed");
+        require(
+            usdc.transferFrom(msg.sender, address(this), governance.securityDepositProvider()), "USDC transfer failed"
+        );
         billboardProviders[msg.sender] = handle;
         providerDepositTime[msg.sender] = block.timestamp;
         providerWithdrawnDeposit[msg.sender] = false;

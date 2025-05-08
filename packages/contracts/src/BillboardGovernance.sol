@@ -48,10 +48,13 @@ contract BillboardGovernance is Initializable, OwnableUpgradeable {
     event ProposalExecuted(uint256 indexed proposalId);
     event SecurityDepositReturned(uint256 indexed proposalId, address indexed proposer, uint256 amount);
 
-    function initialize(uint256 _duration, uint256 _pricePerBillboard, uint256 _securityDeposit, address _token, uint256 _securityDepositProvider)
-        public
-        initializer
-    {
+    function initialize(
+        uint256 _duration,
+        uint256 _pricePerBillboard,
+        uint256 _securityDeposit,
+        address _token,
+        uint256 _securityDepositProvider
+    ) public initializer {
         __Ownable_init(msg.sender);
         duration = _duration;
         pricePerBillboard = _pricePerBillboard;

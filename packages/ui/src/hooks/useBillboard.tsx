@@ -500,6 +500,7 @@ export default function useBillboard() {
     securityDeposit: bigint,
     minProposalTokens: bigint,
     minVotingTokens: bigint,
+    securityDepositProvider: bigint,
   ) => {
     if (!governanceContract) throw new Error("Governance contract not defined");
     if (!tokenContract) throw new Error("Token contract not defined");
@@ -546,6 +547,7 @@ export default function useBillboard() {
         securityDeposit,
         minProposalTokens,
         minVotingTokens,
+        securityDepositProvider,
       );
       await tx.wait();
 

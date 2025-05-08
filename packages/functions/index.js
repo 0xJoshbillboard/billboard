@@ -13,7 +13,12 @@ dotenv.config();
 
 setGlobalOptions({ region: "europe-west1" });
 initializeApp();
-const cors = [/localhost(:\d+)?$/, /web\.app$/, /firebase\.com$/];
+const cors = [
+  /localhost(:\d+)?$/,
+  /web\.app$/,
+  /firebase\.com$/,
+  /billboard\.ink$/,
+];
 
 const pinata = new PinataSDK({
   pinataJwt: process.env.PINATA_API_KEY,
@@ -22,7 +27,7 @@ const pinata = new PinataSDK({
 const rpcUrl = `https://optimism-sepolia.infura.io/v3/${process.env.INFURA_API}`;
 const provider = new ethers.JsonRpcProvider(rpcUrl);
 const contract = new ethers.Contract(
-  "0xdcbacd4de1714f0b6c68e61aac8ab31fadd649d1",
+  "0x7a4dcb2f541954bf5494d91e62c5de91febcea45",
   abi,
   provider,
 );

@@ -20,36 +20,38 @@ import {
   CardContent,
   CardActions,
   Alert,
+  CircularProgress,
+  Step,
+  StepButton,
+  Stepper,
+  StepLabel,
   Divider,
 } from "@mui/material";
+import CreateProposal from "../components/Modals/CreateProposal";
+import VoteFor from "../components/Icons/VoteFor";
+import VoteAgainst from "../components/Icons/VoteAgainst";
 
 export default function Governance() {
-  const [{ wallet }, connect] = useConnectWallet();
+  const [{ wallet }] = useConnectWallet();
   const {
     governanceSettings,
     tokenBalance,
     proposals,
-    hasVoted,
-    createProposal,
     vote,
     executeProposal,
     buyBBT,
     usdcBalance,
+    transactionStatus,
   } = useBillboard();
   const [governanceContract, setGovernanceContract] = useState<Contract | null>(
     null,
   );
+  const [showCreateProposal, setShowCreateProposal] = useState(false);
   const [tokenContract, setTokenContract] = useState<Contract | null>(null);
-  const [newProposal, setNewProposal] = useState({
-    duration: "",
-    pricePerBillboard: "",
-    securityDeposit: "",
-    minProposalTokens: "",
-    minVotingTokens: "",
-  });
   const [buyAmount, setBuyAmount] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
+  const [transactions, setTransactions] = useState<any[]>([]);
 
   useEffect(() => {
     const setupContracts = async () => {
@@ -79,45 +81,31 @@ export default function Governance() {
 
       await buyBBT(amount);
 
+      // Add transaction to list
+      const newTransaction = {
+        id: Date.now(),
+        type: "Buy BBT",
+        amount: buyAmount,
+        timestamp: new Date().toLocaleString(),
+        status: "Completed",
+      };
+      setTransactions([newTransaction, ...transactions]);
+
       // Reset input field after successful purchase
       setBuyAmount("");
     } catch (error) {
       console.error("Failed to buy BBT tokens:", error);
       setErrorMessage("Failed to buy BBT tokens. Please try again.");
-    } finally {
-      setIsLoading(false);
-    }
-  };
 
-  const handleCreateProposal = async () => {
-    if (!wallet) {
-      await connect();
-      return;
-    }
-    if (!governanceContract || !tokenContract) return;
-
-    try {
-      setIsLoading(true);
-      setErrorMessage("");
-
-      const tx = await createProposal(
-        BigInt(newProposal.duration) * BigInt(86400), // Convert days to seconds
-        BigInt(newProposal.pricePerBillboard) * BigInt(1e6), // Convert to USDC decimals
-        BigInt(newProposal.securityDeposit) * BigInt(1e18), // Convert to BBT decimals
-        BigInt(newProposal.minProposalTokens) * BigInt(1e18), // Convert to BBT decimals
-        BigInt(newProposal.minVotingTokens) * BigInt(1e18), // Convert to BBT decimals
-      );
-      await tx.wait();
-      setNewProposal({
-        duration: "",
-        pricePerBillboard: "",
-        securityDeposit: "",
-        minProposalTokens: "",
-        minVotingTokens: "",
-      });
-    } catch (error) {
-      console.error("Failed to create proposal:", error);
-      setErrorMessage("Failed to create proposal. Please try again.");
+      // Add failed transaction
+      const failedTransaction = {
+        id: Date.now(),
+        type: "Buy BBT",
+        amount: buyAmount,
+        timestamp: new Date().toLocaleString(),
+        status: "Failed",
+      };
+      setTransactions([failedTransaction, ...transactions]);
     } finally {
       setIsLoading(false);
     }
@@ -158,308 +146,331 @@ export default function Governance() {
   return (
     <Container maxWidth="lg" sx={{ py: 4 }}>
       <Stack spacing={4}>
-        {/* Current Settings */}
-        <Paper elevation={3} sx={{ p: 4 }}>
-          <Typography variant="h4" gutterBottom>
-            Current Settings
-          </Typography>
-          <Stack direction="row" spacing={4} sx={{ mt: 2 }}>
-            <Box>
-              <Typography variant="subtitle1" color="text.secondary">
-                Duration
-              </Typography>
-              <Typography variant="h6">
-                {governanceSettings.duration
-                  ? governanceSettings.duration / 86400
-                  : 0}{" "}
-                days
-              </Typography>
-            </Box>
-            <Box>
-              <Typography variant="subtitle1" color="text.secondary">
-                Price per Billboard
-              </Typography>
-              <Typography variant="h6">
-                {governanceSettings.price || 0} USDC
-              </Typography>
-            </Box>
-            <Box>
-              <Typography variant="subtitle1" color="text.secondary">
-                Min Proposal Tokens
-              </Typography>
-              <Typography variant="h6">
-                {governanceSettings.minProposalTokens
-                  ? governanceSettings.minProposalTokens
-                  : 0}{" "}
-                BBT
-              </Typography>
-            </Box>
-            <Box>
-              <Typography variant="subtitle1" color="text.secondary">
-                Min Voting Tokens
-              </Typography>
-              <Typography variant="h6">
-                {governanceSettings.minVotingTokens
-                  ? governanceSettings.minVotingTokens
-                  : 0}{" "}
-                BBT
-              </Typography>
-            </Box>
+        <Stack direction="row" spacing={4} justifyContent="space-between">
+          {/* Current Settings */}
+          <Stack direction="column" spacing={4} sx={{ mt: 2 }}>
+            <Typography variant="h4" fontWeight={800}>
+              CURRENT SETTINGS
+            </Typography>
+            <Stack direction="column" spacing={4} sx={{ mt: 2 }}>
+              <Box>
+                <Typography variant="body1">Duration</Typography>
+                <Typography variant="body1">
+                  {governanceSettings.duration
+                    ? governanceSettings.duration / 86400
+                    : 0}{" "}
+                  days
+                </Typography>
+              </Box>
+              <Box>
+                <Typography variant="body1">Price per Billboard</Typography>
+                <Typography variant="body1">
+                  {governanceSettings.price.toLocaleString()} USDC
+                </Typography>
+              </Box>
+              <Box>
+                <Typography variant="body1">
+                  Security Deposit for creating a Proposal
+                </Typography>
+                <Typography variant="body1">
+                  {governanceSettings.securityDeposit.toLocaleString()} USDC
+                </Typography>
+              </Box>
+              <Box>
+                <Typography variant="body1">Min Proposal Tokens</Typography>
+                <Typography variant="body1">
+                  {governanceSettings.minProposalTokens
+                    ? governanceSettings.minProposalTokens.toLocaleString()
+                    : 0}{" "}
+                  BBT
+                </Typography>
+              </Box>
+              <Box>
+                <Typography variant="body1">Min Voting Tokens</Typography>
+                <Typography variant="body1">
+                  {governanceSettings.minVotingTokens
+                    ? governanceSettings.minVotingTokens.toLocaleString()
+                    : 0}{" "}
+                  BBT
+                </Typography>
+              </Box>
+              <Box>
+                <Typography variant="body1">
+                  Security Deposit Provider
+                </Typography>
+                <Typography variant="body1">
+                  {/* {governanceSettings.securityDepositProvider} USDC */}
+                  100 USDC
+                </Typography>
+              </Box>
+            </Stack>
           </Stack>
-        </Paper>
-
-        {/* Buy BBT Tokens */}
-        <Paper elevation={3} sx={{ p: 4 }}>
-          <Typography variant="h4" gutterBottom>
-            Governance Tokens
-          </Typography>
-          <Stack spacing={3} sx={{ mt: 2 }}>
+          <Stack
+            direction="column"
+            spacing={4}
+            sx={{ mt: 2, minWidth: "400px" }}
+          >
+            <Typography variant="h4" fontWeight={800}>
+              GOVERNANCE TOKENS
+            </Typography>
             <Stack direction="row" spacing={4}>
               <Box>
-                <Typography variant="subtitle1" color="text.secondary">
-                  BBT Balance
-                </Typography>
+                <Typography variant="body1">BBT Balance</Typography>
                 <Typography variant="h6">{tokenBalance} BBT</Typography>
               </Box>
               <Box>
-                <Typography variant="subtitle1" color="text.secondary">
-                  USDC Balance
-                </Typography>
+                <Typography variant="body1">USDC Balance</Typography>
                 <Typography variant="h6">{usdcBalance} USDC</Typography>
               </Box>
             </Stack>
-            <Divider />
-            <Typography variant="h6">Buy BBT Tokens</Typography>
-            <Stack direction="row" spacing={2} alignItems="center">
-              <TextField
-                label="Amount (USDC)"
-                type="number"
-                value={buyAmount}
-                onChange={(e) => setBuyAmount(e.target.value)}
-                fullWidth
-                helperText="1 USDC = 1 BBT"
-              />
-              <Button
-                variant="contained"
-                color="primary"
-                onClick={handleBuyBBT}
-                disabled={!buyAmount || isLoading || parseFloat(buyAmount) <= 0}
-                sx={{ height: 56 }}
-              >
-                {isLoading ? "Processing..." : "Buy Tokens"}
-              </Button>
-            </Stack>
-          </Stack>
-        </Paper>
+            <Paper elevation={3} sx={{ p: 3, mt: 2 }}>
+              <Typography variant="h6" gutterBottom>
+                Buy BBT Tokens
+              </Typography>
+              <Stack direction="row" spacing={2} alignItems="center">
+                <TextField
+                  label="USDC Amount"
+                  type="number"
+                  value={buyAmount}
+                  onChange={(e) => setBuyAmount(e.target.value)}
+                  fullWidth
+                  size="small"
+                  InputProps={{
+                    inputProps: { min: 0 },
+                  }}
+                />
+                <Button
+                  variant="contained"
+                  onClick={handleBuyBBT}
+                  disabled={
+                    isLoading || !buyAmount || parseFloat(buyAmount) <= 0
+                  }
+                  startIcon={isLoading ? <CircularProgress size={20} /> : null}
+                >
+                  Buy BBT
+                </Button>
+              </Stack>
+              {errorMessage && (
+                <Alert severity="error" sx={{ mt: 2 }}>
+                  {errorMessage}
+                </Alert>
+              )}
+            </Paper>
 
-        {/* Create Proposal */}
-        <Paper elevation={3} sx={{ p: 4 }}>
-          <Typography variant="h4" gutterBottom>
-            Create New Proposal
-          </Typography>
-          <Stack spacing={3} sx={{ mt: 3 }}>
-            <TextField
-              label="Duration (days)"
-              type="number"
-              value={newProposal.duration}
-              onChange={(e) =>
-                setNewProposal({ ...newProposal, duration: e.target.value })
-              }
-              fullWidth
-            />
-            <TextField
-              label="Price per Billboard (USDC)"
-              type="number"
-              value={newProposal.pricePerBillboard}
-              onChange={(e) =>
-                setNewProposal({
-                  ...newProposal,
-                  pricePerBillboard: e.target.value,
-                })
-              }
-              fullWidth
-            />
-            <TextField
-              label="Security Deposit (BBT)"
-              type="number"
-              value={newProposal.securityDeposit}
-              onChange={(e) =>
-                setNewProposal({
-                  ...newProposal,
-                  securityDeposit: e.target.value,
-                })
-              }
-              fullWidth
-            />
-            <TextField
-              label="Minimum Proposal Tokens (BBT)"
-              type="number"
-              value={newProposal.minProposalTokens}
-              onChange={(e) =>
-                setNewProposal({
-                  ...newProposal,
-                  minProposalTokens: e.target.value,
-                })
-              }
-              fullWidth
-            />
-            <TextField
-              label="Minimum Voting Tokens (BBT)"
-              type="number"
-              value={newProposal.minVotingTokens}
-              onChange={(e) =>
-                setNewProposal({
-                  ...newProposal,
-                  minVotingTokens: e.target.value,
-                })
-              }
-              fullWidth
-            />
+            <Paper elevation={3} sx={{ p: 3, mt: 2 }}>
+              <Typography variant="h6" gutterBottom>
+                Transaction Status
+              </Typography>
+              {transactionStatus && (
+                <Stepper
+                  activeStep={transactionStatus?.approveUSDC.completed ? 1 : 0}
+                  orientation="vertical"
+                >
+                  <Step completed={transactionStatus?.approveUSDC.completed}>
+                    <StepButton
+                      disabled={
+                        transactionStatus?.approveUSDC.pending ||
+                        transactionStatus?.approveUSDC.completed
+                      }
+                    >
+                      <StepLabel>
+                        <Box>
+                          <Typography variant="body1">
+                            {transactionStatus?.approveUSDC.label ||
+                              "Approve USDC"}
+                          </Typography>
+                          {transactionStatus?.approveUSDC.pending && (
+                            <Typography variant="caption" color="primary">
+                              Processing...
+                            </Typography>
+                          )}
+                          {transactionStatus?.approveUSDC.completed && (
+                            <Typography variant="caption" color="success.main">
+                              ✓ Approved
+                            </Typography>
+                          )}
+                          {transactionStatus?.approveUSDC.error && (
+                            <Typography
+                              variant="caption"
+                              color="error"
+                              sx={{ overflow: "scroll" }}
+                            >
+                              Error: {transactionStatus.approveUSDC.error}
+                            </Typography>
+                          )}
+                        </Box>
+                      </StepLabel>
+                    </StepButton>
+                  </Step>
+                  <Step completed={transactionStatus?.buyBillboard.completed}>
+                    <StepButton
+                      disabled={
+                        transactionStatus?.buyBillboard.pending ||
+                        transactionStatus?.buyBillboard.completed ||
+                        !transactionStatus?.approveUSDC.completed
+                      }
+                    >
+                      <StepLabel>
+                        <Box>
+                          <Typography variant="body1">
+                            {transactionStatus?.buyBillboard.label ||
+                              "Buy Billboard"}
+                          </Typography>
+                          {transactionStatus?.buyBillboard.pending && (
+                            <Typography variant="caption" color="primary">
+                              Processing...
+                            </Typography>
+                          )}
+                          {transactionStatus?.buyBillboard.completed && (
+                            <Typography variant="caption" color="success.main">
+                              ✓ Complete
+                            </Typography>
+                          )}
+                          {transactionStatus?.buyBillboard.error && (
+                            <Typography
+                              variant="caption"
+                              color="error"
+                              sx={{ overflow: "scroll" }}
+                            >
+                              Error: {transactionStatus.buyBillboard.error}
+                            </Typography>
+                          )}
+                        </Box>
+                      </StepLabel>
+                    </StepButton>
+                  </Step>
+                </Stepper>
+              )}
+            </Paper>
+          </Stack>
+        </Stack>
+
+        <Stack direction="column" spacing={4} width="100%">
+          <Stack
+            direction="row"
+            spacing={4}
+            justifyContent="space-between"
+            alignItems="center"
+          >
+            <Typography variant="h4" fontWeight={800}>
+              ACTIVE PROPOSALS
+            </Typography>
             <Button
               variant="contained"
               color="primary"
-              onClick={handleCreateProposal}
-              disabled={
-                !newProposal.duration ||
-                !newProposal.pricePerBillboard ||
-                !newProposal.securityDeposit ||
-                !newProposal.minProposalTokens ||
-                !newProposal.minVotingTokens ||
-                isLoading
-              }
+              onClick={() => setShowCreateProposal(true)}
             >
-              {!wallet
-                ? "Connect Wallet"
-                : isLoading
-                  ? "Creating..."
-                  : "Create Proposal"}
+              Create Proposal
             </Button>
-            {errorMessage && (
-              <Alert severity="error" sx={{ mt: 2 }}>
-                {errorMessage}
-              </Alert>
-            )}
           </Stack>
-        </Paper>
+        </Stack>
 
-        {/* Proposals List */}
-        <Paper elevation={3} sx={{ p: 4 }}>
-          <Typography variant="h4" gutterBottom>
-            Active Proposals
-          </Typography>
-          <Stack spacing={3} sx={{ mt: 3 }}>
-            {proposals.map((proposal) => (
-              <Card key={proposal.id}>
-                <CardContent>
-                  <Stack direction="row" spacing={4}>
-                    <Box>
-                      <Typography variant="subtitle1" color="text.secondary">
-                        Duration
-                      </Typography>
-                      <Typography variant="h6">
-                        {proposal.duration / 86400} days
-                      </Typography>
-                    </Box>
-                    <Box>
-                      <Typography variant="subtitle1" color="text.secondary">
-                        Price per Billboard
-                      </Typography>
-                      <Typography variant="h6">
-                        {proposal.pricePerBillboard / 1e6} USDC
-                      </Typography>
-                    </Box>
-                    <Box>
-                      <Typography variant="subtitle1" color="text.secondary">
-                        Security Deposit
-                      </Typography>
-                      <Typography variant="h6">
-                        {proposal.securityDeposit / 1e18} BBT
-                      </Typography>
-                    </Box>
-                    <Box>
-                      <Typography variant="subtitle1" color="text.secondary">
-                        Voting Period
-                      </Typography>
-                      <Typography variant="h6">
-                        {new Date(
-                          (proposal.createdAt + 7 * 86400) * 1000,
-                        ).toLocaleDateString()}{" "}
-                        (
-                        {Math.floor(
-                          (proposal.createdAt + 7 * 86400 - Date.now() / 1000) /
-                            86400,
-                        )}{" "}
-                        days remaining)
-                      </Typography>
-                    </Box>
-                    <Box>
-                      <Typography variant="subtitle1" color="text.secondary">
-                        Min Proposal Tokens
-                      </Typography>
-                      <Typography variant="h6">
-                        {proposal.minProposalTokens / 1e18} BBT
-                      </Typography>
-                    </Box>
-                    <Box>
-                      <Typography variant="subtitle1" color="text.secondary">
-                        Min Voting Tokens
-                      </Typography>
-                      <Typography variant="h6">
-                        {proposal.minVotingTokens / 1e18} BBT
-                      </Typography>
-                    </Box>
-                    <Box>
-                      <Typography variant="subtitle1" color="text.secondary">
-                        Votes
-                      </Typography>
-                      <Typography variant="h6">
-                        For: {proposal.votesFor / 1e18} | Against:{" "}
-                        {proposal.votesAgainst / 1e18}
-                      </Typography>
-                    </Box>
+        <Stack direction="column" spacing={4} width="100%">
+          {proposals.map((proposal) => (
+            <Stack
+              direction="column"
+              spacing={4}
+              key={proposal.id.toString().concat("proposal")}
+              border="1px solid #444"
+              borderRadius={2}
+              p={2}
+              width="100%"
+            >
+              <Typography variant="h4">{proposal.id + 1}</Typography>
+              <Stack direction="row" spacing={4}>
+                <Stack direction="column" spacing={2}>
+                  <Typography variant="body1">Duration</Typography>
+                  <Typography variant="body1">
+                    {proposal.duration} days
+                  </Typography>
+                </Stack>
+                <Stack direction="column" spacing={2}>
+                  <Typography variant="body1">Price per Billboard</Typography>
+                  <Typography variant="body1">
+                    {proposal.pricePerBillboard.toString()} USDC
+                  </Typography>
+                </Stack>
+                <Stack direction="column" spacing={2}>
+                  <Typography variant="body1">
+                    Security Deposit for creating a Proposal
+                  </Typography>
+                  <Typography variant="body1">
+                    {proposal.securityDeposit.toString()} BBT
+                  </Typography>
+                </Stack>
+                <Stack direction="column" spacing={2}>
+                  <Typography variant="body1">
+                    Security Deposit Provider
+                  </Typography>
+                  <Typography variant="body1">
+                    {/* TODO: Add security deposit provider */}
+                    {/* {proposal.securityDepositProvider.toString()} USDC */}
+                  </Typography>
+                </Stack>
+                <Stack direction="column" spacing={2}>
+                  <Typography variant="body1">Min Proposal Tokens</Typography>
+                  <Typography variant="body1">
+                    {proposal.minProposalTokens.toString()} BBT
+                  </Typography>
+                </Stack>
+                <Stack direction="column" spacing={2}>
+                  <Typography variant="body1">Min Voting Tokens</Typography>
+                  <Typography variant="body1">
+                    {proposal.minVotingTokens.toString()} BBT
+                  </Typography>
+                </Stack>
+              </Stack>
+              <Stack direction="row" spacing={4} justifyContent="space-between">
+                <Stack direction="row" spacing={2} alignItems="center">
+                  <Button
+                    size="small"
+                    variant="outlined"
+                    color="primary"
+                    onClick={() => handleVote(proposal.id, true)}
+                    startIcon={<VoteFor />}
+                  >
+                    Vote For
+                  </Button>
+                  <Button
+                    size="small"
+                    variant="outlined"
+                    color="primary"
+                    onClick={() => handleVote(proposal.id, false)}
+                    startIcon={<VoteAgainst />}
+                  >
+                    Vote Against
+                  </Button>
+                </Stack>
+                <Stack direction="column" spacing={2}>
+                  <Typography variant="body1">Votes</Typography>
+                  <Stack direction="row" spacing={2}>
+                    <Typography variant="body1">
+                      For: {proposal.votesFor.toString()}
+                    </Typography>
+                    <Divider orientation="vertical" flexItem sx={{ mx: 1 }} />
+                    <Typography variant="body1">
+                      Against: {proposal.votesAgainst.toString()}
+                    </Typography>
                   </Stack>
-                </CardContent>
-                <CardActions>
-                  {!hasVoted[proposal.id] && (
-                    <>
-                      <Button
-                        variant="contained"
-                        color="success"
-                        onClick={() => handleVote(proposal.id, true)}
-                        disabled={isLoading}
-                      >
-                        Vote For
-                      </Button>
-                      <Button
-                        variant="contained"
-                        color="error"
-                        onClick={() => handleVote(proposal.id, false)}
-                        disabled={isLoading}
-                      >
-                        Vote Against
-                      </Button>
-                    </>
-                  )}
-                  {!proposal.executed &&
-                    proposal.votesFor > proposal.votesAgainst && (
-                      <Button
-                        variant="contained"
-                        color="primary"
-                        onClick={() => handleExecuteProposal(proposal.id)}
-                        disabled={isLoading}
-                      >
-                        Execute Proposal
-                      </Button>
-                    )}
-                </CardActions>
-              </Card>
-            ))}
-            {proposals.length === 0 && (
-              <Alert severity="info">No active proposals</Alert>
-            )}
-          </Stack>
-        </Paper>
+                  <Button
+                    size="small"
+                    disabled={proposal.executed}
+                    variant="contained"
+                    color="primary"
+                    onClick={() => handleExecuteProposal(proposal.id)}
+                  >
+                    Execute
+                  </Button>
+                </Stack>
+              </Stack>
+            </Stack>
+          ))}
+        </Stack>
       </Stack>
+      <CreateProposal
+        open={showCreateProposal}
+        onClose={() => setShowCreateProposal(false)}
+      />
     </Container>
   );
 }

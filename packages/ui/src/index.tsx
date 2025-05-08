@@ -62,7 +62,7 @@ function App() {
           },
           background: {
             default: mode === "light" ? "#1E1E1E" : "#1E1E1E",
-            paper: mode === "light" ? "#1E1E1E" : "#1e1e1e",
+            paper: mode === "light" ? "#1E1E1E" : "#1E1E1E",
           },
           text: {
             primary: mode === "light" ? "#FFFFFF" : "#ffffff",

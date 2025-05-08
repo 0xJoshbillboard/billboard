@@ -12,6 +12,7 @@ contract BillboardGovernance is Initializable, OwnableUpgradeable {
     uint256 public minProposalTokens;
     uint256 public minVotingTokens;
     BillboardToken public token;
+    uint256 public securityDepositProvider;
 
     struct Proposal {
         uint256 duration;
@@ -26,6 +27,7 @@ contract BillboardGovernance is Initializable, OwnableUpgradeable {
         address proposer;
         bool depositReturned;
         uint256 createdAt;
+        uint256 securityDepositProvider;
     }
 
     mapping(uint256 => Proposal) public proposals;
@@ -39,13 +41,14 @@ contract BillboardGovernance is Initializable, OwnableUpgradeable {
         uint256 securityDeposit,
         uint256 minProposalTokens,
         uint256 minVotingTokens,
-        uint256 createdAt
+        uint256 createdAt,
+        uint256 securityDepositProvider
     );
     event Voted(uint256 indexed proposalId, address indexed voter, bool support, uint256 votes);
     event ProposalExecuted(uint256 indexed proposalId);
     event SecurityDepositReturned(uint256 indexed proposalId, address indexed proposer, uint256 amount);
 
-    function initialize(uint256 _duration, uint256 _pricePerBillboard, uint256 _securityDeposit, address _token)
+    function initialize(uint256 _duration, uint256 _pricePerBillboard, uint256 _securityDeposit, address _token, uint256 _securityDepositProvider)
         public
         initializer
     {
@@ -57,6 +60,7 @@ contract BillboardGovernance is Initializable, OwnableUpgradeable {
         minVotingTokens = 500 * 10 ** 18;
         token = BillboardToken(_token);
         proposalCount = 0;
+        securityDepositProvider = _securityDepositProvider;
     }
 
     function createProposal(
@@ -64,7 +68,8 @@ contract BillboardGovernance is Initializable, OwnableUpgradeable {
         uint256 _pricePerBillboard,
         uint256 _securityDeposit,
         uint256 _minProposalTokens,
-        uint256 _minVotingTokens
+        uint256 _minVotingTokens,
+        uint256 _securityDepositProvider
     ) external {
         require(token.balanceOf(msg.sender) >= minProposalTokens, "Insufficient tokens to create proposal");
         require(token.transferFrom(msg.sender, address(this), securityDeposit), "Security deposit transfer failed");
@@ -82,7 +87,8 @@ contract BillboardGovernance is Initializable, OwnableUpgradeable {
             proposer: msg.sender,
             depositReturned: false,
             initialSecurityDeposit: securityDeposit,
-            createdAt: block.timestamp
+            createdAt: block.timestamp,
+            securityDepositProvider: _securityDepositProvider
         });
 
         proposalCount++;
@@ -98,12 +104,13 @@ contract BillboardGovernance is Initializable, OwnableUpgradeable {
         );
     }
 
-    function vote(uint256 proposalId, bool support, uint256 amount) external {
+    function vote(uint256 proposalId, bool support) external {
         require(proposalId < proposalCount, "Invalid proposal");
         require(!hasVoted[msg.sender][proposalId], "Already voted");
         Proposal storage proposal = proposals[proposalId];
         require(!proposal.executed, "Proposal already executed");
-        require(token.balanceOf(msg.sender) >= minVotingTokens, "Insufficient tokens to vote");
+        uint256 amount = token.balanceOf(msg.sender);
+        require(amount >= minVotingTokens, "Insufficient tokens to vote");
 
         hasVoted[msg.sender][proposalId] = true;
 
@@ -160,7 +167,8 @@ contract BillboardGovernance is Initializable, OwnableUpgradeable {
             uint256 _votesFor,
             uint256 _votesAgainst,
             bool _executed,
-            uint256 _createdAt
+            uint256 _createdAt,
+            uint256 _securityDepositProvider
         )
     {
         require(proposalId < proposalCount, "Invalid proposal");
@@ -175,7 +183,8 @@ contract BillboardGovernance is Initializable, OwnableUpgradeable {
             proposal.votesFor,
             proposal.votesAgainst,
             proposal.executed,
-            proposal.createdAt
+            proposal.createdAt,
+            proposal.securityDepositProvider
         );
     }
 }

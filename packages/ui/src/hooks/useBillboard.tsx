@@ -36,6 +36,7 @@ export interface Proposal {
   minProposalTokens: number;
   minVotingTokens: number;
   createdAt: number;
+  securityDepositProvider: number;
 }
 
 export interface TransactionStatus {
@@ -118,12 +119,14 @@ export default function useBillboard() {
     minProposalTokens: number;
     minVotingTokens: number;
     securityDeposit: number;
+    securityDepositProvider: number;
   }>({
     price: 0,
     duration: 0,
     minProposalTokens: 0,
     minVotingTokens: 0,
     securityDeposit: 0,
+    securityDepositProvider: 0,
   });
   const [billboards, setBillboards] = useState<Billboard[]>([]);
   const [usdcBalance, setUsdcBalance] = useState<string>("0");
@@ -257,12 +260,14 @@ export default function useBillboard() {
           minProposalTokens,
           minVotingTokens,
           securityDeposit,
+          securityDepositProvider,
         ] = await Promise.all([
           governanceContract.pricePerBillboard(),
           governanceContract.duration(),
           governanceContract.minProposalTokens(),
           governanceContract.minVotingTokens(),
           governanceContract.securityDeposit(),
+          governanceContract.securityDepositProvider(),
         ]);
 
         const readablePrice = Number(price) / 1_000_000;
@@ -270,12 +275,15 @@ export default function useBillboard() {
         const minProposalTokensReadable = Number(minProposalTokens) / 1e18;
         const minVotingTokensReadable = Number(minVotingTokens) / 1e18;
         const securityDepositReadable = Number(securityDeposit) / 1e6;
+        const securityDepositProviderReadable =
+          Number(securityDepositProvider) / 1e6;
         setGovernanceSettings({
           price: readablePrice,
           duration: durationInSeconds,
           minProposalTokens: minProposalTokensReadable,
           minVotingTokens: minVotingTokensReadable,
           securityDeposit: securityDepositReadable,
+          securityDepositProvider: securityDepositProviderReadable,
         });
       }
     };
@@ -464,6 +472,7 @@ export default function useBillboard() {
           votesAgainst: Number(proposal[7]),
           executed: proposal[8],
           createdAt: Number(proposal[9]),
+          securityDepositProvider: Number(proposal[10]),
         });
       }
 
@@ -655,6 +664,7 @@ export default function useBillboard() {
         minProposalTokens,
         minVotingTokens,
         securityDeposit,
+        securityDepositProvider,
       ] = await Promise.all([
         governanceContract.pricePerBillboard(),
         governanceContract.duration(),
@@ -662,6 +672,7 @@ export default function useBillboard() {
         governanceContract.minProposalTokens(),
         governanceContract.minVotingTokens(),
         governanceContract.securityDeposit(),
+        governanceContract.securityDepositProvider(),
       ]);
 
       setGovernanceSettings({
@@ -670,6 +681,7 @@ export default function useBillboard() {
         minProposalTokens: Number(minProposalTokens),
         minVotingTokens: Number(minVotingTokens),
         securityDeposit: Number(securityDeposit) / 1e6,
+        securityDepositProvider: Number(securityDepositProvider) / 1e6,
       });
       return tx;
     } catch (error) {

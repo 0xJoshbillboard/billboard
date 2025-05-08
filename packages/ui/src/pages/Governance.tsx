@@ -12,13 +12,9 @@ import {
   Box,
   Container,
   Typography,
-  Paper,
   Stack,
   TextField,
   Button,
-  Card,
-  CardContent,
-  CardActions,
   Alert,
   CircularProgress,
   Step,
@@ -203,8 +199,7 @@ export default function Governance() {
                   Security Deposit Provider
                 </Typography>
                 <Typography variant="body1">
-                  {/* {governanceSettings.securityDepositProvider} USDC */}
-                  100 USDC
+                  {governanceSettings.securityDepositProvider} USDC 100 USDC
                 </Typography>
               </Box>
             </Stack>
@@ -227,41 +222,37 @@ export default function Governance() {
                 <Typography variant="h6">{usdcBalance} USDC</Typography>
               </Box>
             </Stack>
-            <Paper elevation={3} sx={{ p: 3, mt: 2 }}>
-              <Typography variant="h6" gutterBottom>
-                Buy BBT Tokens
-              </Typography>
-              <Stack direction="row" spacing={2} alignItems="center">
-                <TextField
-                  label="USDC Amount"
-                  type="number"
-                  value={buyAmount}
-                  onChange={(e) => setBuyAmount(e.target.value)}
-                  fullWidth
-                  size="small"
-                  InputProps={{
-                    inputProps: { min: 0 },
-                  }}
-                />
-                <Button
-                  variant="contained"
-                  onClick={handleBuyBBT}
-                  disabled={
-                    isLoading || !buyAmount || parseFloat(buyAmount) <= 0
-                  }
-                  startIcon={isLoading ? <CircularProgress size={20} /> : null}
-                >
-                  Buy BBT
-                </Button>
-              </Stack>
-              {errorMessage && (
-                <Alert severity="error" sx={{ mt: 2 }}>
-                  {errorMessage}
-                </Alert>
-              )}
-            </Paper>
-
-            <Paper elevation={3} sx={{ p: 3, mt: 2 }}>
+            <Typography variant="h6" gutterBottom>
+              Buy BBT Tokens
+            </Typography>
+            <Stack direction="row" spacing={2} alignItems="center">
+              <TextField
+                label="USDC Amount"
+                type="number"
+                value={buyAmount}
+                onChange={(e) => setBuyAmount(e.target.value)}
+                fullWidth
+                size="small"
+                InputProps={{
+                  inputProps: { min: 0 },
+                }}
+              />
+              <Button
+                variant="contained"
+                onClick={handleBuyBBT}
+                disabled={isLoading || !buyAmount || parseFloat(buyAmount) <= 0}
+                startIcon={isLoading ? <CircularProgress size={20} /> : null}
+                sx={{ width: "100px" }}
+              >
+                Buy BBT
+              </Button>
+            </Stack>
+            {errorMessage && (
+              <Alert severity="error" sx={{ mt: 2 }}>
+                {errorMessage}
+              </Alert>
+            )}
+            <Box border="1px solid #444" borderRadius={2} p={2}>
               <Typography variant="h6" gutterBottom>
                 Transaction Status
               </Typography>
@@ -345,7 +336,7 @@ export default function Governance() {
                   </Step>
                 </Stepper>
               )}
-            </Paper>
+            </Box>
           </Stack>
         </Stack>
 

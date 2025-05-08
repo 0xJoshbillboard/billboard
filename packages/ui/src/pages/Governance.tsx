@@ -146,7 +146,11 @@ export default function Governance() {
   return (
     <Container maxWidth="lg" sx={{ py: 4 }}>
       <Stack spacing={4}>
-        <Stack direction="row" spacing={4} justifyContent="space-between">
+        <Stack
+          direction={{ xs: "column", md: "row" }}
+          spacing={4}
+          justifyContent="space-between"
+        >
           {/* Current Settings */}
           <Stack direction="column" spacing={4} sx={{ mt: 2 }}>
             <Typography variant="h4" fontWeight={800}>
@@ -376,8 +380,12 @@ export default function Governance() {
               p={2}
               width="100%"
             >
-              <Typography variant="h4">{proposal.id + 1}</Typography>
-              <Stack direction="row" spacing={4}>
+              <Typography variant="h4">#{proposal.id + 1}</Typography>
+              <Stack
+                direction={{ xs: "column", md: "row" }}
+                spacing={4}
+                justifyContent="space-between"
+              >
                 <Stack direction="column" spacing={2}>
                   <Typography variant="body1">Duration</Typography>
                   <Typography variant="body1">
@@ -387,7 +395,7 @@ export default function Governance() {
                 <Stack direction="column" spacing={2}>
                   <Typography variant="body1">Price per Billboard</Typography>
                   <Typography variant="body1">
-                    {proposal.pricePerBillboard.toString()} USDC
+                    {(proposal.pricePerBillboard / 1e18).toLocaleString()} USDC
                   </Typography>
                 </Stack>
                 <Stack direction="column" spacing={2}>
@@ -395,7 +403,7 @@ export default function Governance() {
                     Security Deposit for creating a Proposal
                   </Typography>
                   <Typography variant="body1">
-                    {proposal.securityDeposit.toString()} BBT
+                    {(proposal.securityDeposit / 1e18).toLocaleString()} BBT
                   </Typography>
                 </Stack>
                 <Stack direction="column" spacing={2}>
@@ -410,17 +418,21 @@ export default function Governance() {
                 <Stack direction="column" spacing={2}>
                   <Typography variant="body1">Min Proposal Tokens</Typography>
                   <Typography variant="body1">
-                    {proposal.minProposalTokens.toString()} BBT
+                    {(proposal.minProposalTokens / 1e18).toLocaleString()} BBT
                   </Typography>
                 </Stack>
                 <Stack direction="column" spacing={2}>
                   <Typography variant="body1">Min Voting Tokens</Typography>
                   <Typography variant="body1">
-                    {proposal.minVotingTokens.toString()} BBT
+                    {(proposal.minVotingTokens / 1e18).toLocaleString()} BBT
                   </Typography>
                 </Stack>
               </Stack>
-              <Stack direction="row" spacing={4} justifyContent="space-between">
+              <Stack
+                direction={{ xs: "column", md: "row" }}
+                spacing={4}
+                justifyContent="space-between"
+              >
                 <Stack direction="row" spacing={2} alignItems="center">
                   <Button
                     size="small"

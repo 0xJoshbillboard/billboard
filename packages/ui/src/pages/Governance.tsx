@@ -199,7 +199,7 @@ export default function Governance() {
                   Security Deposit Provider
                 </Typography>
                 <Typography variant="body1">
-                  {governanceSettings.securityDepositProvider} USDC 100 USDC
+                  {governanceSettings.securityDepositProvider} USDC
                 </Typography>
               </Box>
             </Stack>
@@ -215,11 +215,15 @@ export default function Governance() {
             <Stack direction="row" spacing={4}>
               <Box>
                 <Typography variant="body1">BBT Balance</Typography>
-                <Typography variant="h6">{tokenBalance} BBT</Typography>
+                <Typography variant="h6">
+                  {tokenBalance.toLocaleString()} BBT
+                </Typography>
               </Box>
               <Box>
                 <Typography variant="body1">USDC Balance</Typography>
-                <Typography variant="h6">{usdcBalance} USDC</Typography>
+                <Typography variant="h6">
+                  {usdcBalance.toLocaleString()} USDC
+                </Typography>
               </Box>
             </Stack>
             <Typography variant="h6" gutterBottom>
@@ -402,8 +406,7 @@ export default function Governance() {
                     Security Deposit Provider
                   </Typography>
                   <Typography variant="body1">
-                    {/* TODO: Add security deposit provider */}
-                    {/* {proposal.securityDepositProvider.toString()} USDC */}
+                    {proposal.securityDepositProvider.toString()} USDC
                   </Typography>
                 </Stack>
                 <Stack direction="column" spacing={2}>

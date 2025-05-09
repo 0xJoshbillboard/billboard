@@ -16,6 +16,7 @@ import { useConnectWallet } from "@web3-onboard/react";
 import useBillboard, { RawBillboard } from "../hooks/useBillboard";
 import { useEffect, useState } from "react";
 import ContentCopyIcon from "@mui/icons-material/ContentCopy";
+import { useNavigate } from "react-router-dom";
 
 export default function Dashboard() {
   const [{ wallet }, connect] = useConnectWallet();
@@ -23,6 +24,7 @@ export default function Dashboard() {
   const [billboards, setBillboards] = useState<RawBillboard[]>([]);
   const [billboardsAreLoading, setBillboardsAreLoading] = useState(false);
   const theme = useTheme();
+  const navigate = useNavigate();
 
   useEffect(() => {
     if (wallet) {
@@ -126,7 +128,7 @@ export default function Dashboard() {
           <Box sx={{ display: "flex", flexDirection: "column", width: "100%" }}>
             {billboardsAreLoading ? (
               <CircularProgress />
-            ) : (
+            ) : billboards.length > 0 ? (
               billboards.map((billboard, index) => (
                 <Card
                   key={billboard.ipfsHash.concat(billboard.link)}
@@ -225,6 +227,19 @@ export default function Dashboard() {
                   </CardActions>
                 </Card>
               ))
+            ) : (
+              <>
+                <Typography variant="h6">No billboards found</Typography>
+                <Button
+                  variant="contained"
+                  color="primary"
+                  onClick={() => {
+                    navigate("/buy");
+                  }}
+                >
+                  Buy Billboards
+                </Button>
+              </>
             )}
           </Box>
         </Stack>

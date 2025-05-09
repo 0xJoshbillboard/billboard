@@ -128,7 +128,6 @@ export default function useBillboard() {
     securityDeposit: 0,
     securityDepositProvider: 0,
   });
-  const [billboards, setBillboards] = useState<Billboard[]>([]);
   const [usdcBalance, setUsdcBalance] = useState<string>("0");
   const [tokenBalance, setTokenBalance] = useState<string>("0");
   const [proposals, setProposals] = useState<Proposal[]>([]);
@@ -322,7 +321,7 @@ export default function useBillboard() {
       return "0";
     }
     const balance = await tokenContract.balanceOf(wallet.accounts[0].address);
-    return (Number(balance) / 1e18).toString();
+    return (Number(balance) / 1e18).toLocaleString();
   };
 
   const buyBBT = async (amount: number) => {
@@ -992,7 +991,6 @@ export default function useBillboard() {
     buy,
     extend,
     fetchBillboards,
-    billboards,
     uploadImage,
     getAds,
     registerProvider,

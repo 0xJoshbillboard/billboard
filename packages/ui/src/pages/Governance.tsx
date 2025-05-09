@@ -365,6 +365,9 @@ export default function Governance() {
         </Stack>
 
         <Stack direction="column" spacing={4} width="100%">
+          {proposals.length === 0 && (
+            <Typography variant="body1">No active proposals</Typography>
+          )}
           {proposals.map((proposal) => (
             <Stack
               direction="column"

@@ -121,7 +121,8 @@ export default function SDK() {
             alignItems="center"
           >
             <Typography variant="h1" position="relative">
-              {governanceSettings?.securityDeposit.toLocaleString()} USDC
+              {governanceSettings?.securityDepositProvider.toLocaleString()}{" "}
+              USDC
               <Typography
                 variant="h4"
                 fontWeight="bold"

@@ -127,6 +127,10 @@ export default function Footer() {
                 <FooterLink href="https://explorer.gitcoin.co/#/projects/0x0cfb90b8837870617d38d784f81e75348fc78b57cc4eff3715ddf30ef2d6605c">
                   Gitcoin
                 </FooterLink>
+                <FooterLink href="https://x.com/0xJoshbillboard">X</FooterLink>
+                <FooterLink href="mailto:0xJoshbillboard@gmail.com">
+                  Email
+                </FooterLink>
               </Stack>
 
               <Stack

@@ -121,7 +121,7 @@ export default function Footer() {
                 <FooterLink href="https://github.com/0xJoshbillboard/billboard">
                   Github
                 </FooterLink>
-                <FooterLink href="https://discord.gg/kh9nuJsf">
+                <FooterLink href="https://discord.com/invite/RTv6fdHr">
                   Discord
                 </FooterLink>
                 <FooterLink href="https://explorer.gitcoin.co/#/projects/0x0cfb90b8837870617d38d784f81e75348fc78b57cc4eff3715ddf30ef2d6605c">

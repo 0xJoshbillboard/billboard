@@ -13,10 +13,11 @@ import {
   IconButton,
 } from "@mui/material";
 import { useConnectWallet } from "@web3-onboard/react";
-import useBillboard, { RawBillboard } from "../hooks/useBillboard";
+import useBillboard from "../hooks/useBillboard";
 import { useEffect, useState } from "react";
 import ContentCopyIcon from "@mui/icons-material/ContentCopy";
 import { useNavigate } from "react-router-dom";
+import { RawBillboard } from "../utils/types";
 
 export default function Dashboard() {
   const [{ wallet }, connect] = useConnectWallet();

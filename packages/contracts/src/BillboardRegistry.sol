@@ -81,6 +81,7 @@ contract BillboardRegistry is Initializable, OwnableUpgradeable {
         emit BillboardProviderRegistered(msg.sender, handle);
     }
 
+
     function getBillboardProvider(address provider) external view returns (string memory) {
         return billboardProviders[provider];
     }

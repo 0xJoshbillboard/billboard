@@ -4,11 +4,10 @@ import {
   BigNumberish,
   getBigInt,
   JsonRpcProvider,
-  parseEther,
 } from "ethers";
 import { useConnectWallet } from "@web3-onboard/react";
 import { useEffect, useState } from "react";
-import { BillboardSDK, Billboard } from "billboard-sdk";
+import { BillboardSDK } from "billboard-sdk";
 import {
   BILLBOARD_ADDRESS,
   CONTRACT_ABI,
@@ -20,89 +19,10 @@ import {
   BILLBOARD_TOKEN_ABI,
 } from "../utils/contracts";
 import { chains, defaultProvider } from "../utils/chains";
+import { Proposal, RawBillboard, TransactionStatus } from "../utils/types";
 
 const billboardSDK = new BillboardSDK();
 const MAX_FILE_SIZE = 5 * 1024 * 1024;
-
-export interface Proposal {
-  id: number;
-  duration: number;
-  pricePerBillboard: number;
-  securityDeposit: number;
-  initialSecurityDeposit: number;
-  votesFor: number;
-  votesAgainst: number;
-  executed: boolean;
-  minProposalTokens: number;
-  minVotingTokens: number;
-  createdAt: number;
-  securityDepositProvider: number;
-}
-
-export interface TransactionStatus {
-  approveUSDC: {
-    pending: boolean;
-    completed: boolean;
-    error: string | null;
-    label: string;
-  };
-  buyBillboard: {
-    pending: boolean;
-    completed: boolean;
-    error: string | null;
-    label: string;
-  };
-  extendBillboard: {
-    pending: boolean;
-    completed: boolean;
-    error: string | null;
-    label: string;
-  };
-  registerProvider: {
-    pending: boolean;
-    completed: boolean;
-    error: string | null;
-    label: string;
-  };
-  approveTokens: {
-    pending: boolean;
-    completed: boolean;
-    error: string | null;
-    label: string;
-  };
-  buyTokens: {
-    pending: boolean;
-    completed: boolean;
-    error: string | null;
-    label: string;
-  };
-  createProposal: {
-    pending: boolean;
-    completed: boolean;
-    error: string | null;
-    label: string;
-  };
-  vote: {
-    pending: boolean;
-    completed: boolean;
-    error: string | null;
-    label: string;
-  };
-  executeProposal: {
-    pending: boolean;
-    completed: boolean;
-    error: string | null;
-    label: string;
-  };
-}
-
-export interface RawBillboard {
-  owner: string;
-  expiryTime: number;
-  description: string;
-  link: string;
-  ipfsHash: string;
-}
 
 export default function useBillboard() {
   // State variables

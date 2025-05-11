@@ -18,13 +18,6 @@ This monorepo contains several packages:
 
 ## Getting Started
 
-### Prerequisites
-
-- Node.js (v16+)
-- Yarn
-- Foundry (for smart contract development)
-- Firebase CLI (for functions deployment)
-
 ### Installation
 
 1. Clone the repository:

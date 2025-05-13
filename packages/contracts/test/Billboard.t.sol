@@ -20,6 +20,8 @@ contract BillboardTest is Test {
     address public user;
     uint256 public initialBalance = 1000000e6;
     uint256 public securityDeposit = 5000e6;
+    uint256 public securityDepositForProvider = 1000e6;
+
 
     function setUp() public {
         usdc = new USDCMock();
@@ -33,7 +35,7 @@ contract BillboardTest is Test {
 
         BillboardRegistry(address(proxy)).initialize(address(usdc), address(governanceProxy));
         BillboardGovernance(address(governanceProxy)).initialize(
-            30 days, 1000e6, securityDeposit, address(usdc), 1000e6, 1000e6, 500e6
+            30 days, 1000e6, securityDeposit, address(usdc), securityDepositForProvider, 1000e6, 500e6
         );
 
         usdc.mint(address(this), initialBalance);
@@ -112,19 +114,18 @@ contract BillboardTest is Test {
         BillboardRegistry(address(proxy)).purchaseBillboard("Test Billboard", "https://test.com", "test.com");
 
         vm.warp(1000);
-        BillboardRegistry(address(proxy)).withdrawFunds(address(billboardToken));
+        BillboardRegistry(address(proxy)).withdrawFunds(address(usdc));
 
         assertEq(usdc.balanceOf(address(proxy)), 0);
         assertEq(usdc.balanceOf(address(this)), initialBalance);
     }
 
-    function test_RegisterBillboardProvider() public {
+    function test_RegisterBillboardAdvertiser() public {
         vm.startPrank(user);
-        usdc.approve(address(proxy), securityDeposit);
+        usdc.approve(address(proxy), securityDepositForProvider);
 
         vm.expectEmit(true, true, true, true);
-        emit BillboardRegistry.BillboardProviderRegistered(user, "testprovider");
-
+        emit BillboardRegistry.BillboardAdvertiserRegistered(user, "testprovider");
         BillboardRegistry(address(proxy)).registerBillboardAdvertiser("testprovider");
         vm.stopPrank();
 
@@ -145,11 +146,11 @@ contract BillboardTest is Test {
         vm.warp(block.timestamp + 30 days);
 
         vm.expectEmit(true, true, true, true);
-        emit BillboardRegistry.SecurityDepositWithdrawn(user, securityDeposit);
+        emit BillboardRegistry.SecurityDepositWithdrawn(user, securityDepositForProvider);
 
         BillboardRegistry(address(proxy)).withdrawSecurityDepositForAdvertiser();
 
-        assertEq(usdc.balanceOf(user), initialUserBalance + securityDeposit);
+        assertEq(usdc.balanceOf(user), initialUserBalance + securityDepositForProvider);
 
         vm.expectRevert("Deposit already withdrawn");
         BillboardRegistry(address(proxy)).withdrawSecurityDepositForAdvertiser();
@@ -157,7 +158,7 @@ contract BillboardTest is Test {
         vm.stopPrank();
     }
 
-    function test_GetBillboardProvider() public {
+    function test_GetBillboardAdvertiser() public {
         vm.startPrank(user);
         usdc.approve(address(proxy), securityDeposit);
         BillboardRegistry(address(proxy)).registerBillboardAdvertiser("testprovider");
@@ -170,13 +171,13 @@ contract BillboardTest is Test {
         assertEq(emptyHandle, "");
     }
 
-    function test_RegisterBillboardProviderTwice() public {
+    function test_RegisterBillboardAdvertiserTwice() public {
         vm.startPrank(user);
         usdc.approve(address(proxy), securityDeposit * 2);
 
         BillboardRegistry(address(proxy)).registerBillboardAdvertiser("testprovider");
 
-        vm.expectRevert("Provider already registered");
+        vm.expectRevert("Advertiser already registered");
         BillboardRegistry(address(proxy)).registerBillboardAdvertiser("newprovider");
 
         vm.stopPrank();
@@ -192,7 +193,7 @@ contract BillboardTest is Test {
 
         BillboardRegistry(address(proxy)).withdrawSecurityDepositForAdvertiser();
 
-        vm.expectRevert("Provider already registered");
+        vm.expectRevert("Advertiser already registered");
         BillboardRegistry(address(proxy)).registerBillboardAdvertiser("newprovider");
 
         vm.stopPrank();
@@ -211,7 +212,7 @@ contract BillboardTest is Test {
         vm.expectRevert("Deposit already withdrawn");
         BillboardRegistry(address(proxy)).withdrawSecurityDepositForAdvertiser();
 
-        vm.expectRevert("Provider already registered");
+        vm.expectRevert("Advertiser already registered");
         BillboardRegistry(address(proxy)).registerBillboardAdvertiser("newprovider");
 
         vm.stopPrank();

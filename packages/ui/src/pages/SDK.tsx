@@ -72,7 +72,7 @@ export default function SDK() {
 
     setLoading(true);
     try {
-      await registerProvider(providerHandle);
+      await registerProvider(providerHandle.trim());
       setRegistrationStatus({
         success: true,
         message: "Successfully registered as a billboard provider!",
@@ -205,7 +205,7 @@ export default function SDK() {
                               </Typography>
                             )}
                             {transactionStatus.approveUSDC.error && (
-                              <Typography variant="caption" color="error">
+                              <Typography variant="body1" color="error">
                                 Error: {transactionStatus.approveUSDC.error}
                               </Typography>
                             )}
@@ -247,7 +247,7 @@ export default function SDK() {
                               </Typography>
                             )}
                             {transactionStatus.registerProvider.error && (
-                              <Typography variant="caption" color="error">
+                              <Typography variant="body1" color="error">
                                 Error:{" "}
                                 {transactionStatus.registerProvider.error}
                               </Typography>
@@ -290,18 +290,6 @@ export default function SDK() {
                       ? "Registering Provider..."
                       : "Register as Provider"}
               </Button>
-
-              {/* Status display */}
-              {registrationStatus &&
-                !transactionStatus.approveUSDC.pending &&
-                !transactionStatus.registerProvider.pending && (
-                  <Alert
-                    severity={registrationStatus.success ? "success" : "error"}
-                    sx={{ mt: 2 }}
-                  >
-                    {registrationStatus.message}
-                  </Alert>
-                )}
             </Box>
           </Stack>
         </Stack>

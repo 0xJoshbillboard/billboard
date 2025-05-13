@@ -34,7 +34,7 @@ contract BillboardRegistry is Initializable, OwnableUpgradeable {
 
     event BillboardExtended(address indexed owner, uint256 index, uint256 newExpiryTime);
 
-    event BillboardProviderRegistered(address indexed provider, string handle);
+    event BillboardAdvertiserRegistered(address indexed provider, string handle);
 
     event SecurityDepositWithdrawn(address indexed provider, uint256 amount);
 
@@ -82,15 +82,25 @@ contract BillboardRegistry is Initializable, OwnableUpgradeable {
     function registerBillboardAdvertiser(string memory handle) external {
         require(address(governance) != address(0), "Governance not initialized");
         Advertiser storage advertiser = advertisers[msg.sender];
-        require(bytes(advertiser.handle).length == 0, "Provider already registered");
+        require(bytes(advertiser.handle).length == 0, "Advertiser already registered");
+        
+        uint256 requiredDeposit = governance.securityDepositProvider();
+        uint256 userBalance = usdc.balanceOf(msg.sender);
+        uint256 userAllowance = usdc.allowance(msg.sender, address(this));
+        
+        require(userBalance >= requiredDeposit, "Insufficient USDC balance");
+        require(userAllowance >= requiredDeposit, "Insufficient USDC allowance");
+        
         require(
-            usdc.transferFrom(msg.sender, address(this), governance.securityDepositProvider()), "USDC transfer failed"
+            usdc.transferFrom(msg.sender, address(this), requiredDeposit), 
+            "USDC transfer failed"
         );
+        
         advertiser.handle = handle;
         advertiser.advertiser = msg.sender;
         advertiser.depositTime = block.timestamp;
         advertiser.withdrawnDeposit = false;
-        emit BillboardProviderRegistered(msg.sender, handle);
+        emit BillboardAdvertiserRegistered(msg.sender, handle);
     }
 
     function getBillboardAdvertiser(address advertiser) external view returns (Advertiser memory) {

@@ -801,10 +801,10 @@ export default function useBillboard() {
       }));
 
       const allowance = await allowanceUSDC();
-      const securityDeposit = await governanceContract.securityDeposit();
-
-      if (getBigInt(allowance) < getBigInt(securityDeposit)) {
-        await approveUSDC(securityDeposit.toString());
+      const securityDepositProvider =
+        governanceSettings.securityDepositProvider;
+      if (getBigInt(allowance) < getBigInt(securityDepositProvider * 1e6)) {
+        await approveUSDC((securityDepositProvider * 1e6).toString());
       }
 
       setTransactionStatus((prev) => ({
@@ -821,7 +821,7 @@ export default function useBillboard() {
         },
       }));
 
-      const tx = await contract.registerBillboardProvider(handle);
+      const tx = await contract.registerBillboardAdvertiser(handle);
       await tx.wait();
 
       setTransactionStatus((prev) => ({

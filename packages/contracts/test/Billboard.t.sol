@@ -7,13 +7,14 @@ import {BillboardProxy} from "../src/BillboardProxy.sol";
 import {USDCMock} from "../src/mocks/USDCMock.sol";
 import {BillboardGovernance} from "../src/BillboardGovernance.sol";
 import {BillboardGovernanceProxy} from "../src/BillboardGovernanceProxy.sol";
-
+import {BillboardToken} from "../src/BillboardToken.sol";
 contract BillboardTest is Test {
     BillboardRegistry public registry;
     BillboardProxy public proxy;
     USDCMock public usdc;
     BillboardGovernance public governance;
     BillboardGovernanceProxy public governanceProxy;
+    BillboardToken public billboardToken;
 
     address public user;
     uint256 public initialBalance = 1000000e6;
@@ -21,6 +22,7 @@ contract BillboardTest is Test {
 
     function setUp() public {
         usdc = new USDCMock();
+        billboardToken = new BillboardToken(address(usdc));
 
         registry = new BillboardRegistry();
         proxy = new BillboardProxy(address(registry), address(this), "");
@@ -29,7 +31,7 @@ contract BillboardTest is Test {
         governanceProxy = new BillboardGovernanceProxy(address(governance), address(this), "");
 
         BillboardRegistry(address(proxy)).initialize(address(usdc), address(governanceProxy));
-        BillboardGovernance(address(governanceProxy)).initialize(30 days, 1000e6, securityDeposit, address(usdc));
+        BillboardGovernance(address(governanceProxy)).initialize(30 days, 1000e6, securityDeposit, address(usdc), 1000e6, 1000e6, 500e6);
 
         usdc.mint(address(this), initialBalance);
 
@@ -107,7 +109,7 @@ contract BillboardTest is Test {
         BillboardRegistry(address(proxy)).purchaseBillboard("Test Billboard", "https://test.com", "test.com");
 
         vm.warp(1000);
-        BillboardRegistry(address(proxy)).withdrawFunds();
+        BillboardRegistry(address(proxy)).withdrawFunds(address(billboardToken));
 
         assertEq(usdc.balanceOf(address(proxy)), 0);
         assertEq(usdc.balanceOf(address(this)), initialBalance);
@@ -120,34 +122,34 @@ contract BillboardTest is Test {
         vm.expectEmit(true, true, true, true);
         emit BillboardRegistry.BillboardProviderRegistered(user, "testprovider");
 
-        BillboardRegistry(address(proxy)).registerBillboardProvider("testprovider");
+        BillboardRegistry(address(proxy)).registerBillboardAdvertiser("testprovider");
         vm.stopPrank();
 
-        string memory handle = BillboardRegistry(address(proxy)).getBillboardProvider(user);
+        string memory handle = BillboardRegistry(address(proxy)).getBillboardAdvertiser(user).handle;
         assertEq(handle, "testprovider");
     }
 
-    function test_WithdrawSecurityDeposit() public {
+    function test_WithdrawSecurityDepositForAdvertiser() public {
         vm.startPrank(user);
         usdc.approve(address(proxy), securityDeposit);
-        BillboardRegistry(address(proxy)).registerBillboardProvider("testprovider");
+        BillboardRegistry(address(proxy)).registerBillboardAdvertiser("testprovider");
 
         uint256 initialUserBalance = usdc.balanceOf(user);
 
         vm.expectRevert("Deposit locked for 30 days");
-        BillboardRegistry(address(proxy)).withdrawSecurityDeposit();
+        BillboardRegistry(address(proxy)).withdrawSecurityDepositForAdvertiser();
 
         vm.warp(block.timestamp + 30 days);
 
         vm.expectEmit(true, true, true, true);
         emit BillboardRegistry.SecurityDepositWithdrawn(user, securityDeposit);
 
-        BillboardRegistry(address(proxy)).withdrawSecurityDeposit();
+        BillboardRegistry(address(proxy)).withdrawSecurityDepositForAdvertiser();
 
         assertEq(usdc.balanceOf(user), initialUserBalance + securityDeposit);
 
         vm.expectRevert("Deposit already withdrawn");
-        BillboardRegistry(address(proxy)).withdrawSecurityDeposit();
+        BillboardRegistry(address(proxy)).withdrawSecurityDepositForAdvertiser();
 
         vm.stopPrank();
     }
@@ -155,13 +157,13 @@ contract BillboardTest is Test {
     function test_GetBillboardProvider() public {
         vm.startPrank(user);
         usdc.approve(address(proxy), securityDeposit);
-        BillboardRegistry(address(proxy)).registerBillboardProvider("testprovider");
+        BillboardRegistry(address(proxy)).registerBillboardAdvertiser("testprovider");
         vm.stopPrank();
 
-        string memory handle = BillboardRegistry(address(proxy)).getBillboardProvider(user);
+        string memory handle = BillboardRegistry(address(proxy)).getBillboardAdvertiser(user).handle;
         assertEq(handle, "testprovider");
 
-        string memory emptyHandle = BillboardRegistry(address(proxy)).getBillboardProvider(address(0x2));
+        string memory emptyHandle = BillboardRegistry(address(proxy)).getBillboardAdvertiser(address(0x2)).handle;
         assertEq(emptyHandle, "");
     }
 
@@ -169,10 +171,10 @@ contract BillboardTest is Test {
         vm.startPrank(user);
         usdc.approve(address(proxy), securityDeposit * 2);
 
-        BillboardRegistry(address(proxy)).registerBillboardProvider("testprovider");
+        BillboardRegistry(address(proxy)).registerBillboardAdvertiser("testprovider");
 
         vm.expectRevert("Provider already registered");
-        BillboardRegistry(address(proxy)).registerBillboardProvider("newprovider");
+        BillboardRegistry(address(proxy)).registerBillboardAdvertiser("newprovider");
 
         vm.stopPrank();
     }
@@ -181,14 +183,14 @@ contract BillboardTest is Test {
         vm.startPrank(user);
         usdc.approve(address(proxy), securityDeposit * 2);
 
-        BillboardRegistry(address(proxy)).registerBillboardProvider("testprovider");
+        BillboardRegistry(address(proxy)).registerBillboardAdvertiser("testprovider");
 
         vm.warp(block.timestamp + 30 days);
 
-        BillboardRegistry(address(proxy)).withdrawSecurityDeposit();
+        BillboardRegistry(address(proxy)).withdrawSecurityDepositForAdvertiser();
 
         vm.expectRevert("Provider already registered");
-        BillboardRegistry(address(proxy)).registerBillboardProvider("newprovider");
+        BillboardRegistry(address(proxy)).registerBillboardAdvertiser("newprovider");
 
         vm.stopPrank();
     }
@@ -197,17 +199,17 @@ contract BillboardTest is Test {
         vm.startPrank(user);
         usdc.approve(address(proxy), securityDeposit * 2);
 
-        BillboardRegistry(address(proxy)).registerBillboardProvider("testprovider");
+        BillboardRegistry(address(proxy)).registerBillboardAdvertiser("testprovider");
 
         vm.warp(block.timestamp + 30 days);
 
-        BillboardRegistry(address(proxy)).withdrawSecurityDeposit();
+        BillboardRegistry(address(proxy)).withdrawSecurityDepositForAdvertiser();
 
         vm.expectRevert("Deposit already withdrawn");
-        BillboardRegistry(address(proxy)).withdrawSecurityDeposit();
+        BillboardRegistry(address(proxy)).withdrawSecurityDepositForAdvertiser();
 
         vm.expectRevert("Provider already registered");
-        BillboardRegistry(address(proxy)).registerBillboardProvider("newprovider");
+        BillboardRegistry(address(proxy)).registerBillboardAdvertiser("newprovider");
 
         vm.stopPrank();
     }

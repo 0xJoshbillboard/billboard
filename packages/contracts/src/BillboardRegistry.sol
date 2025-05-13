@@ -46,6 +46,11 @@ contract BillboardRegistry is Initializable, OwnableUpgradeable {
         governance = BillboardGovernance(_governance);
     }
 
+    function setGovernance(address _governance) external onlyOwner {
+        require(_governance != address(0), "Governance address cannot be zero");
+        governance = BillboardGovernance(_governance);
+    }
+
     function purchaseBillboard(string memory description, string memory link, string memory ipfsHash) external {
         require(address(governance) != address(0), "Governance not initialized");
         require(usdc.transferFrom(msg.sender, address(this), governance.pricePerBillboard()), "USDC transfer failed");

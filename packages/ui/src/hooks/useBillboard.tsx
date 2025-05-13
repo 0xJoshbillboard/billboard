@@ -517,7 +517,7 @@ export default function useBillboard() {
     }
   };
 
-  const vote = async (proposalId: number, support: boolean, amount: number) => {
+  const vote = async (proposalId: number, support: boolean) => {
     if (!governanceContract) throw new Error("Governance contract not defined");
     if (!wallet) throw new Error("Wallet not connected");
 
@@ -527,7 +527,7 @@ export default function useBillboard() {
         vote: { ...prev.vote, pending: true, error: null },
       }));
 
-      const tx = await governanceContract.vote(proposalId, support, amount);
+      const tx = await governanceContract.vote(proposalId, support);
       await tx.wait();
 
       setTransactionStatus((prev) => ({

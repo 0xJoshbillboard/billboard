@@ -12,3 +12,7 @@ docs/
 
 # Dotenv file
 .env
+
+# Etherscan API key
+verify-governance.sh
+verify-billboard.sh

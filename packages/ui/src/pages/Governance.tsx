@@ -113,12 +113,7 @@ export default function Governance() {
     try {
       setIsLoading(true);
       setErrorMessage("");
-
-      const tx = await vote(
-        proposalId,
-        support,
-        Number(BigInt(tokenBalance) * BigInt(1e18)), // Current token balance
-      );
+      const tx = await vote(proposalId, support);
       await tx.wait();
     } catch (error) {
       console.error("Failed to vote:", error);
@@ -199,7 +194,8 @@ export default function Governance() {
                   Security Deposit Provider
                 </Typography>
                 <Typography variant="body1">
-                  {governanceSettings.securityDepositProvider} USDC
+                  {governanceSettings.securityDepositProvider.toLocaleString()}{" "}
+                  USDC
                 </Typography>
               </Box>
             </Stack>
@@ -207,7 +203,7 @@ export default function Governance() {
           <Stack
             direction="column"
             spacing={4}
-            sx={{ mt: 2, minWidth: "400px" }}
+            sx={{ mt: 2, minWidth: "350px" }}
           >
             <Typography variant="h4" fontWeight={800}>
               GOVERNANCE TOKENS
@@ -387,13 +383,13 @@ export default function Governance() {
                 <Stack direction="column" spacing={2}>
                   <Typography variant="body1">Duration</Typography>
                   <Typography variant="body1">
-                    {proposal.duration} days
+                    {proposal.duration / 86400} days
                   </Typography>
                 </Stack>
                 <Stack direction="column" spacing={2}>
                   <Typography variant="body1">Price per Billboard</Typography>
                   <Typography variant="body1">
-                    {(proposal.pricePerBillboard / 1e18).toLocaleString()} USDC
+                    {(proposal.pricePerBillboard / 1e6).toLocaleString()} USDC
                   </Typography>
                 </Stack>
                 <Stack direction="column" spacing={2}>
@@ -401,7 +397,7 @@ export default function Governance() {
                     Security Deposit for creating a Proposal
                   </Typography>
                   <Typography variant="body1">
-                    {(proposal.securityDeposit / 1e18).toLocaleString()} BBT
+                    {(proposal.securityDeposit / 1e6).toLocaleString()} USDC
                   </Typography>
                 </Stack>
                 <Stack direction="column" spacing={2}>
@@ -409,7 +405,8 @@ export default function Governance() {
                     Security Deposit Provider
                   </Typography>
                   <Typography variant="body1">
-                    {proposal.securityDepositProvider.toString()} USDC
+                    {(proposal.securityDepositProvider / 1e6).toLocaleString()}{" "}
+                    USDC
                   </Typography>
                 </Stack>
                 <Stack direction="column" spacing={2}>
@@ -435,6 +432,7 @@ export default function Governance() {
                     size="small"
                     variant="outlined"
                     color="primary"
+                    disabled={!wallet}
                     onClick={() => handleVote(proposal.id, true)}
                     startIcon={<VoteFor />}
                   >
@@ -444,6 +442,7 @@ export default function Governance() {
                     size="small"
                     variant="outlined"
                     color="primary"
+                    disabled={!wallet}
                     onClick={() => handleVote(proposal.id, false)}
                     startIcon={<VoteAgainst />}
                   >
@@ -454,16 +453,16 @@ export default function Governance() {
                   <Typography variant="body1">Votes</Typography>
                   <Stack direction="row" spacing={2}>
                     <Typography variant="body1">
-                      For: {proposal.votesFor.toString()}
+                      For: {(proposal.votesFor / 1e18).toLocaleString()}
                     </Typography>
                     <Divider orientation="vertical" flexItem sx={{ mx: 1 }} />
                     <Typography variant="body1">
-                      Against: {proposal.votesAgainst.toString()}
+                      Against: {(proposal.votesAgainst / 1e18).toLocaleString()}
                     </Typography>
                   </Stack>
                   <Button
                     size="small"
-                    disabled={proposal.executed}
+                    disabled={proposal.executed || !wallet}
                     variant="contained"
                     color="primary"
                     onClick={() => handleExecuteProposal(proposal.id)}

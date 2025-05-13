@@ -30,7 +30,7 @@ contract GovernanceTest is Test {
     uint256 public securityDeposit = 1000 * 10 ** 18;
     uint256 public minProposalTokens = 1000 * 10 ** 18;
     uint256 public minVotingTokens = 500 * 10 ** 18;
-    uint256 public securityDepositProvider = 1000 * 10 ** 6;
+    uint256 public securityDepositAdvertiser = 1000 * 10 ** 6;
 
     function setUp() public {
         owner = address(this);
@@ -48,7 +48,7 @@ contract GovernanceTest is Test {
             initialPrice,
             securityDeposit,
             address(token),
-            securityDepositProvider,
+            securityDepositAdvertiser,
             minProposalTokens,
             minVotingTokens
         );
@@ -71,7 +71,7 @@ contract GovernanceTest is Test {
         assertEq(BillboardGovernance(address(governanceProxy)).owner(), owner);
         assertEq(BillboardGovernance(address(governanceProxy)).minProposalTokens(), 1000 * 10 ** 18);
         assertEq(BillboardGovernance(address(governanceProxy)).minVotingTokens(), 500 * 10 ** 18);
-        assertEq(BillboardGovernance(address(governanceProxy)).securityDepositProvider(), securityDepositProvider);
+        assertEq(BillboardGovernance(address(governanceProxy)).securityDepositAdvertiser(), securityDepositAdvertiser);
         assertEq(address(BillboardGovernance(address(governanceProxy)).token()), address(token));
         assertEq(BillboardGovernance(address(governanceProxy)).proposalCount(), 0);
     }
@@ -95,7 +95,7 @@ contract GovernanceTest is Test {
             uint256 votesAgainst,
             bool executed,
             uint256 createdAt,
-            uint256 securityDepositProviderFromProposal
+            uint256 securityDepositAdvertiserFromProposal
         ) = BillboardGovernance(address(governanceProxy)).getProposal(0);
 
         assertEq(duration, 60 days);
@@ -108,7 +108,7 @@ contract GovernanceTest is Test {
         assertEq(votesAgainst, 0);
         assertEq(executed, false);
         assertEq(createdAt, block.timestamp);
-        assertEq(securityDepositProviderFromProposal, 900 * 10 ** 18);
+        assertEq(securityDepositAdvertiserFromProposal, 900 * 10 ** 18);
     }
 
     function test_CreateProposal_RevertWhenInsufficientTokens() public {
@@ -199,7 +199,7 @@ contract GovernanceTest is Test {
         assertEq(BillboardGovernance(address(governanceProxy)).securityDeposit(), 15000 * 10 ** 18);
         assertEq(BillboardGovernance(address(governanceProxy)).minProposalTokens(), 1500 * 10 ** 18);
         assertEq(BillboardGovernance(address(governanceProxy)).minVotingTokens(), 750 * 10 ** 18);
-        assertEq(BillboardGovernance(address(governanceProxy)).securityDepositProvider(), securityDepositProvider);
+        assertEq(BillboardGovernance(address(governanceProxy)).securityDepositAdvertiser(), securityDepositAdvertiser);
 
         (,,,,,,,, bool _executed,,) = BillboardGovernance(address(governanceProxy)).getProposal(0);
         assertEq(_executed, true);

@@ -8,4 +8,10 @@ remappings = [
   '@openzeppelin/contracts-upgradeable/=lib/openzeppelin-contracts-upgradeable/contracts/'
 ]
 
+[rpc_endpoints]
+optimism_sepolia = "${OPTIMISM_SEPOLIA_RPC_URL}"
+
+[etherscan]
+optimism_sepolia = { key = "${OPTIMISM_SEPOLIA_API_KEY}" }
+
 # See more config options https://github.com/foundry-rs/foundry/blob/master/crates/config/README.md#all-options

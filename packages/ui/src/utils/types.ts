@@ -10,7 +10,7 @@ export interface Proposal {
   minProposalTokens: number;
   minVotingTokens: number;
   createdAt: number;
-  securityDepositProvider: number;
+  securityDepositAdvertiser: number;
 }
 
 export interface TransactionStatus {

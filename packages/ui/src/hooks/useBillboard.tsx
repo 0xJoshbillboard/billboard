@@ -39,14 +39,14 @@ export default function useBillboard() {
     minProposalTokens: number;
     minVotingTokens: number;
     securityDeposit: number;
-    securityDepositProvider: number;
+    securityDepositAdvertiser: number;
   }>({
     price: 0,
     duration: 0,
     minProposalTokens: 0,
     minVotingTokens: 0,
     securityDeposit: 0,
-    securityDepositProvider: 0,
+    securityDepositAdvertiser: 0,
   });
   const [usdcBalance, setUsdcBalance] = useState<string>("0");
   const [tokenBalance, setTokenBalance] = useState<string>("0");
@@ -179,14 +179,14 @@ export default function useBillboard() {
           minProposalTokens,
           minVotingTokens,
           securityDeposit,
-          securityDepositProvider,
+          securityDepositAdvertiser,
         ] = await Promise.all([
           governanceContract.pricePerBillboard(),
           governanceContract.duration(),
           governanceContract.minProposalTokens(),
           governanceContract.minVotingTokens(),
           governanceContract.securityDeposit(),
-          governanceContract.securityDepositProvider(),
+          governanceContract.securityDepositAdvertiser(),
         ]);
 
         const readablePrice = Number(price) / 1_000_000;
@@ -194,15 +194,15 @@ export default function useBillboard() {
         const minProposalTokensReadable = Number(minProposalTokens) / 1e18;
         const minVotingTokensReadable = Number(minVotingTokens) / 1e18;
         const securityDepositReadable = Number(securityDeposit) / 1e6;
-        const securityDepositProviderReadable =
-          Number(securityDepositProvider) / 1e6;
+        const securityDepositAdvertiserReadable =
+          Number(securityDepositAdvertiser) / 1e6;
         setGovernanceSettings({
           price: readablePrice,
           duration: durationInSeconds,
           minProposalTokens: minProposalTokensReadable,
           minVotingTokens: minVotingTokensReadable,
           securityDeposit: securityDepositReadable,
-          securityDepositProvider: securityDepositProviderReadable,
+          securityDepositAdvertiser: securityDepositAdvertiserReadable,
         });
       }
     };
@@ -391,7 +391,7 @@ export default function useBillboard() {
           votesAgainst: Number(proposal[7]),
           executed: proposal[8],
           createdAt: Number(proposal[9]),
-          securityDepositProvider: Number(proposal[10]),
+          securityDepositAdvertiser: Number(proposal[10]),
         });
       }
 
@@ -583,7 +583,7 @@ export default function useBillboard() {
         minProposalTokens,
         minVotingTokens,
         securityDeposit,
-        securityDepositProvider,
+        securityDepositAdvertiser,
       ] = await Promise.all([
         governanceContract.pricePerBillboard(),
         governanceContract.duration(),
@@ -591,7 +591,7 @@ export default function useBillboard() {
         governanceContract.minProposalTokens(),
         governanceContract.minVotingTokens(),
         governanceContract.securityDeposit(),
-        governanceContract.securityDepositProvider(),
+        governanceContract.securityDepositAdvertiser(),
       ]);
 
       setGovernanceSettings({
@@ -600,7 +600,7 @@ export default function useBillboard() {
         minProposalTokens: Number(minProposalTokens),
         minVotingTokens: Number(minVotingTokens),
         securityDeposit: Number(securityDeposit) / 1e6,
-        securityDepositProvider: Number(securityDepositProvider) / 1e6,
+        securityDepositAdvertiser: Number(securityDepositAdvertiser) / 1e6,
       });
       return tx;
     } catch (error) {
@@ -638,8 +638,8 @@ export default function useBillboard() {
       }));
 
       const allowance = await allowanceUSDC();
-      if (getBigInt(allowance) < getBigInt("1000000000")) {
-        await approveUSDC("1000000000");
+      if (getBigInt(allowance) < getBigInt(governanceSettings.price)) {
+        await approveUSDC(governanceSettings.price.toString());
       }
 
       setTransactionStatus((prev) => ({
@@ -801,10 +801,10 @@ export default function useBillboard() {
       }));
 
       const allowance = await allowanceUSDC();
-      const securityDepositProvider =
-        governanceSettings.securityDepositProvider;
-      if (getBigInt(allowance) < getBigInt(securityDepositProvider * 1e6)) {
-        await approveUSDC((securityDepositProvider * 1e6).toString());
+      const securityDepositAdvertiser =
+        governanceSettings.securityDepositAdvertiser;
+      if (getBigInt(allowance) < getBigInt(securityDepositAdvertiser * 1e6)) {
+        await approveUSDC((securityDepositAdvertiser * 1e6).toString());
       }
 
       setTransactionStatus((prev) => ({
@@ -866,13 +866,8 @@ export default function useBillboard() {
     return await contract.getBillboardProvider(address);
   };
 
-  // SDK functions
   const getAds = async () => {
     return billboardSDK.getAds("billboard-ui");
-  };
-
-  const getAd = async (handle: string) => {
-    return billboardSDK.showAd(handle);
   };
 
   const uploadImage = async (image: File) => {

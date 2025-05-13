@@ -22,7 +22,6 @@ contract BillboardTest is Test {
     uint256 public securityDeposit = 5000e6;
     uint256 public securityDepositForProvider = 1000e6;
 
-
     function setUp() public {
         usdc = new USDCMock();
         billboardToken = new BillboardToken(address(usdc));

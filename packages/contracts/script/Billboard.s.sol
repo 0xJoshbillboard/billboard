@@ -53,6 +53,9 @@ contract DeployBillboard is Script {
         BillboardRegistry(address(proxy)).initialize(address(usdc), address(governanceProxy));
         console.log("Billboard Proxy initialized with registry");
 
+        BillboardRegistry(address(proxy)).setGovernance(address(governanceProxy));
+        console.log("Billboard Proxy initialized with governance");
+
         vm.stopBroadcast();
     }
 }

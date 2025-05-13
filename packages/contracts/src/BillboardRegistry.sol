@@ -34,9 +34,9 @@ contract BillboardRegistry is Initializable, OwnableUpgradeable {
 
     event BillboardExtended(address indexed owner, uint256 index, uint256 newExpiryTime);
 
-    event BillboardAdvertiserRegistered(address indexed provider, string handle);
+    event BillboardAdvertiserRegistered(address indexed advertiser, string handle);
 
-    event SecurityDepositWithdrawn(address indexed provider, uint256 amount);
+    event SecurityDepositWithdrawn(address indexed advertiser, uint256 amount);
 
     function initialize(address _usdcAddress, address _governance) public initializer {
         __Ownable_init(msg.sender);
@@ -83,19 +83,16 @@ contract BillboardRegistry is Initializable, OwnableUpgradeable {
         require(address(governance) != address(0), "Governance not initialized");
         Advertiser storage advertiser = advertisers[msg.sender];
         require(bytes(advertiser.handle).length == 0, "Advertiser already registered");
-        
-        uint256 requiredDeposit = governance.securityDepositProvider();
+
+        uint256 requiredDeposit = governance.securityDepositAdvertiser();
         uint256 userBalance = usdc.balanceOf(msg.sender);
         uint256 userAllowance = usdc.allowance(msg.sender, address(this));
-        
+
         require(userBalance >= requiredDeposit, "Insufficient USDC balance");
         require(userAllowance >= requiredDeposit, "Insufficient USDC allowance");
-        
-        require(
-            usdc.transferFrom(msg.sender, address(this), requiredDeposit), 
-            "USDC transfer failed"
-        );
-        
+
+        require(usdc.transferFrom(msg.sender, address(this), requiredDeposit), "USDC transfer failed");
+
         advertiser.handle = handle;
         advertiser.advertiser = msg.sender;
         advertiser.depositTime = block.timestamp;
@@ -110,11 +107,11 @@ contract BillboardRegistry is Initializable, OwnableUpgradeable {
     function withdrawSecurityDepositForAdvertiser() external {
         require(address(governance) != address(0), "Governance not initialized");
         Advertiser storage advertiser = advertisers[msg.sender];
-        require(bytes(advertiser.handle).length > 0, "Not a registered provider");
+        require(bytes(advertiser.handle).length > 0, "Not a registered advertiser");
         require(!advertiser.withdrawnDeposit, "Deposit already withdrawn");
         require(block.timestamp >= advertiser.depositTime + 30 days, "Deposit locked for 30 days");
         require(!governance.getAdvertiserIsBlamed(advertiser.advertiser).isBlamed, "Advertiser is blamed");
-        uint256 depositAmount = governance.securityDepositProvider();
+        uint256 depositAmount = governance.securityDepositAdvertiser();
         advertiser.withdrawnDeposit = true;
         require(usdc.transfer(msg.sender, depositAmount), "USDC transfer failed");
         emit SecurityDepositWithdrawn(msg.sender, depositAmount);

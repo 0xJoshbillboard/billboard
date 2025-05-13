@@ -12,7 +12,7 @@ contract BillboardGovernance is Initializable, OwnableUpgradeable {
     uint256 public minProposalTokens;
     uint256 public minVotingTokens;
     BillboardToken public token;
-    uint256 public securityDepositProvider;
+    uint256 public securityDepositAdvertiser;
 
     struct Proposal {
         uint256 duration;
@@ -27,7 +27,7 @@ contract BillboardGovernance is Initializable, OwnableUpgradeable {
         address proposer;
         bool depositReturned;
         uint256 createdAt;
-        uint256 securityDepositProvider;
+        uint256 securityDepositAdvertiser;
     }
 
     struct AdvertiserIsBlamed {
@@ -55,7 +55,7 @@ contract BillboardGovernance is Initializable, OwnableUpgradeable {
         uint256 minProposalTokens,
         uint256 minVotingTokens,
         uint256 createdAt,
-        uint256 securityDepositProvider
+        uint256 securityDepositAdvertiser
     );
     event Voted(uint256 indexed proposalId, address indexed voter, bool support, uint256 votes);
     event ProposalExecuted(uint256 indexed proposalId);
@@ -65,8 +65,8 @@ contract BillboardGovernance is Initializable, OwnableUpgradeable {
     event AdvertiserBlameResolved(address indexed from, bool indexed resolved);
     event SecurityDepositReturnedForBlame(address indexed advertiser, address indexed proposer, uint256 amount);
 
-    function updateSecurityDepositProvider(uint256 _securityDepositProvider) external onlyOwner {
-        securityDepositProvider = _securityDepositProvider;
+    function updateSecurityDepositAdvertiser(uint256 _securityDepositAdvertiser) external onlyOwner {
+        securityDepositAdvertiser = _securityDepositAdvertiser;
     }
 
     function initialize(
@@ -74,7 +74,7 @@ contract BillboardGovernance is Initializable, OwnableUpgradeable {
         uint256 _pricePerBillboard,
         uint256 _securityDeposit,
         address _token,
-        uint256 _securityDepositProvider,
+        uint256 _securityDepositAdvertiser,
         uint256 _minProposalTokens,
         uint256 _minVotingTokens
     ) public initializer {
@@ -86,7 +86,7 @@ contract BillboardGovernance is Initializable, OwnableUpgradeable {
         minVotingTokens = _minVotingTokens;
         token = BillboardToken(_token);
         proposalCount = 0;
-        securityDepositProvider = _securityDepositProvider;
+        securityDepositAdvertiser = _securityDepositAdvertiser;
     }
 
     function createProposal(
@@ -95,7 +95,7 @@ contract BillboardGovernance is Initializable, OwnableUpgradeable {
         uint256 _securityDeposit,
         uint256 _minProposalTokens,
         uint256 _minVotingTokens,
-        uint256 _securityDepositProvider
+        uint256 _securityDepositAdvertiser
     ) external {
         require(token.balanceOf(msg.sender) >= minProposalTokens, "Insufficient tokens to create proposal");
         require(token.transferFrom(msg.sender, address(this), securityDeposit), "Security deposit transfer failed");
@@ -114,7 +114,7 @@ contract BillboardGovernance is Initializable, OwnableUpgradeable {
             depositReturned: false,
             initialSecurityDeposit: securityDeposit,
             createdAt: block.timestamp,
-            securityDepositProvider: _securityDepositProvider
+            securityDepositAdvertiser: _securityDepositAdvertiser
         });
 
         proposalCount++;
@@ -127,7 +127,7 @@ contract BillboardGovernance is Initializable, OwnableUpgradeable {
             _minProposalTokens,
             _minVotingTokens,
             block.timestamp,
-            _securityDepositProvider
+            _securityDepositAdvertiser
         );
     }
 
@@ -265,7 +265,7 @@ contract BillboardGovernance is Initializable, OwnableUpgradeable {
             uint256 _votesAgainst,
             bool _executed,
             uint256 _createdAt,
-            uint256 _securityDepositProvider
+            uint256 _securityDepositAdvertiser
         )
     {
         require(proposalId < proposalCount, "Invalid proposal");
@@ -281,7 +281,7 @@ contract BillboardGovernance is Initializable, OwnableUpgradeable {
             proposal.votesAgainst,
             proposal.executed,
             proposal.createdAt,
-            proposal.securityDepositProvider
+            proposal.securityDepositAdvertiser
         );
     }
 }

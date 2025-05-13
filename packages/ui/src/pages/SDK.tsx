@@ -12,7 +12,6 @@ import {
   Button,
   useTheme,
   TextField,
-  Alert,
   CircularProgress,
   Stepper,
   Step,
@@ -29,10 +28,6 @@ export default function SDK() {
   const [loading, setLoading] = useState(false);
   const [providerHandle, setProviderHandle] = useState("");
   const [adsAreLoading, setAdsAreLoading] = useState(false);
-  const [registrationStatus, setRegistrationStatus] = useState<{
-    success: boolean;
-    message: string;
-  } | null>(null);
 
   // Hooks
   const { getAds, registerProvider, governanceSettings, transactionStatus } =
@@ -62,27 +57,11 @@ export default function SDK() {
       return;
     }
 
-    if (!providerHandle.trim()) {
-      setRegistrationStatus({
-        success: false,
-        message: "Please enter a provider handle",
-      });
-      return;
-    }
-
     setLoading(true);
     try {
       await registerProvider(providerHandle.trim());
-      setRegistrationStatus({
-        success: true,
-        message: "Successfully registered as a billboard provider!",
-      });
       setProviderHandle("");
     } catch (error: any) {
-      setRegistrationStatus({
-        success: false,
-        message: error.message || "Failed to register as provider",
-      });
     } finally {
       setLoading(false);
     }
@@ -121,7 +100,7 @@ export default function SDK() {
             alignItems="center"
           >
             <Typography variant="h1" position="relative">
-              {governanceSettings?.securityDepositProvider.toLocaleString()}{" "}
+              {governanceSettings?.securityDepositAdvertiser.toLocaleString()}{" "}
               USDC
               <Typography
                 variant="h4"

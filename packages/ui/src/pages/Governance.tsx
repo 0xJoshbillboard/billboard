@@ -15,7 +15,6 @@ import {
   Stack,
   TextField,
   Button,
-  Alert,
   CircularProgress,
   Step,
   StepButton,
@@ -46,7 +45,6 @@ export default function Governance() {
   const [tokenContract, setTokenContract] = useState<Contract | null>(null);
   const [buyAmount, setBuyAmount] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const [errorMessage, setErrorMessage] = useState("");
   const [transactions, setTransactions] = useState<any[]>([]);
 
   useEffect(() => {
@@ -70,7 +68,6 @@ export default function Governance() {
 
     try {
       setIsLoading(true);
-      setErrorMessage("");
 
       // Convert to USDC decimals (6 decimals)
       const amount = Number(BigInt(parseFloat(buyAmount) * 1e6));
@@ -91,7 +88,6 @@ export default function Governance() {
       setBuyAmount("");
     } catch (error) {
       console.error("Failed to buy BBT tokens:", error);
-      setErrorMessage("Failed to buy BBT tokens. Please try again.");
 
       // Add failed transaction
       const failedTransaction = {
@@ -112,12 +108,10 @@ export default function Governance() {
 
     try {
       setIsLoading(true);
-      setErrorMessage("");
       const tx = await vote(proposalId, support);
       await tx.wait();
     } catch (error) {
       console.error("Failed to vote:", error);
-      setErrorMessage("Failed to vote. Please try again.");
     } finally {
       setIsLoading(false);
     }
@@ -191,10 +185,10 @@ export default function Governance() {
               </Box>
               <Box>
                 <Typography variant="body1">
-                  Security Deposit Provider
+                  Security Deposit Advertiser
                 </Typography>
                 <Typography variant="body1">
-                  {governanceSettings.securityDepositProvider.toLocaleString()}{" "}
+                  {governanceSettings.securityDepositAdvertiser.toLocaleString()}{" "}
                   USDC
                 </Typography>
               </Box>
@@ -247,11 +241,6 @@ export default function Governance() {
                 Buy BBT
               </Button>
             </Stack>
-            {errorMessage && (
-              <Alert severity="error" sx={{ mt: 2 }}>
-                {errorMessage}
-              </Alert>
-            )}
             <Box border="1px solid #444" borderRadius={2} p={2}>
               <Typography variant="h6" gutterBottom>
                 Transaction Status
@@ -402,10 +391,12 @@ export default function Governance() {
                 </Stack>
                 <Stack direction="column" spacing={2}>
                   <Typography variant="body1">
-                    Security Deposit Provider
+                    Security Deposit Advertiser
                   </Typography>
                   <Typography variant="body1">
-                    {(proposal.securityDepositProvider / 1e6).toLocaleString()}{" "}
+                    {(
+                      proposal.securityDepositAdvertiser / 1e6
+                    ).toLocaleString()}{" "}
                     USDC
                   </Typography>
                 </Stack>

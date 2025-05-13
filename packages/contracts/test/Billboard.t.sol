@@ -8,6 +8,7 @@ import {USDCMock} from "../src/mocks/USDCMock.sol";
 import {BillboardGovernance} from "../src/BillboardGovernance.sol";
 import {BillboardGovernanceProxy} from "../src/BillboardGovernanceProxy.sol";
 import {BillboardToken} from "../src/BillboardToken.sol";
+
 contract BillboardTest is Test {
     BillboardRegistry public registry;
     BillboardProxy public proxy;
@@ -31,7 +32,9 @@ contract BillboardTest is Test {
         governanceProxy = new BillboardGovernanceProxy(address(governance), address(this), "");
 
         BillboardRegistry(address(proxy)).initialize(address(usdc), address(governanceProxy));
-        BillboardGovernance(address(governanceProxy)).initialize(30 days, 1000e6, securityDeposit, address(usdc), 1000e6, 1000e6, 500e6);
+        BillboardGovernance(address(governanceProxy)).initialize(
+            30 days, 1000e6, securityDeposit, address(usdc), 1000e6, 1000e6, 500e6
+        );
 
         usdc.mint(address(this), initialBalance);
 

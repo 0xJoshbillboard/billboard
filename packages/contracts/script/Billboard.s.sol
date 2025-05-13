@@ -36,7 +36,9 @@ contract DeployBillboard is Script {
         console.log("Billboard Token deployed at:", address(token));
 
         // Initialize the BillboardGovernanceProxy
-        BillboardGovernance(address(governanceProxy)).initialize(30 days, 1000e6, 1000e6, address(token), 1000e6, 1000e6, 500e6);
+        BillboardGovernance(address(governanceProxy)).initialize(
+            30 days, 1000e6, 1000e6, address(token), 1000e6, 1000e6, 500e6
+        );
         console.log("Billboard Governance Proxy initialized with values");
 
         // Deploy the BillboardRegistry

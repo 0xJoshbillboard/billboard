@@ -13,6 +13,7 @@ import {
     ITransparentUpgradeableProxy
 } from "@openzeppelin/contracts/proxy/transparent/TransparentUpgradeableProxy.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+
 contract GovernanceTest is Test {
     BillboardGovernance public governance;
     BillboardGovernanceProxy public governanceProxy;
@@ -151,7 +152,7 @@ contract GovernanceTest is Test {
         BillboardGovernance(address(governanceProxy)).vote(0, true);
         vm.stopPrank();
 
-        (,,,,,,uint256 votesFor, uint256 votesAgainst, bool executed,,) =
+        (,,,,,, uint256 votesFor, uint256 votesAgainst, bool executed,,) =
             BillboardGovernance(address(governanceProxy)).getProposal(0);
         assertEq(votesFor, user2BbtAmount);
         assertEq(votesAgainst, 0);
@@ -353,5 +354,21 @@ contract GovernanceTest is Test {
         assertEq(advertiserIsBlamedAfterBeingResolved.resolved, true);
         assertEq(token.balanceOf(user), 5000e18);
         assertEq(usdc.balanceOf(address(governanceProxy)), 0);
+    }
+
+    function test_blameAdvertiser_RevertWhenNotResolved() public {
+        usdc.mint(user2, 1000 * 10 ** 6);
+        vm.startPrank(user2);
+        usdc.approve(address(proxy), 1000 * 10 ** 6);
+        BillboardRegistry(address(proxy)).registerBillboardAdvertiser("testprovider");
+        vm.stopPrank();
+
+        vm.startPrank(user);
+        token.approve(address(governanceProxy), 1000 * 10 ** 18);
+        BillboardGovernance(address(governanceProxy)).blameAdvertiser(user2);
+        vm.stopPrank();
+
+        vm.expectRevert("Blame not resolved");
+        BillboardGovernance(address(governanceProxy)).returnSecurityDepositForBlame(user2);
     }
 }

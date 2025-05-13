@@ -108,6 +108,36 @@ export default function useBillboard() {
         error: null,
         label: "Execute Proposal",
       },
+      blameAdvertiser: {
+        pending: false,
+        completed: false,
+        error: null,
+        label: "Blame Advertiser",
+      },
+      approveBBT: {
+        pending: false,
+        completed: false,
+        error: null,
+        label: "Approve BBT",
+      },
+      voteForBlame: {
+        pending: false,
+        completed: false,
+        error: null,
+        label: "Vote for Blame",
+      },
+      resolveAdvertiserBlame: {
+        pending: false,
+        completed: false,
+        error: null,
+        label: "Resolve Advertiser Blame",
+      },
+      returnSecurityDepositForBlame: {
+        pending: false,
+        completed: false,
+        error: null,
+        label: "Return Security Deposit for Blame",
+      },
     },
   );
 
@@ -242,6 +272,67 @@ export default function useBillboard() {
     }
     const balance = await tokenContract.balanceOf(wallet.accounts[0].address);
     return (Number(balance) / 1e18).toLocaleString();
+  };
+
+  const approveBBT = async (amount: number) => {
+    if (!tokenContract || !wallet?.accounts[0].address) {
+      throw new Error("Token contract or wallet not defined");
+    }
+
+    try {
+      setTransactionStatus((prev) => ({
+        ...prev,
+        approveBBT: {
+          ...prev.approveBBT,
+          pending: true,
+          error: null,
+        },
+      }));
+
+      const currentAllowance = await tokenContract.allowance(
+        wallet.accounts[0].address,
+        GOVERNANCE_ADDRESS,
+      );
+
+      const parsedAmount = BigInt(amount) * BigInt(1e18);
+
+      if (BigInt(currentAllowance) < parsedAmount) {
+        const approveTx = await tokenContract.approve(
+          GOVERNANCE_ADDRESS,
+          parsedAmount,
+        );
+        await approveTx.wait();
+        setTransactionStatus((prev) => ({
+          ...prev,
+          approveBBT: {
+            ...prev.approveBBT,
+            pending: false,
+            completed: true,
+          },
+        }));
+      } else {
+        setTransactionStatus((prev) => ({
+          ...prev,
+          approveBBT: {
+            ...prev.approveBBT,
+            pending: false,
+            completed: true,
+          },
+        }));
+      }
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
+      setTransactionStatus((prev) => ({
+        ...prev,
+        approveBBT: {
+          ...prev.approveBBT,
+          pending: false,
+          error: errorMessage,
+        },
+      }));
+      throw error;
+    }
   };
 
   const buyBBT = async (amount: number) => {
@@ -638,8 +729,8 @@ export default function useBillboard() {
       }));
 
       const allowance = await allowanceUSDC();
-      if (getBigInt(allowance) < getBigInt(governanceSettings.price)) {
-        await approveUSDC(governanceSettings.price.toString());
+      if (getBigInt(allowance) < getBigInt(governanceSettings.price * 1e6)) {
+        await approveUSDC((governanceSettings.price * 1e6).toString());
       }
 
       setTransactionStatus((prev) => ({
@@ -861,9 +952,91 @@ export default function useBillboard() {
     }
   };
 
-  const getProvider = async (address: string) => {
+  const blameAdvertiser = async (address: string) => {
+    if (!contract || !governanceContract) {
+      throw new Error("Contract not defined");
+    }
+    if (!wallet) throw new Error("Wallet not connected");
+    setTransactionStatus((prev) => ({
+      ...prev,
+      blameAdvertiser: { ...prev.blameAdvertiser, pending: true, error: null },
+    }));
+    try {
+      const tx = await governanceContract.blameAdvertiser(address);
+      await tx.wait();
+      setTransactionStatus((prev) => ({
+        ...prev,
+        blameAdvertiser: {
+          ...prev.blameAdvertiser,
+          pending: false,
+          completed: true,
+        },
+      }));
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
+      setTransactionStatus((prev) => ({
+        ...prev,
+        blameAdvertiser: {
+          ...prev.blameAdvertiser,
+          pending: false,
+          error: errorMessage,
+        },
+      }));
+      throw error;
+    }
+  };
+
+  const voteForBlame = async (address: string, support: boolean) => {
+    if (!governanceContract) throw new Error("Governance contract not defined");
+    if (!wallet) throw new Error("Wallet not connected");
+    setTransactionStatus((prev) => ({
+      ...prev,
+      voteForBlame: { ...prev.voteForBlame, pending: true, error: null },
+    }));
+    try {
+      const tx = await governanceContract.voteForBlame(address, support);
+      await tx.wait();
+      setTransactionStatus((prev) => ({
+        ...prev,
+        voteForBlame: { ...prev.voteForBlame, pending: false, completed: true },
+      }));
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
+      setTransactionStatus((prev) => ({
+        ...prev,
+        voteForBlame: {
+          ...prev.voteForBlame,
+          pending: false,
+          error: errorMessage,
+        },
+      }));
+      throw error;
+    }
+  };
+
+  const getAdvertiserIsBlamed = async (address: string) => {
+    if (!governanceContract) throw new Error("Governance contract not defined");
+    if (!wallet) throw new Error("Wallet not connected");
+    return await governanceContract.getAdvertiserIsBlamed(address);
+  };
+
+  const resolveAdvertiserBlame = async (address: string) => {
+    if (!governanceContract) throw new Error("Governance contract not defined");
+    if (!wallet) throw new Error("Wallet not connected");
+    governanceContract.resolveAdvertiserBlame(address);
+  };
+
+  const returnSecurityDepositForBlame = async (address: string) => {
+    if (!governanceContract) throw new Error("Governance contract not defined");
+    if (!wallet) throw new Error("Wallet not connected");
+    return await governanceContract.returnSecurityDepositForBlame(address);
+  };
+
+  const getAdvertiser = async (address: string) => {
     if (!contract) throw new Error("Contract not defined");
-    return await contract.getBillboardProvider(address);
+    return await contract.getBillboardAdvertiser(address);
   };
 
   const getAds = async () => {
@@ -909,7 +1082,12 @@ export default function useBillboard() {
     uploadImage,
     getAds,
     registerProvider,
-    getProvider,
+    getAdvertiser,
+    blameAdvertiser,
+    voteForBlame,
+    getAdvertiserIsBlamed,
+    resolveAdvertiserBlame,
+    returnSecurityDepositForBlame,
 
     // USDC operations
     approveUSDC,
@@ -920,6 +1098,7 @@ export default function useBillboard() {
     // Token operations
     tokenBalance,
     buyBBT,
+    approveBBT,
 
     // Governance operations
     governanceSettings,

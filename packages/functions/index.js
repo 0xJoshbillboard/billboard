@@ -6,6 +6,7 @@ const { initializeApp } = require("firebase-admin/app");
 const { onRequest } = require("firebase-functions/v2/https");
 const { PinataSDK } = require("pinata");
 const abi = require("./abi");
+const governanceAbi = require("./abi-gov");
 const { setGlobalOptions } = require("firebase-functions");
 const dotenv = require("dotenv");
 
@@ -27,8 +28,13 @@ const pinata = new PinataSDK({
 const rpcUrl = `https://optimism-sepolia.infura.io/v3/${process.env.INFURA_API}`;
 const provider = new ethers.JsonRpcProvider(rpcUrl);
 const contract = new ethers.Contract(
-  "0x11508abf11400793d84b402553f4bf7e52ad8b26",
+  "0xc5533b322861de8c894fc44ec421a02395b83df5",
   abi,
+  provider,
+);
+const governanceContract = new ethers.Contract(
+  "0x9527f41eb97173ea364b775b4ab99578110fec5f",
+  governanceAbi,
   provider,
 );
 
@@ -425,3 +431,236 @@ exports.getAds = onRequest(
     }
   },
 );
+
+const fetchGovernanceEvents = async () => {
+  try {
+    const db = getFirestore();
+    const currentBlock = await provider.getBlockNumber();
+
+    const lastRunRef = db
+      .collection("governance_events_metadata")
+      .doc("last_run");
+    const lastRunDoc = await lastRunRef.get();
+
+    let lastProcessedBlock = currentBlock - 10000;
+
+    if (lastRunDoc.exists) {
+      lastProcessedBlock = lastRunDoc.data().lastProcessedBlock;
+    }
+
+    logger.log(
+      `Fetching governance events from block ${lastProcessedBlock + 1} to ${currentBlock}`,
+    );
+
+    const fetchLogsInChunks = async (
+      filter,
+      startBlock,
+      endBlock,
+      chunkSize = 2000,
+    ) => {
+      let allLogs = [];
+      let currentStartBlock = startBlock;
+
+      while (currentStartBlock <= endBlock) {
+        const currentEndBlock = Math.min(
+          currentStartBlock + chunkSize - 1,
+          endBlock,
+        );
+
+        try {
+          logger.log(
+            `Fetching logs from block ${currentStartBlock} to ${currentEndBlock}`,
+          );
+          const logs = await governanceContract.queryFilter(
+            filter,
+            currentStartBlock,
+            currentEndBlock,
+          );
+          allLogs = [...allLogs, ...logs];
+        } catch (error) {
+          logger.error(
+            `Error fetching logs from ${currentStartBlock} to ${currentEndBlock}:`,
+            error,
+          );
+          if (error.message && error.message.includes("Too Many Requests")) {
+            const newChunkSize = Math.floor(chunkSize / 2);
+            if (newChunkSize < 100) {
+              throw new Error(
+                "Chunk size too small, cannot proceed with fetching logs",
+              );
+            }
+            logger.log(`Reducing chunk size to ${newChunkSize} and retrying`);
+            const remainingLogs = await fetchLogsInChunks(
+              filter,
+              currentStartBlock,
+              endBlock,
+              newChunkSize,
+            );
+            allLogs = [...allLogs, ...remainingLogs];
+            break;
+          } else {
+            throw error;
+          }
+        }
+
+        await new Promise((resolve) => setTimeout(resolve, 500));
+
+        currentStartBlock = currentEndBlock + 1;
+      }
+
+      return allLogs;
+    };
+
+    const filterAdvertiserBlamed =
+      governanceContract.filters.AdvertiserBlamed();
+    const filterVotedForBlame = governanceContract.filters.VotedForBlame();
+    const filterAdvertiserBlameResolved =
+      governanceContract.filters.AdvertiserBlameResolved();
+
+    const logsAdvertiserBlamed = await fetchLogsInChunks(
+      filterAdvertiserBlamed,
+      lastProcessedBlock + 1,
+      currentBlock,
+    );
+
+    const logsVotedForBlame = await fetchLogsInChunks(
+      filterVotedForBlame,
+      lastProcessedBlock + 1,
+      currentBlock,
+    );
+
+    const logsAdvertiserBlameResolved = await fetchLogsInChunks(
+      filterAdvertiserBlameResolved,
+      lastProcessedBlock + 1,
+      currentBlock,
+    );
+
+    const batch = db.batch();
+
+    // Process AdvertiserBlamed events
+    for (const log of logsAdvertiserBlamed) {
+      const logData = {
+        eventType: "AdvertiserBlamed",
+        blockNumber: log.blockNumber,
+        transactionHash: log.transactionHash,
+        timestamp: new Date().toISOString(),
+        from: log.args[0],
+        advertiser: log.args[1],
+      };
+
+      // Use a unique ID that includes the event type to avoid collisions
+      const logRef = db
+        .collection("governance_events")
+        .doc(`${log.transactionHash}_AdvertiserBlamed`);
+      batch.set(logRef, logData);
+
+      logger.log(
+        `Processing AdvertiserBlamed event: ${JSON.stringify(logData)}`,
+      );
+    }
+
+    // Process VotedForBlame events
+    for (const log of logsVotedForBlame) {
+      const logData = {
+        eventType: "VotedForBlame",
+        blockNumber: log.blockNumber,
+        transactionHash: log.transactionHash,
+        timestamp: new Date().toISOString(),
+        voter: log.args[0],
+        advertiser: log.args[1],
+        support: log.args[2],
+        votes: log.args[3].toString(),
+      };
+
+      // Use a unique ID that includes the event type to avoid collisions
+      const logRef = db
+        .collection("governance_events")
+        .doc(`${log.transactionHash}_VotedForBlame_${log.args[0]}`);
+      batch.set(logRef, logData);
+
+      logger.log(`Processing VotedForBlame event: ${JSON.stringify(logData)}`);
+    }
+
+    // Process AdvertiserBlameResolved events
+    for (const log of logsAdvertiserBlameResolved) {
+      const logData = {
+        eventType: "AdvertiserBlameResolved",
+        blockNumber: log.blockNumber,
+        transactionHash: log.transactionHash,
+        timestamp: new Date().toISOString(),
+        from: log.args[0],
+        resolved: log.args[1],
+      };
+
+      // Use a unique ID that includes the event type to avoid collisions
+      const logRef = db
+        .collection("governance_events")
+        .doc(`${log.transactionHash}_AdvertiserBlameResolved`);
+      batch.set(logRef, logData);
+
+      logger.log(
+        `Processing AdvertiserBlameResolved event: ${JSON.stringify(logData)}`,
+      );
+    }
+
+    batch.set(lastRunRef, {
+      lastProcessedBlock: currentBlock,
+      lastRunTime: new Date().toISOString(),
+    });
+
+    await batch.commit();
+
+    logger.log(
+      `Processed governance events: ${logsAdvertiserBlamed.length} AdvertiserBlamed, ${logsVotedForBlame.length} VotedForBlame, ${logsAdvertiserBlameResolved.length} AdvertiserBlameResolved`,
+    );
+
+    return {
+      success: true,
+      processedEvents:
+        logsAdvertiserBlamed.length +
+        logsVotedForBlame.length +
+        logsAdvertiserBlameResolved.length,
+      lastProcessedBlock: currentBlock,
+    };
+  } catch (error) {
+    logger.error("Error fetching governance events:", error);
+    throw error;
+  }
+};
+
+exports.scheduledGovernanceEventsFetch = onSchedule(
+  {
+    schedule: "every 6 hours",
+    timeZone: "Europe/London",
+  },
+  async () => {
+    try {
+      logger.log("Starting scheduled governance events fetch");
+      const result = await fetchGovernanceEvents();
+      logger.log("Completed scheduled governance events fetch:", result);
+      return result;
+    } catch (error) {
+      logger.error("Error in scheduled governance events fetch:", error);
+      throw error;
+    }
+  },
+);
+
+exports.fetchGovernanceEventsManual = onRequest({ cors }, async (req, res) => {
+  try {
+    logger.log("Manual governance events fetch requested");
+    const result = await fetchGovernanceEvents();
+    logger.log("Completed manual governance events fetch:", result);
+    return res.status(200).json({
+      success: true,
+      message: "Governance events fetched successfully",
+      result,
+    });
+  } catch (error) {
+    logger.error("Error in manual governance events fetch:", error);
+    return res.status(500).json({
+      success: false,
+      error: error.message || "Failed to fetch governance events",
+    });
+  }
+});

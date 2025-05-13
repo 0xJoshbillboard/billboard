@@ -20,11 +20,12 @@ import {
   StepButton,
   Stepper,
   StepLabel,
-  Divider,
+  Tabs,
+  Tab,
 } from "@mui/material";
 import CreateProposal from "../components/Modals/CreateProposal";
-import VoteFor from "../components/Icons/VoteFor";
-import VoteAgainst from "../components/Icons/VoteAgainst";
+import { ProposalsList } from "../components/ProposalList";
+import { BlameAdvertiser } from "../components/BlameAdvertiser";
 
 export default function Governance() {
   const [{ wallet }] = useConnectWallet();
@@ -35,8 +36,10 @@ export default function Governance() {
     vote,
     executeProposal,
     buyBBT,
+    approveBBT,
     usdcBalance,
     transactionStatus,
+    blameAdvertiser,
   } = useBillboard();
   const [governanceContract, setGovernanceContract] = useState<Contract | null>(
     null,
@@ -46,6 +49,7 @@ export default function Governance() {
   const [buyAmount, setBuyAmount] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [transactions, setTransactions] = useState<any[]>([]);
+  const [activeTab, setActiveTab] = useState(0);
 
   useEffect(() => {
     const setupContracts = async () => {
@@ -69,12 +73,10 @@ export default function Governance() {
     try {
       setIsLoading(true);
 
-      // Convert to USDC decimals (6 decimals)
       const amount = Number(BigInt(parseFloat(buyAmount) * 1e6));
 
       await buyBBT(amount);
 
-      // Add transaction to list
       const newTransaction = {
         id: Date.now(),
         type: "Buy BBT",
@@ -84,12 +86,10 @@ export default function Governance() {
       };
       setTransactions([newTransaction, ...transactions]);
 
-      // Reset input field after successful purchase
       setBuyAmount("");
     } catch (error) {
       console.error("Failed to buy BBT tokens:", error);
 
-      // Add failed transaction
       const failedTransaction = {
         id: Date.now(),
         type: "Buy BBT",
@@ -103,29 +103,8 @@ export default function Governance() {
     }
   };
 
-  const handleVote = async (proposalId: number, support: boolean) => {
-    if (!governanceContract) return;
-
-    try {
-      setIsLoading(true);
-      const tx = await vote(proposalId, support);
-      await tx.wait();
-    } catch (error) {
-      console.error("Failed to vote:", error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleExecuteProposal = async (proposalId: number) => {
-    if (!governanceContract) return;
-
-    try {
-      const tx = await executeProposal(proposalId);
-      await tx.wait();
-    } catch (error) {
-      console.error("Failed to execute proposal:", error);
-    }
+  const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
+    setActiveTab(newValue);
   };
 
   return (
@@ -136,7 +115,6 @@ export default function Governance() {
           spacing={4}
           justifyContent="space-between"
         >
-          {/* Current Settings */}
           <Stack direction="column" spacing={4} sx={{ mt: 2 }}>
             <Typography variant="h4" fontWeight={800}>
               CURRENT SETTINGS
@@ -206,13 +184,17 @@ export default function Governance() {
               <Box>
                 <Typography variant="body1">BBT Balance</Typography>
                 <Typography variant="h6">
-                  {tokenBalance.toLocaleString()} BBT
+                  {wallet?.accounts[0].address
+                    ? tokenBalance.toLocaleString() + " BBT"
+                    : "Connect Wallet"}
                 </Typography>
               </Box>
               <Box>
                 <Typography variant="body1">USDC Balance</Typography>
                 <Typography variant="h6">
-                  {usdcBalance.toLocaleString()} USDC
+                  {wallet?.accounts[0].address
+                    ? usdcBalance.toLocaleString() + " USDC"
+                    : "Connect Wallet"}
                 </Typography>
               </Box>
             </Stack>
@@ -329,142 +311,33 @@ export default function Governance() {
           </Stack>
         </Stack>
 
-        <Stack direction="column" spacing={4} width="100%">
-          <Stack
-            direction="row"
-            spacing={4}
-            justifyContent="space-between"
-            alignItems="center"
+        <Box sx={{ borderBottom: 1, borderColor: "divider" }}>
+          <Tabs
+            value={activeTab}
+            onChange={handleTabChange}
+            aria-label="governance tabs"
           >
-            <Typography variant="h4" fontWeight={800}>
-              ACTIVE PROPOSALS
-            </Typography>
-            <Button
-              variant="contained"
-              color="primary"
-              onClick={() => setShowCreateProposal(true)}
-            >
-              Create Proposal
-            </Button>
-          </Stack>
-        </Stack>
+            <Tab label="Proposals" />
+            <Tab label="Blame Advertiser" />
+          </Tabs>
+        </Box>
 
-        <Stack direction="column" spacing={4} width="100%">
-          {proposals.length === 0 && (
-            <Typography variant="body1">No active proposals</Typography>
-          )}
-          {proposals.map((proposal) => (
-            <Stack
-              direction="column"
-              spacing={4}
-              key={proposal.id.toString().concat("proposal")}
-              border="1px solid #444"
-              borderRadius={2}
-              p={2}
-              width="100%"
-            >
-              <Typography variant="h4">#{proposal.id + 1}</Typography>
-              <Stack
-                direction={{ xs: "column", md: "row" }}
-                spacing={4}
-                justifyContent="space-between"
-              >
-                <Stack direction="column" spacing={2}>
-                  <Typography variant="body1">Duration</Typography>
-                  <Typography variant="body1">
-                    {proposal.duration / 86400} days
-                  </Typography>
-                </Stack>
-                <Stack direction="column" spacing={2}>
-                  <Typography variant="body1">Price per Billboard</Typography>
-                  <Typography variant="body1">
-                    {(proposal.pricePerBillboard / 1e6).toLocaleString()} USDC
-                  </Typography>
-                </Stack>
-                <Stack direction="column" spacing={2}>
-                  <Typography variant="body1">
-                    Security Deposit for creating a Proposal
-                  </Typography>
-                  <Typography variant="body1">
-                    {(proposal.securityDeposit / 1e6).toLocaleString()} USDC
-                  </Typography>
-                </Stack>
-                <Stack direction="column" spacing={2}>
-                  <Typography variant="body1">
-                    Security Deposit Advertiser
-                  </Typography>
-                  <Typography variant="body1">
-                    {(
-                      proposal.securityDepositAdvertiser / 1e6
-                    ).toLocaleString()}{" "}
-                    USDC
-                  </Typography>
-                </Stack>
-                <Stack direction="column" spacing={2}>
-                  <Typography variant="body1">Min Proposal Tokens</Typography>
-                  <Typography variant="body1">
-                    {(proposal.minProposalTokens / 1e18).toLocaleString()} BBT
-                  </Typography>
-                </Stack>
-                <Stack direction="column" spacing={2}>
-                  <Typography variant="body1">Min Voting Tokens</Typography>
-                  <Typography variant="body1">
-                    {(proposal.minVotingTokens / 1e18).toLocaleString()} BBT
-                  </Typography>
-                </Stack>
-              </Stack>
-              <Stack
-                direction={{ xs: "column", md: "row" }}
-                spacing={4}
-                justifyContent="space-between"
-              >
-                <Stack direction="row" spacing={2} alignItems="center">
-                  <Button
-                    size="small"
-                    variant="outlined"
-                    color="primary"
-                    disabled={!wallet}
-                    onClick={() => handleVote(proposal.id, true)}
-                    startIcon={<VoteFor />}
-                  >
-                    Vote For
-                  </Button>
-                  <Button
-                    size="small"
-                    variant="outlined"
-                    color="primary"
-                    disabled={!wallet}
-                    onClick={() => handleVote(proposal.id, false)}
-                    startIcon={<VoteAgainst />}
-                  >
-                    Vote Against
-                  </Button>
-                </Stack>
-                <Stack direction="column" spacing={2}>
-                  <Typography variant="body1">Votes</Typography>
-                  <Stack direction="row" spacing={2}>
-                    <Typography variant="body1">
-                      For: {(proposal.votesFor / 1e18).toLocaleString()}
-                    </Typography>
-                    <Divider orientation="vertical" flexItem sx={{ mx: 1 }} />
-                    <Typography variant="body1">
-                      Against: {(proposal.votesAgainst / 1e18).toLocaleString()}
-                    </Typography>
-                  </Stack>
-                  <Button
-                    size="small"
-                    disabled={proposal.executed || !wallet}
-                    variant="contained"
-                    color="primary"
-                    onClick={() => handleExecuteProposal(proposal.id)}
-                  >
-                    Execute
-                  </Button>
-                </Stack>
-              </Stack>
-            </Stack>
-          ))}
-        </Stack>
+        {activeTab === 0 ? (
+          <ProposalsList
+            proposals={proposals}
+            wallet={wallet}
+            vote={vote}
+            executeProposal={executeProposal}
+            setShowCreateProposal={setShowCreateProposal}
+          />
+        ) : (
+          <BlameAdvertiser
+            blameAdvertiser={blameAdvertiser}
+            transactionStatus={transactionStatus}
+            approveBBT={approveBBT}
+            minProposalTokens={governanceSettings.minProposalTokens}
+          />
+        )}
       </Stack>
       <CreateProposal
         open={showCreateProposal}

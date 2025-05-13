@@ -68,6 +68,36 @@ export interface TransactionStatus {
     error: string | null;
     label: string;
   };
+  blameAdvertiser: {
+    pending: boolean;
+    completed: boolean;
+    error: string | null;
+    label: string;
+  };
+  approveBBT: {
+    pending: boolean;
+    completed: boolean;
+    error: string | null;
+    label: string;
+  };
+  voteForBlame: {
+    pending: boolean;
+    completed: boolean;
+    error: string | null;
+    label: string;
+  };
+  resolveAdvertiserBlame: {
+    pending: boolean;
+    completed: boolean;
+    error: string | null;
+    label: string;
+  };
+  returnSecurityDepositForBlame: {
+    pending: boolean;
+    completed: boolean;
+    error: string | null;
+    label: string;
+  };
 }
 
 export interface RawBillboard {

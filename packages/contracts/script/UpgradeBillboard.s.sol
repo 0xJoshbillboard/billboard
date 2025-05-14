@@ -8,7 +8,7 @@ import "@openzeppelin/contracts/proxy/transparent/ProxyAdmin.sol";
 
 contract UpgradeBillboard is Script {
     address PROXY_ADDRESS = address(0xDcBACD4DE1714F0B6c68E61AaC8AB31fadD649D1);
-    address PROXY_ADMIN = address(0xd0B19109DD194fe366f2d2dA34B3C22Dabb1Cb0b);
+    address PROXY_ADMIN = address(0xbb366D9ccD4bA7bCC43a8edbFd15B27a66F70f3d);
 
     function run() public {
         require(PROXY_ADDRESS != address(0), "Please set the proxy address");

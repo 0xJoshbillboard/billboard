@@ -12,7 +12,7 @@ contract BillboardGovernance is Initializable, OwnableUpgradeable {
     uint256 public minProposalTokens;
     uint256 public minVotingTokens;
     BillboardToken public token;
-    uint256 public securityDepositProvider;
+    uint256 public securityDepositAdvertiser;
 
     struct Proposal {
         uint256 duration;
@@ -27,12 +27,25 @@ contract BillboardGovernance is Initializable, OwnableUpgradeable {
         address proposer;
         bool depositReturned;
         uint256 createdAt;
-        uint256 securityDepositProvider;
+        uint256 securityDepositAdvertiser;
+    }
+
+    struct AdvertiserIsBlamed {
+        bool isBlamed;
+        uint256 createdAt;
+        uint256 votesFor;
+        uint256 votesAgainst;
+        bool resolved;
+        uint256 blameSecurityDeposit;
+        bool blameSecurityDepositReturned;
+        address proposer;
     }
 
     mapping(uint256 => Proposal) public proposals;
     uint256 public proposalCount;
     mapping(address => mapping(uint256 => bool)) public hasVoted;
+    mapping(address => AdvertiserIsBlamed) public advertiserIsBlamed;
+    mapping(address => mapping(address => bool)) public hasVotedForBlame;
 
     event ProposalCreated(
         uint256 indexed proposalId,
@@ -42,14 +55,18 @@ contract BillboardGovernance is Initializable, OwnableUpgradeable {
         uint256 minProposalTokens,
         uint256 minVotingTokens,
         uint256 createdAt,
-        uint256 securityDepositProvider
+        uint256 securityDepositAdvertiser
     );
     event Voted(uint256 indexed proposalId, address indexed voter, bool support, uint256 votes);
     event ProposalExecuted(uint256 indexed proposalId);
     event SecurityDepositReturned(uint256 indexed proposalId, address indexed proposer, uint256 amount);
+    event AdvertiserBlamed(address indexed from, address indexed advertiser);
+    event VotedForBlame(address indexed voter, address indexed advertiser, bool support, uint256 votes);
+    event AdvertiserBlameResolved(address indexed from, bool indexed resolved);
+    event SecurityDepositReturnedForBlame(address indexed advertiser, address indexed proposer, uint256 amount);
 
-    function updateSecurityDepositProvider(uint256 _securityDepositProvider) external onlyOwner {
-        securityDepositProvider = _securityDepositProvider;
+    function updateSecurityDepositAdvertiser(uint256 _securityDepositAdvertiser) external onlyOwner {
+        securityDepositAdvertiser = _securityDepositAdvertiser;
     }
 
     function initialize(
@@ -57,17 +74,19 @@ contract BillboardGovernance is Initializable, OwnableUpgradeable {
         uint256 _pricePerBillboard,
         uint256 _securityDeposit,
         address _token,
-        uint256 _securityDepositProvider
+        uint256 _securityDepositAdvertiser,
+        uint256 _minProposalTokens,
+        uint256 _minVotingTokens
     ) public initializer {
         __Ownable_init(msg.sender);
         duration = _duration;
         pricePerBillboard = _pricePerBillboard;
         securityDeposit = _securityDeposit;
-        minProposalTokens = 1000 * 10 ** 18;
-        minVotingTokens = 500 * 10 ** 18;
+        minProposalTokens = _minProposalTokens;
+        minVotingTokens = _minVotingTokens;
         token = BillboardToken(_token);
         proposalCount = 0;
-        securityDepositProvider = _securityDepositProvider;
+        securityDepositAdvertiser = _securityDepositAdvertiser;
     }
 
     function createProposal(
@@ -76,7 +95,7 @@ contract BillboardGovernance is Initializable, OwnableUpgradeable {
         uint256 _securityDeposit,
         uint256 _minProposalTokens,
         uint256 _minVotingTokens,
-        uint256 _securityDepositProvider
+        uint256 _securityDepositAdvertiser
     ) external {
         require(token.balanceOf(msg.sender) >= minProposalTokens, "Insufficient tokens to create proposal");
         require(token.transferFrom(msg.sender, address(this), securityDeposit), "Security deposit transfer failed");
@@ -95,7 +114,7 @@ contract BillboardGovernance is Initializable, OwnableUpgradeable {
             depositReturned: false,
             initialSecurityDeposit: securityDeposit,
             createdAt: block.timestamp,
-            securityDepositProvider: _securityDepositProvider
+            securityDepositAdvertiser: _securityDepositAdvertiser
         });
 
         proposalCount++;
@@ -108,7 +127,7 @@ contract BillboardGovernance is Initializable, OwnableUpgradeable {
             _minProposalTokens,
             _minVotingTokens,
             block.timestamp,
-            _securityDepositProvider
+            _securityDepositAdvertiser
         );
     }
 
@@ -162,6 +181,76 @@ contract BillboardGovernance is Initializable, OwnableUpgradeable {
         emit SecurityDepositReturned(proposalId, proposal.proposer, proposal.initialSecurityDeposit);
     }
 
+    function blameAdvertiser(address advertiser) external {
+        require(token.balanceOf(msg.sender) >= minProposalTokens, "Insufficient tokens to blame advertiser");
+        require(token.transferFrom(msg.sender, address(this), minProposalTokens), "Token transfer failed");
+
+        if (!advertiserIsBlamed[advertiser].isBlamed) {
+            advertiserIsBlamed[advertiser] = AdvertiserIsBlamed({
+                isBlamed: true,
+                createdAt: block.timestamp,
+                votesFor: 0,
+                votesAgainst: 0,
+                resolved: false,
+                blameSecurityDeposit: minProposalTokens,
+                blameSecurityDepositReturned: false,
+                proposer: msg.sender
+            });
+        }
+
+        voteForBlame(advertiser, true);
+        emit AdvertiserBlamed(msg.sender, advertiser);
+    }
+
+    function voteForBlame(address advertiser, bool support) public {
+        require(advertiserIsBlamed[advertiser].isBlamed, "Advertiser is not blamed");
+        require(!advertiserIsBlamed[advertiser].resolved, "Blame already resolved");
+        require(!hasVotedForBlame[msg.sender][advertiser], "Already voted for this blame");
+
+        uint256 amount = token.balanceOf(msg.sender);
+        require(amount >= minVotingTokens, "Insufficient tokens to vote");
+
+        hasVotedForBlame[msg.sender][advertiser] = true;
+
+        if (support) {
+            advertiserIsBlamed[advertiser].votesFor += amount;
+        } else {
+            advertiserIsBlamed[advertiser].votesAgainst += amount;
+        }
+
+        emit VotedForBlame(msg.sender, advertiser, support, amount);
+    }
+
+    function getAdvertiserIsBlamed(address advertiser) external view returns (AdvertiserIsBlamed memory) {
+        return advertiserIsBlamed[advertiser];
+    }
+
+    function resolveAdvertiserBlame(address advertiser) external {
+        require(advertiserIsBlamed[advertiser].isBlamed, "Advertiser is not blamed");
+        require(block.timestamp > advertiserIsBlamed[advertiser].createdAt + 7 days, "Blame voting not done");
+        require(!advertiserIsBlamed[advertiser].resolved, "Blame already resolved");
+
+        bool blameResult = advertiserIsBlamed[advertiser].votesFor > advertiserIsBlamed[advertiser].votesAgainst;
+        advertiserIsBlamed[advertiser].isBlamed = blameResult;
+        advertiserIsBlamed[advertiser].resolved = true;
+
+        emit AdvertiserBlameResolved(advertiser, blameResult);
+    }
+
+    function returnSecurityDepositForBlame(address advertiser) external {
+        require(advertiserIsBlamed[advertiser].isBlamed, "Advertiser is not blamed");
+        require(advertiserIsBlamed[advertiser].resolved, "Blame not resolved");
+        require(!advertiserIsBlamed[advertiser].blameSecurityDepositReturned, "Security deposit already returned");
+        require(
+            token.transfer(advertiserIsBlamed[advertiser].proposer, advertiserIsBlamed[advertiser].blameSecurityDeposit),
+            "Security deposit return failed"
+        );
+        advertiserIsBlamed[advertiser].blameSecurityDepositReturned = true;
+        emit SecurityDepositReturnedForBlame(
+            advertiser, advertiserIsBlamed[advertiser].proposer, advertiserIsBlamed[advertiser].blameSecurityDeposit
+        );
+    }
+
     function getProposal(uint256 proposalId)
         external
         view
@@ -176,7 +265,7 @@ contract BillboardGovernance is Initializable, OwnableUpgradeable {
             uint256 _votesAgainst,
             bool _executed,
             uint256 _createdAt,
-            uint256 _securityDepositProvider
+            uint256 _securityDepositAdvertiser
         )
     {
         require(proposalId < proposalCount, "Invalid proposal");
@@ -192,7 +281,7 @@ contract BillboardGovernance is Initializable, OwnableUpgradeable {
             proposal.votesAgainst,
             proposal.executed,
             proposal.createdAt,
-            proposal.securityDepositProvider
+            proposal.securityDepositAdvertiser
         );
     }
 }

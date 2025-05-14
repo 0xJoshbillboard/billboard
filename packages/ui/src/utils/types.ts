@@ -10,7 +10,7 @@ export interface Proposal {
   minProposalTokens: number;
   minVotingTokens: number;
   createdAt: number;
-  securityDepositProvider: number;
+  securityDepositAdvertiser: number;
 }
 
 export interface TransactionStatus {
@@ -68,6 +68,36 @@ export interface TransactionStatus {
     error: string | null;
     label: string;
   };
+  blameAdvertiser: {
+    pending: boolean;
+    completed: boolean;
+    error: string | null;
+    label: string;
+  };
+  approveBBT: {
+    pending: boolean;
+    completed: boolean;
+    error: string | null;
+    label: string;
+  };
+  voteForBlame: {
+    pending: boolean;
+    completed: boolean;
+    error: string | null;
+    label: string;
+  };
+  resolveAdvertiserBlame: {
+    pending: boolean;
+    completed: boolean;
+    error: string | null;
+    label: string;
+  };
+  returnSecurityDepositForBlame: {
+    pending: boolean;
+    completed: boolean;
+    error: string | null;
+    label: string;
+  };
 }
 
 export interface RawBillboard {
@@ -76,4 +106,16 @@ export interface RawBillboard {
   description: string;
   link: string;
   ipfsHash: string;
+}
+
+export interface GovernanceEvent {
+  advertiser: string;
+  blockNumber: number;
+  eventType: string;
+  support: boolean;
+  timestamp: string;
+  timestampDate: Date;
+  transactionHash: string;
+  voter: string;
+  votes: string;
 }

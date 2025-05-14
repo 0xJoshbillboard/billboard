@@ -36,7 +36,9 @@ contract DeployBillboard is Script {
         console.log("Billboard Token deployed at:", address(token));
 
         // Initialize the BillboardGovernanceProxy
-        BillboardGovernance(address(governanceProxy)).initialize(30 days, 1000e6, 10000e6, address(token), 1000e6);
+        BillboardGovernance(address(governanceProxy)).initialize(
+            30 days, 1000e6, 1000e6, address(token), 500e6, 1000e18, 1000e18
+        );
         console.log("Billboard Governance Proxy initialized with values");
 
         // Deploy the BillboardRegistry
@@ -50,6 +52,9 @@ contract DeployBillboard is Script {
         // Initialize the proxy with the registry address
         BillboardRegistry(address(proxy)).initialize(address(usdc), address(governanceProxy));
         console.log("Billboard Proxy initialized with registry");
+
+        BillboardRegistry(address(proxy)).setGovernance(address(governanceProxy));
+        console.log("Billboard Proxy initialized with governance");
 
         vm.stopBroadcast();
     }

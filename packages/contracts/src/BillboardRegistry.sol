@@ -11,9 +11,14 @@ contract BillboardRegistry is Initializable, OwnableUpgradeable {
     BillboardGovernance public governance;
 
     mapping(address => Billboard[]) public billboards;
-    mapping(address => string) public billboardProviders;
-    mapping(address => uint256) public providerDepositTime;
-    mapping(address => bool) public providerWithdrawnDeposit;
+    mapping(address => Advertiser) public advertisers;
+
+    struct Advertiser {
+        string handle;
+        address advertiser;
+        uint256 depositTime;
+        bool withdrawnDeposit;
+    }
 
     struct Billboard {
         address owner;
@@ -29,15 +34,20 @@ contract BillboardRegistry is Initializable, OwnableUpgradeable {
 
     event BillboardExtended(address indexed owner, uint256 index, uint256 newExpiryTime);
 
-    event BillboardProviderRegistered(address indexed provider, string handle);
+    event BillboardAdvertiserRegistered(address indexed advertiser, string handle);
 
-    event SecurityDepositWithdrawn(address indexed provider, uint256 amount);
+    event SecurityDepositWithdrawn(address indexed advertiser, uint256 amount);
 
     function initialize(address _usdcAddress, address _governance) public initializer {
         __Ownable_init(msg.sender);
         require(_usdcAddress != address(0), "USDC address cannot be zero");
         require(_governance != address(0), "Governance address cannot be zero");
         usdc = IERC20(_usdcAddress);
+        governance = BillboardGovernance(_governance);
+    }
+
+    function setGovernance(address _governance) external onlyOwner {
+        require(_governance != address(0), "Governance address cannot be zero");
         governance = BillboardGovernance(_governance);
     }
 
@@ -69,35 +79,46 @@ contract BillboardRegistry is Initializable, OwnableUpgradeable {
         emit BillboardExtended(msg.sender, index, block.timestamp + governance.duration());
     }
 
-    function registerBillboardProvider(string memory handle) external {
+    function registerBillboardAdvertiser(string memory handle) external {
         require(address(governance) != address(0), "Governance not initialized");
-        require(bytes(billboardProviders[msg.sender]).length == 0, "Provider already registered");
-        require(
-            usdc.transferFrom(msg.sender, address(this), governance.securityDepositProvider()), "USDC transfer failed"
-        );
-        billboardProviders[msg.sender] = handle;
-        providerDepositTime[msg.sender] = block.timestamp;
-        providerWithdrawnDeposit[msg.sender] = false;
-        emit BillboardProviderRegistered(msg.sender, handle);
+        Advertiser storage advertiser = advertisers[msg.sender];
+        require(bytes(advertiser.handle).length == 0, "Advertiser already registered");
+
+        uint256 requiredDeposit = governance.securityDepositAdvertiser();
+        uint256 userBalance = usdc.balanceOf(msg.sender);
+        uint256 userAllowance = usdc.allowance(msg.sender, address(this));
+
+        require(userBalance >= requiredDeposit, "Insufficient USDC balance");
+        require(userAllowance >= requiredDeposit, "Insufficient USDC allowance");
+
+        require(usdc.transferFrom(msg.sender, address(this), requiredDeposit), "USDC transfer failed");
+
+        advertiser.handle = handle;
+        advertiser.advertiser = msg.sender;
+        advertiser.depositTime = block.timestamp;
+        advertiser.withdrawnDeposit = false;
+        emit BillboardAdvertiserRegistered(msg.sender, handle);
     }
 
-    function getBillboardProvider(address provider) external view returns (string memory) {
-        return billboardProviders[provider];
+    function getBillboardAdvertiser(address advertiser) external view returns (Advertiser memory) {
+        return advertisers[advertiser];
     }
 
-    function withdrawSecurityDeposit() external {
+    function withdrawSecurityDepositForAdvertiser() external {
         require(address(governance) != address(0), "Governance not initialized");
-        require(bytes(billboardProviders[msg.sender]).length > 0, "Not a registered provider");
-        require(!providerWithdrawnDeposit[msg.sender], "Deposit already withdrawn");
-        require(block.timestamp >= providerDepositTime[msg.sender] + 30 days, "Deposit locked for 30 days");
-        uint256 depositAmount = governance.securityDepositProvider();
-        providerWithdrawnDeposit[msg.sender] = true;
+        Advertiser storage advertiser = advertisers[msg.sender];
+        require(bytes(advertiser.handle).length > 0, "Not a registered advertiser");
+        require(!advertiser.withdrawnDeposit, "Deposit already withdrawn");
+        require(block.timestamp >= advertiser.depositTime + 30 days, "Deposit locked for 30 days");
+        require(!governance.getAdvertiserIsBlamed(advertiser.advertiser).isBlamed, "Advertiser is blamed");
+        uint256 depositAmount = governance.securityDepositAdvertiser();
+        advertiser.withdrawnDeposit = true;
         require(usdc.transfer(msg.sender, depositAmount), "USDC transfer failed");
         emit SecurityDepositWithdrawn(msg.sender, depositAmount);
     }
 
-    function withdrawFunds() external onlyOwner {
-        uint256 balance = usdc.balanceOf(address(this));
-        require(usdc.transfer(owner(), balance), "Transfer failed");
+    function withdrawFunds(address token) external onlyOwner {
+        uint256 balance = IERC20(token).balanceOf(address(this));
+        require(IERC20(token).transfer(owner(), balance), "Transfer failed");
     }
 }

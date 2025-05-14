@@ -15,6 +15,8 @@ dotenv.config();
 setGlobalOptions({ region: "europe-west1" });
 initializeApp();
 
+const cors = { cors: true };
+
 const pinata = new PinataSDK({
   pinataJwt: process.env.PINATA_API_KEY,
   pinataGateway: process.env.PINATA_GATEWAY,
@@ -226,7 +228,7 @@ exports.scheduledUpdateActiveAds = onSchedule(
   },
 );
 
-exports.uploadImageToIPFS = onRequest(async (req, res) => {
+exports.uploadImageToIPFS = onRequest(cors, async (req, res) => {
   try {
     if (req.method !== "POST") {
       return res
@@ -265,7 +267,7 @@ exports.uploadImageToIPFS = onRequest(async (req, res) => {
   }
 });
 
-exports.getAds = onRequest(async (req, res) => {
+exports.getAds = onRequest(cors, async (req, res) => {
   try {
     if (req.method !== "POST") {
       return res
@@ -564,15 +566,13 @@ const fetchGovernanceEvents = async () => {
     await batch.commit();
 
     logger.log(
-      `Processed governance events: ${logsAdvertiserBlamed.length} AdvertiserBlamed, ${logsVotedForBlame.length} VotedForBlame, ${logsAdvertiserBlameResolved.length} AdvertiserBlameResolved`,
+      `Processed governance events: ${logsVotedForBlame.length} VotedForBlame, ${logsAdvertiserBlameResolved.length} AdvertiserBlameResolved`,
     );
 
     return {
       success: true,
       processedEvents:
-        logsAdvertiserBlamed.length +
-        logsVotedForBlame.length +
-        logsAdvertiserBlameResolved.length,
+        logsVotedForBlame.length + logsAdvertiserBlameResolved.length,
       lastProcessedBlock: currentBlock,
     };
   } catch (error) {
@@ -599,7 +599,7 @@ exports.scheduledGovernanceEventsFetch = onSchedule(
   },
 );
 
-exports.fetchGovernanceEventsManual = onRequest({ cors }, async (req, res) => {
+exports.fetchGovernanceEventsManual = onRequest(cors, async (req, res) => {
   try {
     logger.log("Manual governance events fetch requested");
     const result = await fetchGovernanceEvents();

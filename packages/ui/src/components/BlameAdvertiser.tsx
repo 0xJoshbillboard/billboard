@@ -19,6 +19,8 @@ import {
 import { TransactionStatus } from "../utils/types";
 import { useConnectWallet } from "@web3-onboard/react";
 import { useGetGovernanceEvents } from "../hooks/useGetGovernanceEvents";
+import VoteAgainst from "./Icons/VoteAgainst";
+import VoteFor from "./Icons/VoteFor";
 
 export const BlameAdvertiser = ({
   blameAdvertiser,
@@ -26,12 +28,14 @@ export const BlameAdvertiser = ({
   approveBBT,
   minProposalTokens,
   voteForBlame,
+  resolveAdvertiserBlame,
 }: {
   blameAdvertiser: (address: string) => Promise<void>;
   transactionStatus: TransactionStatus;
   approveBBT: (amount: number) => Promise<void>;
   minProposalTokens: number;
   voteForBlame: (address: string, support: boolean) => Promise<void>;
+  resolveAdvertiserBlame: (address: string) => Promise<void>;
 }) => {
   const { events, loading } = useGetGovernanceEvents();
   const [{ wallet }] = useConnectWallet();
@@ -65,12 +69,9 @@ export const BlameAdvertiser = ({
     }
   };
 
-  const formatDate = (timestamp: number) => {
-    return new Date(timestamp * 1000).toLocaleString();
-  };
-
-  const calculateTimeRemaining = (timestamp: number) => {
-    const createdDate = new Date(timestamp * 1000);
+  const calculateTimeRemaining = (timestamp: number | Date) => {
+    const createdDate =
+      typeof timestamp === "number" ? new Date(timestamp * 1000) : timestamp;
     const endDate = new Date(createdDate.getTime() + 7 * 24 * 60 * 60 * 1000); // 7 days voting period
     const now = new Date();
 
@@ -240,29 +241,59 @@ export const BlameAdvertiser = ({
                             Blamed by: {event?.voter?.substring(0, 4)}...
                             {event?.voter?.substring(38)}
                           </Typography>
+                          <br />
+                          <Typography
+                            variant="body1"
+                            component="span"
+                            fontSize="10px"
+                          >
+                            Created: {event?.timestampDate.toLocaleString()}
+                          </Typography>
+                          <br />
+                          <Typography
+                            variant="body1"
+                            component="span"
+                            fontSize="10px"
+                          >
+                            Time Remaining:{" "}
+                            {calculateTimeRemaining(event?.timestampDate)}
+                          </Typography>
                         </Box>
                       }
                     />
-                    <Stack direction="row" spacing={1}>
+                    <Stack direction={{ xs: "column", md: "row" }} spacing={1}>
                       <Button
                         variant="outlined"
                         color="success"
                         size="small"
+                        startIcon={<VoteFor />}
                         onClick={() => {
                           voteForBlame(event.advertiser, true);
                         }}
-                      >
-                        Vote For
-                      </Button>
+                      />
                       <Button
                         variant="outlined"
                         color="error"
                         size="small"
+                        startIcon={<VoteAgainst />}
                         onClick={() => {
                           voteForBlame(event.advertiser, false);
                         }}
+                      />
+                      <Button
+                        variant="outlined"
+                        color="primary"
+                        size="small"
+                        disabled={
+                          !wallet ||
+                          event.timestampDate.getTime() <
+                            Date.now() + 7 * 24 * 60 * 60 * 1000
+                        }
+                        onClick={() => {
+                          resolveAdvertiserBlame(event.advertiser);
+                        }}
                       >
-                        Vote Against
+                        Resolve
                       </Button>
                     </Stack>
                   </ListItem>

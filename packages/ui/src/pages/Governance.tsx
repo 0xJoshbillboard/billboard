@@ -33,6 +33,7 @@ export default function Governance() {
     approveBBT,
     usdcBalance,
     transactionStatus,
+    resolveAdvertiserBlame,
     blameAdvertiser,
     voteForBlame,
   } = useBillboard();
@@ -319,6 +320,7 @@ export default function Governance() {
             approveBBT={approveBBT}
             minProposalTokens={governanceSettings.minProposalTokens}
             voteForBlame={voteForBlame}
+            resolveAdvertiserBlame={resolveAdvertiserBlame}
           />
         )}
       </Stack>

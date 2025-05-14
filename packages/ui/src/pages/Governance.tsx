@@ -1,13 +1,6 @@
-import { useState, useEffect } from "react";
-import { Contract, BrowserProvider } from "ethers";
+import { useState } from "react";
 import { useConnectWallet } from "@web3-onboard/react";
 import useBillboard from "../hooks/useBillboard";
-import {
-  GOVERNANCE_ADDRESS,
-  GOVERNANCE_ABI,
-  BILLBOARD_TOKEN_ADDRESS,
-  BILLBOARD_TOKEN_ABI,
-} from "../utils/contracts";
 import {
   Box,
   Container,
@@ -26,6 +19,7 @@ import {
 import CreateProposal from "../components/Modals/CreateProposal";
 import { ProposalsList } from "../components/ProposalList";
 import { BlameAdvertiser } from "../components/BlameAdvertiser";
+import { useNavigate, useLocation } from "react-router-dom";
 
 export default function Governance() {
   const [{ wallet }] = useConnectWallet();
@@ -40,35 +34,22 @@ export default function Governance() {
     usdcBalance,
     transactionStatus,
     blameAdvertiser,
+    voteForBlame,
   } = useBillboard();
-  const [governanceContract, setGovernanceContract] = useState<Contract | null>(
-    null,
-  );
+
   const [showCreateProposal, setShowCreateProposal] = useState(false);
-  const [tokenContract, setTokenContract] = useState<Contract | null>(null);
   const [buyAmount, setBuyAmount] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [transactions, setTransactions] = useState<any[]>([]);
-  const [activeTab, setActiveTab] = useState(0);
 
-  useEffect(() => {
-    const setupContracts = async () => {
-      if (wallet?.provider) {
-        const provider = new BrowserProvider(wallet.provider);
-        const signer = await provider.getSigner();
-        setGovernanceContract(
-          new Contract(GOVERNANCE_ADDRESS, GOVERNANCE_ABI, signer),
-        );
-        setTokenContract(
-          new Contract(BILLBOARD_TOKEN_ADDRESS, BILLBOARD_TOKEN_ABI, signer),
-        );
-      }
-    };
-    setupContracts();
-  }, [wallet]);
+  const navigate = useNavigate();
+  const location = useLocation();
+  const queryParams = new URLSearchParams(location.search);
+  const tabParam = queryParams.get("tab");
+  const activeTab = tabParam === "blame" ? 1 : 0;
 
   const handleBuyBBT = async () => {
-    if (!tokenContract || !wallet?.accounts[0].address) return;
+    if (!wallet?.accounts[0].address) return;
 
     try {
       setIsLoading(true);
@@ -103,8 +84,9 @@ export default function Governance() {
     }
   };
 
-  const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
-    setActiveTab(newValue);
+  const handleTabChange = (_: React.SyntheticEvent, newValue: number) => {
+    const tabValue = newValue === 1 ? "blame" : "proposals";
+    navigate(`?tab=${tabValue}`);
   };
 
   return (
@@ -336,6 +318,7 @@ export default function Governance() {
             transactionStatus={transactionStatus}
             approveBBT={approveBBT}
             minProposalTokens={governanceSettings.minProposalTokens}
+            voteForBlame={voteForBlame}
           />
         )}
       </Stack>

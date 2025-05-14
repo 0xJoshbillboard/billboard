@@ -511,17 +511,9 @@ const fetchGovernanceEvents = async () => {
       return allLogs;
     };
 
-    const filterAdvertiserBlamed =
-      governanceContract.filters.AdvertiserBlamed();
     const filterVotedForBlame = governanceContract.filters.VotedForBlame();
     const filterAdvertiserBlameResolved =
       governanceContract.filters.AdvertiserBlameResolved();
-
-    const logsAdvertiserBlamed = await fetchLogsInChunks(
-      filterAdvertiserBlamed,
-      lastProcessedBlock + 1,
-      currentBlock,
-    );
 
     const logsVotedForBlame = await fetchLogsInChunks(
       filterVotedForBlame,
@@ -536,28 +528,6 @@ const fetchGovernanceEvents = async () => {
     );
 
     const batch = db.batch();
-
-    // Process AdvertiserBlamed events
-    for (const log of logsAdvertiserBlamed) {
-      const logData = {
-        eventType: "AdvertiserBlamed",
-        blockNumber: log.blockNumber,
-        transactionHash: log.transactionHash,
-        timestamp: new Date().toISOString(),
-        from: log.args[0],
-        advertiser: log.args[1],
-      };
-
-      // Use a unique ID that includes the event type to avoid collisions
-      const logRef = db
-        .collection("governance_events")
-        .doc(`${log.transactionHash}_AdvertiserBlamed`);
-      batch.set(logRef, logData);
-
-      logger.log(
-        `Processing AdvertiserBlamed event: ${JSON.stringify(logData)}`,
-      );
-    }
 
     // Process VotedForBlame events
     for (const log of logsVotedForBlame) {

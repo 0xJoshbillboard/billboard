@@ -1,38 +1,62 @@
 import { getDocs, collection } from "firebase/firestore";
-
 import { useEffect, useState } from "react";
 import { db } from "../../firebase";
-interface GovernanceEvent {
-  id: string;
-  timestamp: number;
-  event: string;
-  address: string;
-  amount: number;
-}
+import { GovernanceEvent } from "../utils/types";
 
 export const useGetGovernanceEvents = () => {
   const [events, setEvents] = useState<GovernanceEvent[]>([]);
+  const [loading, setLoading] = useState<boolean>(false);
 
   useEffect(() => {
     fetchEvents();
   }, []);
 
   const fetchEvents = async () => {
-    const response = await fetch(
-      "https://fetchgovernanceeventsmanual-pe2o27xb6q-ew.a.run.app",
-    );
-    const data = await response.json();
-    setEvents(data);
-  };
+    try {
+      setLoading(true);
+      const snapshot = await getDocs(collection(db, "governance_events"));
+      const data = snapshot.docs.map((doc) => doc.data()) as GovernanceEvent[];
+      const groupedByAdvertiser = data.reduce(
+        (acc, event) => {
+          if (event.advertiser) {
+            const eventWithDate = {
+              ...event,
+              timestampDate: event.timestamp ? new Date(event.timestamp) : null,
+            };
 
-  const fetchEventsFromFirebase = async () => {
-    const events = await getDocs(collection(db, "governance_events"));
-    console.log(events.docs.map((doc) => doc.data()));
+            if (!acc[event.advertiser]) {
+              acc[event.advertiser] = [];
+            }
+            acc[event.advertiser].push(eventWithDate);
+          }
+          return acc;
+        },
+        {} as Record<string, GovernanceEvent[]>,
+      );
+
+      const mergedEvents = Object.entries(groupedByAdvertiser).map(
+        ([advertiser, events]) => {
+          return events.reduce((merged, event) => {
+            return {
+              ...merged,
+              ...event,
+              advertiser,
+            };
+          }, {} as GovernanceEvent);
+        },
+      );
+
+      setEvents(mergedEvents);
+    } catch (error) {
+      console.error("Error fetching governance events:", error);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const refetchEvents = () => {
     fetchEvents();
   };
 
-  return { events, refetchEvents, fetchEventsFromFirebase };
+  return { events, refetchEvents, loading };
 };

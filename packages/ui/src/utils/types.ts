@@ -107,3 +107,15 @@ export interface RawBillboard {
   link: string;
   ipfsHash: string;
 }
+
+export interface GovernanceEvent {
+  advertiser: string;
+  blockNumber: number;
+  eventType: string;
+  support: boolean;
+  timestamp: string;
+  timestampDate: Date;
+  transactionHash: string;
+  voter: string;
+  votes: string;
+}

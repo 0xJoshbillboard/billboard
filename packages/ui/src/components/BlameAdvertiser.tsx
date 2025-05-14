@@ -19,26 +19,28 @@ import {
 import { TransactionStatus } from "../utils/types";
 import { useConnectWallet } from "@web3-onboard/react";
 import { useGetGovernanceEvents } from "../hooks/useGetGovernanceEvents";
-import RefreshIcon from "@mui/icons-material/Refresh";
 
 export const BlameAdvertiser = ({
   blameAdvertiser,
   transactionStatus,
   approveBBT,
   minProposalTokens,
+  voteForBlame,
 }: {
   blameAdvertiser: (address: string) => Promise<void>;
   transactionStatus: TransactionStatus;
   approveBBT: (amount: number) => Promise<void>;
   minProposalTokens: number;
+  voteForBlame: (address: string, support: boolean) => Promise<void>;
 }) => {
-  const { events, refetchEvents, fetchEventsFromFirebase } =
-    useGetGovernanceEvents();
+  const { events, loading } = useGetGovernanceEvents();
   const [{ wallet }] = useConnectWallet();
   const [advertiserAddress, setAdvertiserAddress] = useState("");
   const [blameLoading, setBlameLoading] = useState(false);
   const [activeStep, setActiveStep] = useState(0);
-  fetchEventsFromFirebase();
+
+  console.log(events);
+
   useEffect(() => {
     if (transactionStatus?.approveBBT?.completed) {
       setActiveStep(1);
@@ -61,6 +63,28 @@ export const BlameAdvertiser = ({
     } finally {
       setBlameLoading(false);
     }
+  };
+
+  const formatDate = (timestamp: number) => {
+    return new Date(timestamp * 1000).toLocaleString();
+  };
+
+  const calculateTimeRemaining = (timestamp: number) => {
+    const createdDate = new Date(timestamp * 1000);
+    const endDate = new Date(createdDate.getTime() + 7 * 24 * 60 * 60 * 1000); // 7 days voting period
+    const now = new Date();
+
+    if (now > endDate) {
+      return "Voting period ended";
+    }
+
+    const remainingMs = endDate.getTime() - now.getTime();
+    const days = Math.floor(remainingMs / (1000 * 60 * 60 * 24));
+    const hours = Math.floor(
+      (remainingMs % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60),
+    );
+
+    return `${days}d ${hours}h remaining`;
   };
 
   return (
@@ -92,8 +116,18 @@ export const BlameAdvertiser = ({
         </Button>
       </Stack>
 
-      <Box sx={{ width: "100%", display: "flex" }}>
-        <Stepper activeStep={activeStep} orientation="vertical">
+      <Box
+        sx={{
+          width: "100%",
+          display: "flex",
+          flexDirection: { xs: "column", md: "row" },
+        }}
+      >
+        <Stepper
+          activeStep={activeStep}
+          orientation="vertical"
+          sx={{ height: "140px" }}
+        >
           <Step completed={transactionStatus?.approveBBT?.completed}>
             <StepButton>
               <StepLabel>
@@ -157,28 +191,57 @@ export const BlameAdvertiser = ({
             width: "100%",
             display: "flex",
             flexDirection: "column",
-            ml: 4,
+            ml: { xs: 0, md: 4 },
           }}
         >
           <Typography variant="h6" fontWeight={700} sx={{ mb: 2 }}>
             Blamed Advertisers
           </Typography>
 
-          {/* List of blamed advertisers */}
           <Paper elevation={2} sx={{ p: 2, mb: 3 }}>
-            {/* We would fetch this data from the governance events */}
-            {[].length === 0 ? (
+            {loading ? (
+              <Box sx={{ display: "flex", justifyContent: "center", p: 2 }}>
+                <CircularProgress size={24} />
+                <Typography
+                  variant="body2"
+                  color="text.secondary"
+                  sx={{ ml: 2 }}
+                >
+                  Loading blamed advertisers...
+                </Typography>
+              </Box>
+            ) : events.length === 0 ? (
               <Typography variant="body2" color="text.secondary">
                 No advertisers have been blamed yet.
               </Typography>
             ) : (
               <List>
-                {/* This would be populated from the governance events */}
-                {[].map((event, index) => (
-                  <ListItem key={index} divider={index !== [].length - 1}>
+                {events.map((event, index) => (
+                  <ListItem key={index} divider={index !== events.length - 1}>
                     <ListItemText
-                      primary={`Advertiser: ${event?.advertiser?.substring(0, 8)}...${event?.advertiser?.substring(36)}`}
-                      secondary={`Blamed by: ${event?.from?.substring(0, 8)}...${event?.from?.substring(36)}`}
+                      sx={{ fontSize: "12px", cursor: "pointer" }}
+                      onClick={() => {
+                        navigator.clipboard.writeText(event?.advertiser || "");
+                        alert("Address copied to clipboard!");
+                      }}
+                      primary={`Advertiser: ${event?.advertiser?.substring(0, 4)}...${event?.advertiser?.substring(38)}`}
+                      secondary={
+                        <Box component="span">
+                          <Typography
+                            variant="body1"
+                            component="span"
+                            fontSize="10px"
+                            sx={{ cursor: "pointer" }}
+                            onClick={() => {
+                              navigator.clipboard.writeText(event?.voter || "");
+                              alert("Address copied to clipboard!");
+                            }}
+                          >
+                            Blamed by: {event?.voter?.substring(0, 4)}...
+                            {event?.voter?.substring(38)}
+                          </Typography>
+                        </Box>
+                      }
                     />
                     <Stack direction="row" spacing={1}>
                       <Button
@@ -186,7 +249,7 @@ export const BlameAdvertiser = ({
                         color="success"
                         size="small"
                         onClick={() => {
-                          /* Vote for advertiser */
+                          voteForBlame(event.advertiser, true);
                         }}
                       >
                         Vote For
@@ -196,7 +259,7 @@ export const BlameAdvertiser = ({
                         color="error"
                         size="small"
                         onClick={() => {
-                          /* Vote against advertiser */
+                          voteForBlame(event.advertiser, false);
                         }}
                       >
                         Vote Against
@@ -207,18 +270,6 @@ export const BlameAdvertiser = ({
               </List>
             )}
           </Paper>
-
-          <Button
-            variant="outlined"
-            color="primary"
-            onClick={() => {
-              refetchEvents();
-            }}
-            startIcon={<RefreshIcon />}
-            sx={{ alignSelf: "flex-start" }}
-          >
-            Refresh Blamed Advertisers
-          </Button>
         </Box>
       </Box>
     </Stack>

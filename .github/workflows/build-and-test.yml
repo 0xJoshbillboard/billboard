@@ -34,6 +34,9 @@ jobs:
           yarn --version
           which yarn
 
+      - name: Install Foundry
+        uses: foundry-rs/foundry-toolchain@v1
+
       - name: Install dependencies
         run: |
           yarn install --immutable

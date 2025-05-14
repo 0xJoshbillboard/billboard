@@ -21,14 +21,15 @@ import { RawBillboard } from "../utils/types";
 
 export default function Dashboard() {
   const [{ wallet }, connect] = useConnectWallet();
-  const { governanceSettings, extend, fetchBillboards } = useBillboard();
+  const { governanceSettings, extend, fetchBillboards, contract } =
+    useBillboard();
   const [billboards, setBillboards] = useState<RawBillboard[]>([]);
   const [billboardsAreLoading, setBillboardsAreLoading] = useState(false);
   const theme = useTheme();
   const navigate = useNavigate();
 
   useEffect(() => {
-    if (wallet) {
+    if (wallet && contract) {
       const fetchingBillboards = async () => {
         setBillboardsAreLoading(true);
         try {
@@ -42,7 +43,7 @@ export default function Dashboard() {
       };
       fetchingBillboards();
     }
-  }, [wallet]);
+  }, [wallet, contract]);
 
   const handleExtend = async (index: number) => {
     try {

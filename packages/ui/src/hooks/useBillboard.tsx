@@ -410,11 +410,6 @@ export default function useBillboard() {
     return (Number(balance) / 1_000_000).toLocaleString() + "";
   };
 
-  const getUSDCMock = async () => {
-    if (!wallet) throw new Error("Wallet not connected");
-    await usdcContract?.mint(wallet?.accounts[0].address, 100000e6);
-  };
-
   const approveUSDC = async (amount: string) => {
     if (!usdcContract || !contract) {
       throw new Error("USDC not defined");
@@ -864,7 +859,7 @@ export default function useBillboard() {
   };
 
   const fetchBillboards = async () => {
-    if (!contract || !wallet?.accounts[0].address) {
+    if (!contract && !wallet) {
       throw new Error("Contract or wallet not defined");
     }
     const billboards = await contract.getBillboards(
@@ -1092,7 +1087,6 @@ export default function useBillboard() {
     // USDC operations
     approveUSDC,
     allowanceUSDC,
-    getUSDCMock,
     usdcBalance,
 
     // Token operations
@@ -1112,5 +1106,11 @@ export default function useBillboard() {
 
     // Transaction status tracking
     transactionStatus,
+
+    // Contract
+    contract,
+    usdcContract,
+    tokenContract,
+    governanceContract,
   };
 }

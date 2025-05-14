@@ -39,7 +39,6 @@ export default function Buy() {
   // Hooks
   const {
     buy,
-    getUSDCMock,
     governanceSettings,
     allowanceUSDC,
     transactionStatus,
@@ -208,18 +207,6 @@ export default function Buy() {
             <Box
               sx={{ display: "flex", flexDirection: "column", width: "100%" }}
             >
-              {/* Development helper */}
-              {wallet && wallet.chains[0].id === "0xaa37dc" && (
-                <Button
-                  variant="outlined"
-                  color="secondary"
-                  onClick={() => getUSDCMock()}
-                  sx={{ alignSelf: "flex-start" }}
-                >
-                  Get Mock USDC
-                </Button>
-              )}
-
               <Typography variant="h6" fontSize="medium">
                 Billboard Description
               </Typography>

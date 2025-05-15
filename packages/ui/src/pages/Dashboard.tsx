@@ -1,22 +1,22 @@
+import ContentCopyIcon from "@mui/icons-material/ContentCopy";
 import {
+  Box,
+  Button,
+  Card,
+  CardActions,
+  CardContent,
+  CardMedia,
+  CircularProgress,
+  Container,
+  IconButton,
   Stack,
   Typography,
-  Button,
-  Box,
-  Container,
   useTheme,
-  CircularProgress,
-  Card,
-  CardMedia,
-  CardContent,
-  CardActions,
-  IconButton,
 } from "@mui/material";
 import { useConnectWallet } from "@web3-onboard/react";
-import useBillboard from "../hooks/useBillboard";
 import { useEffect, useState } from "react";
-import ContentCopyIcon from "@mui/icons-material/ContentCopy";
 import { useNavigate } from "react-router-dom";
+import useBillboard from "../hooks/useBillboard";
 import { RawBillboard } from "../utils/types";
 
 export default function Dashboard() {
@@ -96,38 +96,16 @@ export default function Dashboard() {
           src="../assets/win-win.svg"
           alt="Billboard"
         />
-        <Stack
-          direction="column"
-          spacing={1}
-          width={{ xs: "100%", lg: "500px" }}
-          justifyContent="center"
-          alignItems="center"
-        >
-          <Typography
-            variant="h6"
-            px={2}
+        <Box sx={{ display: "flex", flexDirection: "column", width: "100%" }}>
+          <Box
             sx={{
-              backgroundColor: theme.palette.primary.main,
-              borderRadius: "10px",
-              textAlign: "center",
-              width: "fit-content",
+              display: "flex",
+              flexDirection: "row",
+              width: "100%",
+              gap: 2,
+              flexWrap: "wrap",
             }}
           >
-            {Math.floor(governanceSettings?.duration / 86400)} days
-          </Typography>
-          <Typography variant="h1" position="relative">
-            {governanceSettings?.price.toLocaleString()} USDC
-            <Typography
-              variant="h4"
-              fontWeight="bold"
-              position="absolute"
-              top={10}
-              left="-10px"
-            >
-              $
-            </Typography>
-          </Typography>
-          <Box sx={{ display: "flex", flexDirection: "column", width: "100%" }}>
             {billboardsAreLoading ? (
               <CircularProgress />
             ) : billboards.length > 0 ? (
@@ -170,7 +148,7 @@ export default function Dashboard() {
                     <CardMedia
                       component="img"
                       height="200"
-                      image={`https://ipfs.io/ipfs/${billboard.ipfsHash}`}
+                      image={`https://plum-main-eagle-917.mypinata.cloud/ipfs/${billboard.ipfsHash}`}
                       alt={billboard.description}
                       sx={{
                         objectFit: "cover",
@@ -230,8 +208,17 @@ export default function Dashboard() {
                 </Card>
               ))
             ) : (
-              <>
-                <Typography variant="h6">No billboards found</Typography>
+              <Stack
+                spacing={2}
+                width="100%"
+                direction="column"
+                alignItems="center"
+                justifyContent="center"
+                mt={4}
+              >
+                <Typography variant="h4" fontWeight={600}>
+                  No billboards found
+                </Typography>
                 <Button
                   variant="contained"
                   color="primary"
@@ -241,10 +228,10 @@ export default function Dashboard() {
                 >
                   Buy Billboards
                 </Button>
-              </>
+              </Stack>
             )}
           </Box>
-        </Stack>
+        </Box>
       </Stack>
     </Container>
   );

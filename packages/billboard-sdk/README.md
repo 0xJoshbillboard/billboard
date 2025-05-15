@@ -79,22 +79,6 @@ interface Billboard {
 }
 ```
 
-## Error Handling
-
-The SDK throws errors for various scenarios:
-
-- File size exceeds 1MB limit
-- Network errors during API calls
-- Invalid responses from the server
-
-```typescript
-try {
-  const ad = await billboard.showAd("handle");
-} catch (error) {
-  console.error("Error displaying advertisement:", error);
-}
-```
-
 ## License
 
 MIT

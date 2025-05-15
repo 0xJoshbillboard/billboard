@@ -16,6 +16,8 @@ import {
   Stack,
   useTheme,
   TextareaAutosize,
+  Snackbar,
+  Slide,
 } from "@mui/material";
 import CloudUploadIcon from "@mui/icons-material/CloudUpload";
 import CloseIcon from "@mui/icons-material/Close";
@@ -24,6 +26,7 @@ import { Ticker } from "../components/Ticker";
 
 export default function Buy() {
   // State management
+  const [isSnackbarOpen, setIsSnackbarOpen] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -117,6 +120,7 @@ export default function Buy() {
           setIsUploading(true);
           await buy(description, link, null, customCID);
           setError(null);
+          afterSuccessfullyPurchased();
         } catch (err) {
           setError(
             "Failed to process with custom CID: " +
@@ -137,6 +141,7 @@ export default function Buy() {
           setIsUploading(true);
           await buy(description, link, selectedFile);
           setError(null);
+          afterSuccessfullyPurchased();
         } catch (err) {
           setError(
             "Failed to upload image: " +
@@ -147,6 +152,14 @@ export default function Buy() {
         }
       }
     }
+  };
+
+  const afterSuccessfullyPurchased = () => {
+    setIsSnackbarOpen(true);
+    setDescription("");
+    setLink("");
+    setCustomCID("");
+    setSelectedFile(null);
   };
 
   return (
@@ -517,6 +530,26 @@ export default function Buy() {
         </Stack>
       </Box>
       <Ticker />
+      <Snackbar
+        open={isSnackbarOpen}
+        autoHideDuration={6000}
+        slots={{ transition: Slide }}
+        anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
+        onClose={() => setIsSnackbarOpen(false)}
+      >
+        <Alert
+          severity="success"
+          variant="filled"
+          sx={{
+            bgcolor: theme.palette.primary.main,
+            fontSize: "16px",
+            fontWeight: "bold",
+            fontFamily: "FuturaPT-Book",
+          }}
+        >
+          Successfully purchased a billboard
+        </Alert>
+      </Snackbar>
     </Container>
   );
 }

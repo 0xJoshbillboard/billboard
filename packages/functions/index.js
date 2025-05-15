@@ -286,16 +286,6 @@ exports.getAds = onRequest(cors, async (req, res) => {
     logger.log("Request received for handle:", req.body.handle);
     logger.log("Request body:", JSON.stringify(req.body));
 
-    const userData = {
-      timestamp: new Date().toISOString(),
-      ip: req.headers["x-forwarded-for"] || req.connection.remoteAddress || "",
-      userAgent: req.headers["user-agent"] || "",
-      origin: req.headers.origin || req.headers.referer || "",
-      host: req.headers.host || "",
-      acceptLanguage: req.headers["accept-language"] || "",
-      handle: req.body.handle,
-    };
-
     const amountOfAds = req.body.amountOfAds || null;
     const getAllAds = req.body.getAllAds || false;
 
@@ -303,13 +293,6 @@ exports.getAds = onRequest(cors, async (req, res) => {
     logger.log("Get all ads flag:", getAllAds);
 
     const db = getFirestore();
-
-    try {
-      await db.collection("ad_requests").add(userData);
-      logger.log("User data collected successfully");
-    } catch (err) {
-      logger.error("Error storing user data:", err);
-    }
 
     const activeAdsSnapshot = await db.collection("active_ads").get();
 
@@ -404,6 +387,44 @@ exports.getAds = onRequest(cors, async (req, res) => {
           ipfsHash: ad.ipfsHash,
         },
       };
+
+      const userData =
+        amountOfAds === 1
+          ? {
+              timestamp: new Date().toISOString(),
+              ip:
+                req.headers["x-forwarded-for"] ||
+                req.connection.remoteAddress ||
+                "",
+              userAgent: req.headers["user-agent"] || "",
+              origin: req.headers.origin || req.headers.referer || "",
+              host: req.headers.host || "",
+              acceptLanguage: req.headers["accept-language"] || "",
+              handle: req.body.handle,
+              url: result,
+              link: ad.link,
+              description: ad.description,
+              expiryTime: ad.expiryTime,
+              ipfsHash: ad.ipfsHash,
+            }
+          : {
+              timestamp: new Date().toISOString(),
+              ip:
+                req.headers["x-forwarded-for"] ||
+                req.connection.remoteAddress ||
+                "",
+              userAgent: req.headers["user-agent"] || "",
+              origin: req.headers.origin || req.headers.referer || "",
+              host: req.headers.host || "",
+              acceptLanguage: req.headers["accept-language"] || "",
+              handle: req.body.handle,
+            };
+      try {
+        await db.collection("ad_requests").add(userData);
+        logger.log("User data collected successfully");
+      } catch (err) {
+        logger.error("Error storing user data:", err);
+      }
 
       logger.log("Final response data:", JSON.stringify(responseData));
       return res.status(200).json(responseData);

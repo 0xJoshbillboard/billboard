@@ -14,13 +14,11 @@ jobs:
         with:
           node-version: "20"
 
-      # Install npm first (should come with Node)
       - name: Verify npm installation
         run: |
           node --version
           npm --version
 
-      # Install and setup Yarn
       - name: Setup Yarn
         run: |
           npm install -g corepack
@@ -28,7 +26,6 @@ jobs:
           corepack prepare yarn@4.6.0 --activate
           yarn set version 4.6.0
 
-      # Verify Yarn installation
       - name: Verify Yarn installation
         run: |
           yarn --version
@@ -48,19 +45,6 @@ jobs:
 
       - name: Run tests
         run: yarn test
-
-  cypress-run:
-    runs-on: ubuntu-latest
-    needs: build-and-test
-
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: "20"
-
-      - name: Install dependencies
-        run: yarn install
 
       - name: Start UI server
         run: yarn start &

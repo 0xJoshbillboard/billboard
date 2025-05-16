@@ -76,6 +76,7 @@ export default function Header(
           alignItems="center"
           justifyContent="center"
           height="100%"
+          data-testid="header-logo"
         >
           <BillboardIcon />
         </Box>
@@ -92,6 +93,7 @@ export default function Header(
             item.external ? (
               <Button
                 key={item.text}
+                data-testid={`header-button-${item.text}`}
                 component="a"
                 href={item.path}
                 target="_blank"
@@ -109,6 +111,7 @@ export default function Header(
               <Button
                 key={item.text}
                 component={Link}
+                data-testid={`header-button-${item.text}`}
                 to={item.path}
                 size="large"
                 sx={{
@@ -246,6 +249,7 @@ export default function Header(
                 disablePadding
               >
                 <ListItemButton
+                  data-testid={`header-button-${item.text}`}
                   sx={{
                     py: 1.5,
                     borderRadius: 1,

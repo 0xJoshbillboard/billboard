@@ -1,5 +1,5 @@
 export const menuItems = [
-  { text: "Buy Billoard", path: "/buy" },
+  { text: "Buy Billboard", path: "/buy" },
   { text: "Sell Space", path: "/sdk" },
   { text: "Dashboard", path: "/dashboard" },
   { text: "Governance", path: "/governance" },

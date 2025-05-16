@@ -62,11 +62,7 @@ export default function Home() {
         >
           {USP_ITEMS.map((item, index) => (
             <>
-              <USPBox
-                key={item.headline}
-                {...item}
-                isLast={index === USP_ITEMS.length - 1}
-              />
+              <USPBox key={item.headline.concat(index.toString())} {...item} />
               {index < 2 && (
                 <Box
                   sx={{
@@ -110,12 +106,10 @@ const USPBox = ({
   headline,
   description,
   image,
-  isLast,
 }: {
   headline: string;
   description: string;
   image: string;
-  isLast: boolean;
 }) => {
   return (
     <Box

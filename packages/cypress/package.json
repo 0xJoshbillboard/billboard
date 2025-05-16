@@ -1,0 +1,25 @@
+{
+  "name": "@billboard/cypress",
+  "version": "1.0.0",
+  "description": "Cypress tests for Billboard UI package",
+  "scripts": {
+    "cypress:open": "cypress open",
+    "cypress:run": "cypress run",
+    "test": "cypress run",
+    "test:component": "cypress run --component",
+    "test:e2e": "cypress run --e2e"
+  },
+  "keywords": [
+    "cypress",
+    "testing",
+    "billboard"
+  ],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "@testing-library/cypress": "^10.0.1",
+    "@types/node": "^20.11.24",
+    "cypress": "^13.6.6",
+    "typescript": "^5.3.3"
+  }
+}

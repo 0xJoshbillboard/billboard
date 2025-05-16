@@ -361,8 +361,6 @@ exports.getAds = onRequest(cors, async (req, res) => {
 
       const userData = {
         timestamp: new Date().toISOString(),
-        ip:
-          req.headers["x-forwarded-for"] || req.connection.remoteAddress || "",
         userAgent: req.headers["user-agent"] || "",
         origin: req.headers.origin || req.headers.referer || "",
         host: req.headers.host || "",
@@ -413,10 +411,6 @@ exports.getAds = onRequest(cors, async (req, res) => {
         amountOfAds === 1
           ? {
               timestamp: new Date().toISOString(),
-              ip:
-                req.headers["x-forwarded-for"] ||
-                req.connection.remoteAddress ||
-                "",
               userAgent: req.headers["user-agent"] || "",
               origin: req.headers.origin || req.headers.referer || "",
               host: req.headers.host || "",
@@ -430,10 +424,6 @@ exports.getAds = onRequest(cors, async (req, res) => {
             }
           : {
               timestamp: new Date().toISOString(),
-              ip:
-                req.headers["x-forwarded-for"] ||
-                req.connection.remoteAddress ||
-                "",
               userAgent: req.headers["user-agent"] || "",
               origin: req.headers.origin || req.headers.referer || "",
               host: req.headers.host || "",

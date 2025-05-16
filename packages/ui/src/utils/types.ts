@@ -127,7 +127,6 @@ export interface BillboardStatistic {
   expiryTime?: number;
   handle?: string;
   host?: string;
-  ip?: string;
   link?: string;
   origin?: string;
   timestamp: string;

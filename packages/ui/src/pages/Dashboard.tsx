@@ -396,11 +396,6 @@ export default function Dashboard() {
                       <Typography variant="body2" color="text.secondary">
                         Time: {new Date(stat.timestamp).toLocaleString()}
                       </Typography>
-                      {stat.ip && (
-                        <Typography variant="body2" color="text.secondary">
-                          IP: {stat.ip}
-                        </Typography>
-                      )}
                       {stat.userAgent && (
                         <Typography
                           variant="body2"

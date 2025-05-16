@@ -5,7 +5,7 @@
   "scripts": {
     "cypress:open": "cypress open",
     "cypress:run": "cypress run",
-    "test": "cypress run",
+    "test": "echo 'will run in a different workflow'",
     "test:component": "cypress run --component",
     "test:e2e": "cypress run --e2e"
   },

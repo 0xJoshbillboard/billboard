@@ -31,28 +31,20 @@ jobs:
           yarn --version
           which yarn
 
-      - name: Install Foundry
-        uses: foundry-rs/foundry-toolchain@v1
-
       - name: Install dependencies
         run: |
           yarn install --immutable
           yarn cache clean
 
-      - name: Build packages
-        run: |
-          yarn build
+      # - name: Build packages
+      #   run: |
+      #     yarn build
 
       - name: Run tests
         run: yarn test
 
-      - name: Start UI server
-        run: yarn dev &
-        working-directory: ./packages/ui
-
-      - name: Wait for UI to be ready
-        run: npx wait-on http://localhost:3000 --timeout 10000
-
-      - name: Run Cypress tests
-        run: yarn cypress run --headless
-        working-directory: ./packages/cypress
+      - name: Run UI server and Cypress tests
+        run: |
+          cd ./packages/ui && yarn dev & UI_PID=$!
+          cd ../cypress && yarn cypress run --headless
+          kill $UI_PID

@@ -59,14 +59,16 @@ jobs:
         with:
           node-version: "20"
 
-      - name: Install UI dependencies
+      - name: Install dependencies
         run: yarn install
 
       - name: Start UI server
         run: yarn start &
+        working-directory: ./packages/ui
 
       - name: Wait for UI to be ready
         run: npx wait-on http://localhost:3000
 
       - name: Run Cypress tests
         run: yarn cypress run --headless
+        working-directory: ./packages/cypress

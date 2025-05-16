@@ -1,15 +1,19 @@
 {
-  "indexes": [
+  "indexes": [],
+  "fieldOverrides": [
     {
       "collectionGroup": "ad_requests",
-      "queryScope": "COLLECTION",
-      "fields": [
+      "fieldPath": "buyer",
+      "indexes": [
         {
-          "fieldPath": "buyer",
-          "arrayConfig": "CONTAINS"
+          "arrayConfig": "CONTAINS",
+          "queryScope": "COLLECTION"
+        },
+        {
+          "order": "ASCENDING",
+          "queryScope": "COLLECTION"
         }
       ]
     }
-  ],
-  "fieldOverrides": []
+  ]
 }

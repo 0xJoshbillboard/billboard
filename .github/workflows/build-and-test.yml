@@ -48,3 +48,31 @@ jobs:
 
       - name: Run tests
         run: yarn test
+
+  cypress-run:
+    runs-on: ubuntu-latest
+    needs: build-and-test
+    defaults:
+      run:
+        working-directory: ./billboard/packages
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Install UI dependencies
+        run: yarn install
+        working-directory: ./billboard
+
+      - name: Start UI server
+        run: yarn start &
+        working-directory: ./billboard/packages/ui
+
+      - name: Wait for UI to be ready
+        run: npx wait-on http://localhost:3000
+
+      - name: Run Cypress tests
+        run: yarn cypress run --headless
+        working-directory: ./billboard/packages/cypress

@@ -1,5 +1,5 @@
-import { getAds } from "./utils/api";
 import { BillboardCache } from "./cache";
+import { getAds } from "./utils/api";
 
 export interface Billboard {
   link: string;
@@ -24,7 +24,7 @@ export class BillboardSDK {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ handle, amountOfAds: 1 }),
+        body: JSON.stringify({ handle, amountOfAds: 1, getAllAds: false }),
       });
 
       const data = await response.json();

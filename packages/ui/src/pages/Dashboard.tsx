@@ -8,7 +8,10 @@ import {
   CardMedia,
   CircularProgress,
   Container,
+  Divider,
+  Grid,
   IconButton,
+  Paper,
   Stack,
   Typography,
   useTheme,
@@ -16,15 +19,34 @@ import {
 import { useConnectWallet } from "@web3-onboard/react";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import {
+  Bar,
+  BarChart,
+  Cell,
+  Legend,
+  Pie,
+  PieChart,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from "recharts";
 import useBillboard from "../hooks/useBillboard";
-import { RawBillboard } from "../utils/types";
+import { BillboardStatistic, RawBillboard } from "../utils/types";
 
 export default function Dashboard() {
   const [{ wallet }, connect] = useConnectWallet();
-  const { governanceSettings, extend, fetchBillboards, contract } =
-    useBillboard();
+  const {
+    governanceSettings,
+    extend,
+    fetchBillboards,
+    contract,
+    getStatistics,
+  } = useBillboard();
   const [billboards, setBillboards] = useState<RawBillboard[]>([]);
+  const [statistics, setStatistics] = useState<BillboardStatistic[]>([]);
   const [billboardsAreLoading, setBillboardsAreLoading] = useState(false);
+  const [statisticsLoading, setStatisticsLoading] = useState(false);
   const theme = useTheme();
   const navigate = useNavigate();
 
@@ -32,13 +54,25 @@ export default function Dashboard() {
     if (wallet && contract) {
       const fetchingBillboards = async () => {
         setBillboardsAreLoading(true);
+        setStatisticsLoading(true);
         try {
           const fetchedBillboards = await fetchBillboards();
+          const userBillboards = fetchedBillboards.filter(
+            (billboard) =>
+              billboard.owner.toLowerCase() ===
+              wallet.accounts[0].address.toLowerCase(),
+          );
+
+          const stats = await getStatistics(
+            userBillboards.map((billboard) => billboard.owner),
+          );
+          setStatistics(stats);
           setBillboards(fetchedBillboards);
         } catch (error) {
           console.error("Error fetching billboards:", error);
         } finally {
           setBillboardsAreLoading(false);
+          setStatisticsLoading(false);
         }
       };
       fetchingBillboards();
@@ -54,6 +88,48 @@ export default function Dashboard() {
       console.error("Error extending billboard:", error);
     }
   };
+
+  // Prepare data for charts
+  const prepareVisitorData = () => {
+    const visitorsByDate = statistics.reduce(
+      (acc, stat) => {
+        const date = new Date(stat.timestamp).toLocaleDateString();
+        acc[date] = (acc[date] || 0) + 1;
+        return acc;
+      },
+      {} as Record<string, number>,
+    );
+
+    return Object.entries(visitorsByDate).map(([date, count]) => ({
+      date,
+      visitors: count,
+    }));
+  };
+
+  const prepareBrowserData = () => {
+    const browsers = statistics.reduce(
+      (acc, stat) => {
+        if (stat.userAgent) {
+          let browser = "Unknown";
+          if (stat.userAgent.includes("Chrome")) browser = "Chrome";
+          else if (stat.userAgent.includes("Firefox")) browser = "Firefox";
+          else if (stat.userAgent.includes("Safari")) browser = "Safari";
+          else if (stat.userAgent.includes("Edge")) browser = "Edge";
+
+          acc[browser] = (acc[browser] || 0) + 1;
+        }
+        return acc;
+      },
+      {} as Record<string, number>,
+    );
+
+    return Object.entries(browsers).map(([name, value]) => ({
+      name,
+      value,
+    }));
+  };
+
+  const COLORS = ["#0088FE", "#00C49F", "#FFBB28", "#FF8042", "#8884d8"];
 
   if (!wallet) {
     return (
@@ -232,6 +308,128 @@ export default function Dashboard() {
             )}
           </Box>
         </Box>
+      </Stack>
+      <Stack direction="column" spacing={4} sx={{ p: 4, mt: 6 }}>
+        <Typography variant="h1">Statistics</Typography>
+        {statisticsLoading ? (
+          <Box display="flex" justifyContent="center" my={4}>
+            <CircularProgress />
+          </Box>
+        ) : statistics.length > 0 ? (
+          <Grid container spacing={4}>
+            <Grid item xs={12}>
+              <Paper elevation={3} sx={{ p: 3, borderRadius: 2 }}>
+                <Typography variant="h5" gutterBottom>
+                  Visitor Overview
+                </Typography>
+                <Typography variant="body1" color="text.secondary" mb={2}>
+                  Total Visitors: {statistics.length}
+                </Typography>
+                <Box sx={{ height: 300 }}>
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart
+                      data={prepareVisitorData()}
+                      margin={{ top: 20, right: 30, left: 20, bottom: 60 }}
+                    >
+                      <XAxis dataKey="date" angle={-45} textAnchor="end" />
+                      <YAxis />
+                      <Tooltip />
+                      <Bar
+                        dataKey="visitors"
+                        fill={theme.palette.primary.main}
+                      />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </Box>
+              </Paper>
+            </Grid>
+
+            <Grid item xs={12} md={6}>
+              <Paper
+                elevation={3}
+                sx={{ p: 3, borderRadius: 2, height: "100%" }}
+              >
+                <Typography variant="h5" gutterBottom>
+                  Browser Distribution
+                </Typography>
+                <Box sx={{ height: 300 }}>
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie
+                        data={prepareBrowserData()}
+                        cx="50%"
+                        cy="50%"
+                        labelLine={false}
+                        outerRadius={80}
+                        fill="#8884d8"
+                        dataKey="value"
+                        label={({ name, percent }) =>
+                          `${name}: ${(percent * 100).toFixed(0)}%`
+                        }
+                      >
+                        {prepareBrowserData().map((entry, index) => (
+                          <Cell
+                            key={`cell-${index}`}
+                            fill={COLORS[index % COLORS.length]}
+                          />
+                        ))}
+                      </Pie>
+                      <Tooltip />
+                      <Legend />
+                    </PieChart>
+                  </ResponsiveContainer>
+                </Box>
+              </Paper>
+            </Grid>
+
+            <Grid item xs={12} md={6}>
+              <Paper
+                elevation={3}
+                sx={{ p: 3, borderRadius: 2, height: "100%" }}
+              >
+                <Typography variant="h5" gutterBottom>
+                  Visitor Details
+                </Typography>
+                <Box sx={{ maxHeight: 300, overflow: "auto" }}>
+                  {statistics.slice(0, 10).map((stat, index) => (
+                    <Box key={index} sx={{ mb: 2 }}>
+                      <Typography variant="body2" color="text.secondary">
+                        Time: {new Date(stat.timestamp).toLocaleString()}
+                      </Typography>
+                      {stat.ip && (
+                        <Typography variant="body2" color="text.secondary">
+                          IP: {stat.ip}
+                        </Typography>
+                      )}
+                      {stat.userAgent && (
+                        <Typography
+                          variant="body2"
+                          color="text.secondary"
+                          noWrap
+                        >
+                          User Agent: {stat.userAgent.substring(0, 50)}...
+                        </Typography>
+                      )}
+                      <Divider sx={{ mt: 1 }} />
+                    </Box>
+                  ))}
+                  {statistics.length > 10 && (
+                    <Typography variant="body2" textAlign="center">
+                      + {statistics.length - 10} more entries
+                    </Typography>
+                  )}
+                </Box>
+              </Paper>
+            </Grid>
+          </Grid>
+        ) : (
+          <Box textAlign="center" py={4}>
+            <Typography variant="h6" color="text.secondary">
+              No statistics available yet. Statistics will appear when your
+              billboards receive visitors.
+            </Typography>
+          </Box>
+        )}
       </Stack>
     </Container>
   );

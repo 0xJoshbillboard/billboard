@@ -1,25 +1,32 @@
+import { useConnectWallet } from "@web3-onboard/react";
+import { BillboardSDK } from "billboard-sdk";
 import {
-  Contract,
-  BrowserProvider,
   BigNumberish,
+  BrowserProvider,
+  Contract,
   getBigInt,
   JsonRpcProvider,
 } from "ethers";
-import { useConnectWallet } from "@web3-onboard/react";
+import { collection, getDocs, query, where } from "firebase/firestore";
 import { useEffect, useState } from "react";
-import { BillboardSDK } from "billboard-sdk";
+import { db } from "../../firebase";
+import { chains, defaultProvider } from "../utils/chains";
 import {
   BILLBOARD_ADDRESS,
+  BILLBOARD_TOKEN_ABI,
+  BILLBOARD_TOKEN_ADDRESS,
   CONTRACT_ABI,
-  GOVERNANCE_ADDRESS,
   GOVERNANCE_ABI,
+  GOVERNANCE_ADDRESS,
   USDC_ADDRESS,
   USDC_MOCK_ABI,
-  BILLBOARD_TOKEN_ADDRESS,
-  BILLBOARD_TOKEN_ABI,
 } from "../utils/contracts";
-import { chains, defaultProvider } from "../utils/chains";
-import { Proposal, RawBillboard, TransactionStatus } from "../utils/types";
+import {
+  BillboardStatistic,
+  Proposal,
+  RawBillboard,
+  TransactionStatus,
+} from "../utils/types";
 
 const billboardSDK = new BillboardSDK();
 const MAX_FILE_SIZE = 5 * 1024 * 1024;
@@ -1069,6 +1076,25 @@ export default function useBillboard() {
     }
   };
 
+  const getStatistics = async (buyer: string[]) => {
+    if (!buyer || buyer.length === 0) {
+      return [];
+    }
+
+    try {
+      const snapshot = await getDocs(
+        query(
+          collection(db, "ad_requests"),
+          where("buyer", "array-contains-any", buyer),
+        ),
+      );
+      return snapshot.docs.map((doc) => doc.data() as BillboardStatistic);
+    } catch (error) {
+      console.error("Error fetching statistics:", error);
+      return [];
+    }
+  };
+
   return {
     // Billboard operations
     buy,
@@ -1083,6 +1109,7 @@ export default function useBillboard() {
     getAdvertiserIsBlamed,
     resolveAdvertiserBlame,
     returnSecurityDepositForBlame,
+    getStatistics,
 
     // USDC operations
     approveUSDC,

@@ -119,3 +119,25 @@ export interface GovernanceEvent {
   voter: string;
   votes: string;
 }
+
+export interface BillboardStatistic {
+  acceptLanguage?: string;
+  buyer: string[];
+  description?: string;
+  expiryTime?: number;
+  handle?: string;
+  host?: string;
+  ip?: string;
+  link?: string;
+  origin?: string;
+  timestamp: string;
+  url?: string;
+  userAgent?: string;
+  ads?: Array<{
+    buyer: string;
+    description: string;
+    expiryTime: number;
+    ipfsHash: string;
+    link: string;
+  }>;
+}

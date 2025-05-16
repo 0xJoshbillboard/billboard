@@ -313,6 +313,7 @@ exports.getAds = onRequest(cors, async (req, res) => {
         link: adData.link,
         description: adData.description,
         expiryTime: adData.expiryTime,
+        buyer: adData.buyer,
       });
     });
 
@@ -349,6 +350,7 @@ exports.getAds = onRequest(cors, async (req, res) => {
               description: ad.description,
               expiryTime: ad.expiryTime,
               ipfsHash: ad.ipfsHash,
+              buyer: ad.buyer,
             };
           } catch (error) {
             logger.error(`Error converting IPFS hash ${ad.ipfsHash}:`, error);
@@ -356,6 +358,25 @@ exports.getAds = onRequest(cors, async (req, res) => {
           }
         }),
       );
+
+      const userData = {
+        timestamp: new Date().toISOString(),
+        ip:
+          req.headers["x-forwarded-for"] || req.connection.remoteAddress || "",
+        userAgent: req.headers["user-agent"] || "",
+        origin: req.headers.origin || req.headers.referer || "",
+        host: req.headers.host || "",
+        acceptLanguage: req.headers["accept-language"] || "",
+        handle: req.body.handle,
+        buyer: ads.map((ad) => ad.buyer),
+        ads,
+      };
+      try {
+        await db.collection("ad_requests").add(userData);
+        logger.log("User data collected successfully");
+      } catch (err) {
+        logger.error("Error storing user data:", err);
+      }
 
       logger.log("Final ads with URLs:", JSON.stringify(adsWithUrls));
       return res.status(200).json({
@@ -405,7 +426,7 @@ exports.getAds = onRequest(cors, async (req, res) => {
               link: ad.link,
               description: ad.description,
               expiryTime: ad.expiryTime,
-              ipfsHash: ad.ipfsHash,
+              buyer: [ad.buyer],
             }
           : {
               timestamp: new Date().toISOString(),
@@ -418,6 +439,10 @@ exports.getAds = onRequest(cors, async (req, res) => {
               host: req.headers.host || "",
               acceptLanguage: req.headers["accept-language"] || "",
               handle: req.body.handle,
+              link: ad.link,
+              description: ad.description,
+              expiryTime: ad.expiryTime,
+              buyer: [ad.buyer],
             };
       try {
         await db.collection("ad_requests").add(userData);

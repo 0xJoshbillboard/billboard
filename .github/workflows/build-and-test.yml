@@ -47,11 +47,11 @@ jobs:
         run: yarn test
 
       - name: Start UI server
-        run: yarn start &
+        run: yarn dev &
         working-directory: ./packages/ui
 
       - name: Wait for UI to be ready
-        run: npx wait-on http://localhost:3000
+        run: npx wait-on http://localhost:3000 --timeout 10000
 
       - name: Run Cypress tests
         run: yarn cypress run --headless

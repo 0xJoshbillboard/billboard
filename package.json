@@ -6,7 +6,7 @@
     "packages/*"
   ],
   "scripts": {
-    "build": "cd packages/contracts && forge build && yarn workspaces foreach --all run build",
+    "build": "yarn workspaces foreach --all run build",
     "test": "yarn workspaces foreach --all run test",
     "format": "prettier --write .",
     "prepare": "husky"

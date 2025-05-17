@@ -5,17 +5,20 @@ This package contains end-to-end and component tests for the Billboard UI packag
 ## Setup
 
 1. Install dependencies:
+
 ```bash
 npm install
 ```
 
 2. Start the UI development server:
+
 ```bash
 cd ../ui
 npm start
 ```
 
 3. In a separate terminal, run the Cypress tests:
+
 ```bash
 cd ../cypress
 npm run cypress:open
@@ -38,9 +41,11 @@ npm run cypress:open
 ## Writing Tests
 
 ### Component Tests
+
 Component tests are located in `cypress/component/` and test individual React components in isolation.
 
 Example:
+
 ```typescript
 import { mount } from 'cypress/react18'
 import { YourComponent } from '../../ui/src/components/YourComponent'
@@ -54,16 +59,18 @@ describe('YourComponent', () => {
 ```
 
 ### E2E Tests
+
 End-to-end tests are located in `cypress/e2e/` and test the application as a whole.
 
 Example:
+
 ```typescript
-describe('Feature', () => {
-  it('should work end-to-end', () => {
-    cy.visit('/')
+describe("Feature", () => {
+  it("should work end-to-end", () => {
+    cy.visit("/");
     // Test user interactions
-  })
-})
+  });
+});
 ```
 
 ## Best Practices
@@ -72,4 +79,4 @@ describe('Feature', () => {
 2. Keep tests independent and isolated
 3. Use custom commands for common operations
 4. Write descriptive test names
-5. Follow the Arrange-Act-Assert pattern 
+5. Follow the Arrange-Act-Assert pattern

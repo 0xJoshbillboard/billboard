@@ -4,7 +4,6 @@
 [![Smart Contract Tests](https://github.com/0xjoshbillboard/billboard/actions/workflows/contracts.yml/badge.svg)](https://github.com/0xjoshbillboard/billboard/actions/workflows/contracts.yml)
 [![E2E](https://github.com/0xjoshbillboard/billboard/actions/workflows/e2e.yml/badge.svg)](https://github.com/0xjoshbillboard/billboard/actions/workflows/e2e.yml)
 
-
 ## Overview
 
 Billboard is a decentralized advertising platform that allows users to purchase and manage digital billboard spaces using blockchain technology. The platform enables advertisers to display their content while leveraging governance mechanisms for community-driven price and duration settings.

@@ -13,7 +13,11 @@ contract BillboardToken is ERC20, ERC20Permit, Ownable {
     uint256 public constant TOKEN_DECIMALS = 18;
     uint256 public soldTokens = 0;
 
-    constructor(address _usdc) ERC20("Billboard Governance Token", "BBT") ERC20Permit("Billboard Governance Token") Ownable(msg.sender) {
+    constructor(address _usdc)
+        ERC20("Billboard Governance Token", "BBT")
+        ERC20Permit("Billboard Governance Token")
+        Ownable(msg.sender)
+    {
         usdc = IERC20(_usdc);
         _mint(msg.sender, TOTAL_SUPPLY);
     }

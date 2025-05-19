@@ -73,7 +73,7 @@ const fetchContractLogs = async () => {
         expiryTime: log.args[1],
         description: log.args[2],
         link: log.args[3],
-        ipfsHash: log.args[4],
+        hash: log.args[4],
       };
 
       const logRef = db.collection("contract_logs").doc(log.transactionHash);
@@ -146,25 +146,24 @@ const updateActiveAds = async () => {
     const batch = db.batch();
     let activeAdsCount = 0;
 
-    const latestAdsByIpfsHash = new Map();
+    const latestAdsByHash = new Map();
 
     contractLogsSnapshot.forEach((doc) => {
       const adData = doc.data();
 
-      if (adData.expiryTime && adData.ipfsHash) {
+      if (adData.expiryTime && adData.hash) {
         if (
           adData.expiryTime > currentTimeInSeconds &&
           adData.expiryTime >= cutoffTimeInSeconds
         ) {
           if (
-            !latestAdsByIpfsHash.has(adData.ipfsHash) ||
-            latestAdsByIpfsHash.get(adData.ipfsHash).expiryTime <
-              adData.expiryTime
+            !latestAdsByHash.has(adData.hash) ||
+            latestAdsByHash.get(adData.hash).expiryTime < adData.expiryTime
           ) {
-            latestAdsByIpfsHash.set(adData.ipfsHash, {
+            latestAdsByHash.set(adData.hash, {
               link: adData.link,
               description: adData.description,
-              ipfsHash: adData.ipfsHash,
+              hash: adData.hash,
               expiryTime: adData.expiryTime,
               buyer: adData.buyer,
               transactionHash: adData.transactionHash,
@@ -175,8 +174,8 @@ const updateActiveAds = async () => {
       }
     });
 
-    for (const [ipfsHash, adData] of latestAdsByIpfsHash.entries()) {
-      const activeAdRef = db.collection("active_ads").doc(ipfsHash);
+    for (const [hash, adData] of latestAdsByHash.entries()) {
+      const activeAdRef = db.collection("active_ads").doc(hash);
       batch.set(activeAdRef, adData);
       activeAdsCount++;
     }
@@ -275,17 +274,17 @@ exports.uploadImageToSwarmy = onRequest(cors, async (req, res) => {
       base64: sanitizedBase64,
     });
 
-    logger.log("Successfully uploaded sanitized image to IPFS:", result);
+    logger.log("Successfully uploaded sanitized image to hash:", result);
 
     return res.status(200).json({
       success: true,
-      cid: result.data.swarmReference,
+      hash: result.data.swarmReference,
     });
   } catch (error) {
-    logger.error("Error uploading image to IPFS:", error);
+    logger.error("Error uploading image to hash:", error);
     return res.status(500).json({
       success: false,
-      error: error.message || "Failed to upload image to IPFS",
+      error: error.message || "Failed to upload image to hash",
     });
   }
 });
@@ -332,7 +331,7 @@ exports.getAds = onRequest(cors, async (req, res) => {
       const adData = doc.data();
       logger.log("Ad data from Firestore:", JSON.stringify(adData));
       ads.push({
-        ipfsHash: adData.ipfsHash,
+        hash: adData.hash,
         link: adData.link,
         description: adData.description,
         expiryTime: adData.expiryTime,
@@ -364,19 +363,19 @@ exports.getAds = onRequest(cors, async (req, res) => {
       const adsWithUrls = await Promise.all(
         limitedAds.map(async (ad) => {
           try {
-            logger.log("Converting IPFS hash to URL:", ad.ipfsHash);
-            const result = await pinata.gateways.public.convert(ad.ipfsHash);
-            logger.log("Conversion result:", JSON.stringify(result));
+            logger.log("Converting hash to URL:", ad.hash);
+            const response = await axios.get(swarmyURLWithReference(ad.hash));
+            logger.log("Conversion result:", JSON.stringify(response));
             return {
-              url: result,
+              url: response,
               link: ad.link,
               description: ad.description,
               expiryTime: ad.expiryTime,
-              ipfsHash: ad.ipfsHash,
+              hash: ad.hash,
               buyer: ad.buyer,
             };
           } catch (error) {
-            logger.error(`Error converting IPFS hash ${ad.ipfsHash}:`, error);
+            logger.error(`Error converting hash ${ad.hash}:`, error);
             return ad;
           }
         }),
@@ -415,18 +414,18 @@ exports.getAds = onRequest(cors, async (req, res) => {
         });
       }
 
-      logger.log("Converting single ad IPFS hash to URL:", ad.ipfsHash);
-      const result = await pinata.gateways.public.convert(ad.ipfsHash);
-      logger.log("Conversion result for single ad:", JSON.stringify(result));
+      logger.log("Converting single ad hash to URL:", ad.hash);
+      const response = await axios.get(swarmyURLWithReference(ad.hash));
+      logger.log("Conversion result for single ad:", JSON.stringify(response));
 
       const responseData = {
         success: true,
         result: {
-          url: result,
+          url: response,
           link: ad.link,
           description: ad.description,
           expiryTime: ad.expiryTime,
-          ipfsHash: ad.ipfsHash,
+          hash: ad.hash,
         },
       };
 
@@ -439,7 +438,7 @@ exports.getAds = onRequest(cors, async (req, res) => {
               host: req.headers.host || "",
               acceptLanguage: req.headers["accept-language"] || "",
               handle: req.body.handle,
-              url: result,
+              url: response,
               link: ad.link,
               description: ad.description,
               expiryTime: ad.expiryTime,

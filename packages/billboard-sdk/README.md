@@ -73,7 +73,7 @@ Retrieves all advertisements for a given billboard handle.
 interface Billboard {
   link: string;
   description: string;
-  ipfsHash: string;
+  hash: string;
   expiryTime: number;
   url: string;
 }

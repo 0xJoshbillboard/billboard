@@ -877,7 +877,7 @@ export default function useBillboard() {
       expiryTime: Number(billboard.expiryTime),
       description: billboard.description,
       link: billboard.link,
-      ipfsHash: billboard.ipfsHash,
+      hash: billboard.hash,
     })) as RawBillboard[];
   };
 
@@ -1059,7 +1059,7 @@ export default function useBillboard() {
       const imageBase64 = btoa(binary);
 
       const response = await fetch(
-        "https://uploadimagetoipfs-pe2o27xb6q-ew.a.run.app",
+        "https://uploadimagetoswarmy-pe2o27xb6q-ew.a.run.app",
         {
           method: "POST",
           headers: {

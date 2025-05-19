@@ -25,11 +25,11 @@ contract BillboardRegistry is Initializable, OwnableUpgradeable {
         uint256 expiryTime;
         string description;
         string link;
-        string ipfsHash;
+        string hash;
     }
 
     event BillboardPurchased(
-        address indexed buyer, uint256 expiryTime, string description, string link, string ipfsHash
+        address indexed buyer, uint256 expiryTime, string description, string link, string hash
     );
 
     event BillboardExtended(address indexed owner, uint256 index, uint256 newExpiryTime);
@@ -51,7 +51,7 @@ contract BillboardRegistry is Initializable, OwnableUpgradeable {
         governance = BillboardGovernance(_governance);
     }
 
-    function purchaseBillboard(string memory description, string memory link, string memory ipfsHash) external {
+        function purchaseBillboard(string memory description, string memory link, string memory hash) external {
         require(address(governance) != address(0), "Governance not initialized");
         require(usdc.transferFrom(msg.sender, address(this), governance.pricePerBillboard()), "USDC transfer failed");
         billboards[msg.sender].push(
@@ -60,10 +60,10 @@ contract BillboardRegistry is Initializable, OwnableUpgradeable {
                 expiryTime: block.timestamp + governance.duration(),
                 description: description,
                 link: link,
-                ipfsHash: ipfsHash
+                hash: hash
             })
         );
-        emit BillboardPurchased(msg.sender, block.timestamp + governance.duration(), description, link, ipfsHash);
+        emit BillboardPurchased(msg.sender, block.timestamp + governance.duration(), description, link, hash);
     }
 
     function getBillboards(address owner) external view returns (Billboard[] memory) {

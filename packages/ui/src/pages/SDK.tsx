@@ -293,7 +293,7 @@ export default function SDK() {
             ) : (
               ads.map((ad) => (
                 <Card
-                  key={ad.ipfsHash.concat(ad.link)}
+                  key={ad.hash.concat(ad.link)}
                   onClick={() => {
                     window.open(ad.link, "_blank", "noopener,noreferrer");
                   }}

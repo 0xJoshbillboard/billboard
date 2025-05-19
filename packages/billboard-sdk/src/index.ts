@@ -4,7 +4,7 @@ import { getAds } from "./utils/api";
 export interface Billboard {
   link: string;
   description: string;
-  ipfsHash: string;
+  hash: string;
   expiryTime: number;
   url: string;
 }
@@ -34,7 +34,7 @@ export class BillboardSDK {
       }
 
       const ad = {
-        ipfsHash: data.result.cid,
+        hash: data.result.cid,
         url: data.result.url,
         link: data.result.link,
         description: data.result.description,
@@ -77,7 +77,7 @@ export class BillboardSDK {
       }
 
       const ads = data.ads.map((ad: Billboard) => ({
-        ipfsHash: ad.ipfsHash,
+        hash: ad.hash,
         url: ad.url,
         link: ad.link,
         description: ad.description,

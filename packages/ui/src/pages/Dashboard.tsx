@@ -187,7 +187,7 @@ export default function Dashboard() {
             ) : billboards.length > 0 ? (
               billboards.map((billboard, index) => (
                 <Card
-                  key={billboard.ipfsHash.concat(billboard.link)}
+                  key={billboard.hash.concat(billboard.link)}
                   onClick={() => {
                     window.open(
                       billboard.link,
@@ -224,7 +224,7 @@ export default function Dashboard() {
                     <CardMedia
                       component="img"
                       height="200"
-                      image={`https://plum-main-eagle-917.mypinata.cloud/ipfs/${billboard.ipfsHash}`}
+                      image={`https://getimagefromswarmy-pe2o27xb6q-ew.a.run.app?cid=${billboard.hash}`}
                       alt={billboard.description}
                       sx={{
                         objectFit: "cover",
@@ -251,17 +251,17 @@ export default function Dashboard() {
                     </Typography>
                     <Box sx={{ display: "flex", alignItems: "center" }}>
                       <Typography variant="body1">
-                        IPFS Hash: {billboard.ipfsHash.slice(0, 6)}...
-                        {billboard.ipfsHash.slice(-4)}
+                        Hash: {billboard.hash.slice(0, 6)}...
+                        {billboard.hash.slice(-4)}
                       </Typography>
                       <IconButton
                         size="small"
                         onClick={(e) => {
                           e.stopPropagation();
-                          navigator.clipboard.writeText(billboard.ipfsHash);
+                          navigator.clipboard.writeText(billboard.hash);
                         }}
                         sx={{ ml: 1 }}
-                        aria-label="Copy IPFS hash"
+                        aria-label="Copy hash"
                       >
                         <ContentCopyIcon fontSize="small" />
                       </IconButton>

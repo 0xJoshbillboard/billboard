@@ -105,7 +105,7 @@ export interface RawBillboard {
   expiryTime: number;
   description: string;
   link: string;
-  ipfsHash: string;
+  hash: string;
 }
 
 export interface GovernanceEvent {
@@ -136,7 +136,7 @@ export interface BillboardStatistic {
     buyer: string;
     description: string;
     expiryTime: number;
-    ipfsHash: string;
+    hash: string;
     link: string;
   }>;
 }

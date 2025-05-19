@@ -64,7 +64,7 @@ contract BillboardTest is Test {
         assertEq(billboards[0].expiryTime, 1000 + 30 days);
         assertEq(billboards[0].description, "Test Billboard");
         assertEq(billboards[0].link, "https://test.com");
-        assertEq(billboards[0].ipfsHash, "test.com");
+        assertEq(billboards[0].hash, "test.com");
     }
 
     function test_PurchaseBillboardEvent() public {
@@ -93,7 +93,7 @@ contract BillboardTest is Test {
         assertEq(billboards[0].owner, address(this));
         assertEq(billboards[0].description, "Test Billboard");
         assertEq(billboards[0].link, "https://test.com");
-        assertEq(billboards[0].ipfsHash, "test.com");
+        assertEq(billboards[0].hash, "test.com");
     }
 
     function test_ExtendBillboardEvent() public {

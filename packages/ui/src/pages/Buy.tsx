@@ -30,10 +30,6 @@ export default function Buy() {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [useCustomCID, setUseCustomCID] = useState<"upload" | "cid" | null>(
-    null,
-  );
-  const [customCID, setCustomCID] = useState("");
   const [description, setDescription] = useState("");
   const [link, setLink] = useState("");
   const [linkError, setLinkError] = useState<string | null>(null);
@@ -109,47 +105,23 @@ export default function Buy() {
         return;
       }
 
-      // Handle custom CID path
-      if (useCustomCID === "cid") {
-        if (!customCID.trim()) {
-          setError("Please enter a CID");
-          return;
-        }
-
-        try {
-          setIsUploading(true);
-          await buy(description, link, null, customCID);
-          setError(null);
-          afterSuccessfullyPurchased();
-        } catch (err) {
-          setError(
-            "Failed to process with custom CID: " +
-              (err instanceof Error ? err.message : String(err)),
-          );
-        } finally {
-          setIsUploading(false);
-        }
+      if (!selectedFile) {
+        setError("Please select a file first");
+        return;
       }
-      // Handle file upload path
-      else {
-        if (!selectedFile) {
-          setError("Please select a file first");
-          return;
-        }
 
-        try {
-          setIsUploading(true);
-          await buy(description, link, selectedFile);
-          setError(null);
-          afterSuccessfullyPurchased();
-        } catch (err) {
-          setError(
-            "Failed to upload image: " +
-              (err instanceof Error ? err.message : String(err)),
-          );
-        } finally {
-          setIsUploading(false);
-        }
+      try {
+        setIsUploading(true);
+        await buy(description, link, selectedFile);
+        setError(null);
+        afterSuccessfullyPurchased();
+      } catch (err) {
+        setError(
+          "Failed to upload image: " +
+            (err instanceof Error ? err.message : String(err)),
+        );
+      } finally {
+        setIsUploading(false);
       }
     }
   };
@@ -158,7 +130,6 @@ export default function Buy() {
     setIsSnackbarOpen(true);
     setDescription("");
     setLink("");
-    setCustomCID("");
     setSelectedFile(null);
   };
 
@@ -253,65 +224,34 @@ export default function Buy() {
                 helperText={linkError}
               />
 
-              {/* Upload method selection */}
-              <Box sx={{ display: "flex", gap: 2, mt: 2 }}>
-                <Button
-                  variant="outlined"
-                  color={useCustomCID === "upload" ? "primary" : "inherit"}
-                  component="label"
-                  onClick={() => setUseCustomCID("upload")}
-                  startIcon={<CloudUploadIcon />}
-                >
-                  Upload an image
-                  {useCustomCID === "upload" && (
-                    <input
-                      type="file"
-                      accept="image/*"
-                      hidden
-                      onChange={handleFileChange}
-                    />
-                  )}
-                </Button>
-                <Button
-                  variant="outlined"
-                  color={useCustomCID === "cid" ? "primary" : "inherit"}
-                  onClick={() => setUseCustomCID("cid")}
-                >
-                  Use custom IPFS CID
-                </Button>
-              </Box>
-
-              {/* Conditional rendering based on upload method */}
-              {useCustomCID === "cid" ? (
-                <TextField
-                  label="Enter IPFS CID"
-                  variant="outlined"
-                  size="small"
-                  value={customCID}
-                  onChange={(e) => setCustomCID(e.target.value)}
-                  fullWidth
-                  placeholder="Your CID here"
-                  sx={{ mt: 2 }}
+              {/* Upload button */}
+              <Button
+                variant="outlined"
+                component="label"
+                startIcon={<CloudUploadIcon />}
+                sx={{ mt: 2 }}
+              >
+                Upload an image
+                <input
+                  type="file"
+                  accept="image/*"
+                  hidden
+                  onChange={handleFileChange}
                 />
-              ) : (
-                <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
-                  {selectedFile && (
-                    <Button
-                      size="small"
-                      onClick={() => setSelectedFile(null)}
-                      sx={{ mt: 2, width: "fit-content" }}
-                      endIcon={<CloseIcon sx={{ color: "white" }} />}
-                    >
-                      <Typography
-                        variant="body1"
-                        color="#E3E3E3"
-                        fontSize="small"
-                      >
-                        {selectedFile.name}
-                      </Typography>
-                    </Button>
-                  )}
-                </Box>
+              </Button>
+
+              {/* Selected file display */}
+              {selectedFile && (
+                <Button
+                  size="small"
+                  onClick={() => setSelectedFile(null)}
+                  sx={{ mt: 2, width: "fit-content" }}
+                  endIcon={<CloseIcon sx={{ color: "white" }} />}
+                >
+                  <Typography variant="body1" color="#E3E3E3" fontSize="small">
+                    {selectedFile.name}
+                  </Typography>
+                </Button>
               )}
 
               {/* Transaction steps */}
@@ -459,13 +399,7 @@ export default function Buy() {
                   mt: 2,
                 }}
                 disabled={
-                  (wallet &&
-                    ((useCustomCID === "cid" && !customCID) ||
-                      (useCustomCID === "upload" && !selectedFile) ||
-                      !useCustomCID ||
-                      !description ||
-                      !link ||
-                      !!linkError)) ||
+                  (wallet && (!description || !link || !!linkError)) ||
                   isUploading
                 }
               >
@@ -486,7 +420,7 @@ export default function Buy() {
               )}
 
               {/* Image preview */}
-              {useCustomCID === "upload" && selectedFile && (
+              {selectedFile && (
                 <Box
                   sx={{
                     mt: 3,

@@ -57,6 +57,7 @@ export default function Dashboard() {
         setStatisticsLoading(true);
         try {
           const fetchedBillboards = await fetchBillboards();
+
           const userBillboards = fetchedBillboards.filter(
             (billboard) =>
               billboard.owner.toLowerCase() ===
@@ -67,7 +68,19 @@ export default function Dashboard() {
             userBillboards.map((billboard) => billboard.owner),
           );
           setStatistics(stats);
-          setBillboards(fetchedBillboards);
+          // could fail because of old IPFS hashes
+          const hashes = userBillboards.map((billboard) => billboard.hash);
+          const imageResponse = await fetch(
+            `https://getimagefromswarmy-pe2o27xb6q-ew.a.run.app?cid=${hashes.join(",")}`,
+          );
+          const json = await imageResponse.json();
+          const billboardsWithImageResponse = userBillboards.map(
+            (billboard, index) => ({
+              ...billboard,
+              hash: json.data[index].data,
+            }),
+          );
+          setBillboards(billboardsWithImageResponse);
         } catch (error) {
           console.error("Error fetching billboards:", error);
         } finally {
@@ -89,7 +102,6 @@ export default function Dashboard() {
     }
   };
 
-  // Prepare data for charts
   const prepareVisitorData = () => {
     const visitorsByDate = statistics.reduce(
       (acc, stat) => {

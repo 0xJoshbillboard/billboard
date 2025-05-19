@@ -242,18 +242,26 @@ exports.uploadImageToSwarmy = onRequest(cors, async (req, res) => {
 
     const imageData = req.body.imageData;
     const fileSizeInBytes = Buffer.byteLength(imageData, "base64");
-    const maxSizeInBytes = 1024 * 1024;
+    const maxSizeInBytes = 2 * 1024 * 1024;
 
     if (fileSizeInBytes > maxSizeInBytes) {
       return res
         .status(400)
-        .json({ error: "File size exceeds the 1MB limit." });
+        .json({ error: "File size exceeds the 2MB limit." });
     }
 
     const imageBuffer = Buffer.from(imageData, "base64");
 
+    // Check if image is PNG or JPG
+    const imageInfo = await sharp(imageBuffer).metadata();
+    if (!["png", "jpeg"].includes(imageInfo.format)) {
+      return res.status(400).json({
+        error: "Only PNG or JPG images are allowed.",
+      });
+    }
+
     const sanitizedImage = await sharp(imageBuffer)
-      .resize(600, 400, {
+      .resize(200, 200, {
         fit: "inside",
         withoutEnlargement: true,
       })
@@ -269,7 +277,7 @@ exports.uploadImageToSwarmy = onRequest(cors, async (req, res) => {
       name: sanitizedBase64
         .slice(0, 20)
         .concat(Math.random().toString(36).substring(2, 15))
-        .concat(".bin"),
+        .concat(".jpg"),
       contentType: "application/octet-stream",
       base64: sanitizedBase64,
     });
@@ -365,9 +373,9 @@ exports.getAds = onRequest(cors, async (req, res) => {
           try {
             logger.log("Converting hash to URL:", ad.hash);
             const response = await axios.get(swarmyURLWithReference(ad.hash));
-            logger.log("Conversion result:", JSON.stringify(response));
+            logger.log("Conversion resultf:", JSON.stringify(response));
             return {
-              url: response,
+              url: response.data,
               link: ad.link,
               description: ad.description,
               expiryTime: ad.expiryTime,
@@ -421,7 +429,7 @@ exports.getAds = onRequest(cors, async (req, res) => {
       const responseData = {
         success: true,
         result: {
-          url: response,
+          url: response.data,
           link: ad.link,
           description: ad.description,
           expiryTime: ad.expiryTime,
@@ -688,16 +696,34 @@ exports.getImageFromSwarmy = onRequest(cors, async (req, res) => {
       return res.status(400).json({ error: "CID is required." });
     }
 
-    const cid = req.query.cid;
-    const response = await axios.get(swarmyURLWithReference(cid));
+    const cids = req.query.cid.split(",");
+    logger.log("Fetching images from Swarmy:", cids);
 
-    res.set("Content-Type", "application/octet-stream");
-    res.send(response.data);
+    const responses = await Promise.all(
+      cids.map(async (cid) => {
+        try {
+          const response = await axios.get(swarmyURLWithReference(cid));
+          if (response.error) {
+            return { error: response.error };
+          }
+          return { data: response.data };
+        } catch (error) {
+          logger.error(`Error fetching image for CID ${cid}:`, error);
+          return { error: error.message };
+        }
+      }),
+    );
+
+    res.set("Content-Type", "application/json");
+    res.json({
+      success: true,
+      data: responses,
+    });
   } catch (error) {
-    logger.error("Error fetching image from Swarmy:", error);
+    logger.error("Error fetching images from Swarmy:", error);
     return res.status(500).json({
       success: false,
-      error: error.message || "Failed to fetch image from Swarmy",
+      error: error.message || "Failed to fetch images from Swarmy",
     });
   }
 });

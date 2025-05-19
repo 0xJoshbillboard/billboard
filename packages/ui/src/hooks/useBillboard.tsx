@@ -29,7 +29,7 @@ import {
 } from "../utils/types";
 
 const billboardSDK = new BillboardSDK();
-const MAX_FILE_SIZE = 5 * 1024 * 1024;
+const MAX_FILE_SIZE = 2 * 1024 * 1024;
 
 export default function useBillboard() {
   // State variables
@@ -713,12 +713,7 @@ export default function useBillboard() {
   };
 
   // Billboard functions
-  const buy = async (
-    description: string,
-    link: string,
-    file: File | null,
-    cid?: string,
-  ) => {
+  const buy = async (description: string, link: string, file: File | null) => {
     if (!contract) {
       throw new Error("Contract not defined");
     }
@@ -743,12 +738,10 @@ export default function useBillboard() {
       let url;
       if (file) {
         url = await uploadImage(file);
-      } else if (cid) {
-        url = { cid };
       } else {
         throw new Error("No file or CID provided");
       }
-      if (!url?.cid) {
+      if (!url?.hash) {
         throw new Error(`url not defined: ${url}`);
       }
 
@@ -757,7 +750,7 @@ export default function useBillboard() {
         buyBillboard: { ...prev.buyBillboard, pending: true, error: null },
       }));
 
-      const tx = await contract.purchaseBillboard(description, link, url.cid);
+      const tx = await contract.purchaseBillboard(description, link, url.hash);
       await tx.wait();
 
       setTransactionStatus((prev) => ({
@@ -765,7 +758,7 @@ export default function useBillboard() {
         buyBillboard: { ...prev.buyBillboard, pending: false, completed: true },
       }));
 
-      return { cid: url.cid, tx };
+      return { hash: url.hash, tx };
     } catch (error) {
       const errorMessage =
         error instanceof Error ? error.message : String(error);
@@ -1047,7 +1040,10 @@ export default function useBillboard() {
 
   const uploadImage = async (image: File) => {
     if (image.size > MAX_FILE_SIZE) {
-      throw new Error("File size exceeds the maximum limit of 5MB");
+      throw new Error("File size exceeds the maximum limit of 2MB");
+    }
+    if (image.type !== "image/png" && image.type !== "image/jpeg") {
+      throw new Error("Only PNG or JPG images are allowed");
     }
     try {
       const arrayBuffer = await image.arrayBuffer();
@@ -1057,7 +1053,6 @@ export default function useBillboard() {
         "",
       );
       const imageBase64 = btoa(binary);
-
       const response = await fetch(
         "https://uploadimagetoswarmy-pe2o27xb6q-ew.a.run.app",
         {
@@ -1065,11 +1060,13 @@ export default function useBillboard() {
           headers: {
             "Content-Type": "application/json",
           },
-          body: JSON.stringify({ imageData: imageBase64 }),
+          body: JSON.stringify({
+            imageData: imageBase64,
+          }),
         },
       );
       const data = await response.json();
-      return data as { success: boolean; cid: string };
+      return data as { success: boolean; hash: string };
     } catch (error) {
       console.error(error);
       throw new Error(`Error while uploading image: ${error}`);

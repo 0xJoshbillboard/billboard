@@ -36,9 +36,9 @@ jobs:
           yarn install --immutable
           yarn cache clean
 
-      # - name: Build packages
-      #   run: |
-      #     yarn build
+      - name: Build packages
+        run: |
+          yarn build
 
       - name: Run tests
         run: yarn test

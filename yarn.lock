@@ -3944,6 +3944,17 @@ __metadata:
   languageName: node
   linkType: hard
 
+"axios@npm:^1.9.0":
+  version: 1.9.0
+  resolution: "axios@npm:1.9.0"
+  dependencies:
+    follow-redirects: "npm:^1.15.6"
+    form-data: "npm:^4.0.0"
+    proxy-from-env: "npm:^1.1.0"
+  checksum: 10c0/9371a56886c2e43e4ff5647b5c2c3c046ed0a3d13482ef1d0135b994a628c41fbad459796f101c655e62f0c161d03883454474d2e435b2e021b1924d9f24994c
+  languageName: node
+  linkType: hard
+
 "babel-jest@npm:^29.7.0":
   version: 29.7.0
   resolution: "babel-jest@npm:29.7.0"
@@ -6566,7 +6577,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"follow-redirects@npm:^1.0.0":
+"follow-redirects@npm:^1.0.0, follow-redirects@npm:^1.15.6":
   version: 1.15.9
   resolution: "follow-redirects@npm:1.15.9"
   peerDependenciesMeta:
@@ -6606,7 +6617,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"form-data@npm:~4.0.0":
+"form-data@npm:^4.0.0, form-data@npm:~4.0.0":
   version: 4.0.2
   resolution: "form-data@npm:4.0.2"
   dependencies:
@@ -6705,13 +6716,13 @@ __metadata:
   resolution: "functions@workspace:packages/functions"
   dependencies:
     "@eslint/js": "npm:^9.25.1"
+    axios: "npm:^1.9.0"
     dotenv: "npm:^16.4.5"
     eslint: "npm:^9.25.1"
     ethers: "npm:6.13.5"
     firebase-admin: "npm:^12.1.0"
     firebase-functions: "npm:^6.3.2"
     globals: "npm:^16.0.0"
-    pinata: "npm:^2.1.1"
   languageName: unknown
   linkType: soft
 
@@ -9642,13 +9653,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"pinata@npm:^2.1.1":
-  version: 2.3.0
-  resolution: "pinata@npm:2.3.0"
-  checksum: 10c0/7507c188771b6f780970423cb9991a2f12b81d205d51ae1dc83a1e13290797d5d2fb6325bca2d5a1165a8bb6c2774bd4c6d452c2e33def4e576d2cac32530327
-  languageName: node
-  linkType: hard
-
 "pirates@npm:^4.0.4":
   version: 4.0.7
   resolution: "pirates@npm:4.0.7"
@@ -9906,6 +9910,13 @@ __metadata:
   version: 1.0.0
   resolution: "proxy-from-env@npm:1.0.0"
   checksum: 10c0/c64df9b21f7f820dc882cd6f7f81671840acd28b9688ee3e3e6af47a56ec7f0edcabe5bc96b32b26218b35eeff377bcc27ac27f89b6b21401003e187ff13256f
+  languageName: node
+  linkType: hard
+
+"proxy-from-env@npm:^1.1.0":
+  version: 1.1.0
+  resolution: "proxy-from-env@npm:1.1.0"
+  checksum: 10c0/fe7dd8b1bdbbbea18d1459107729c3e4a2243ca870d26d34c2c1bcd3e4425b7bcc5112362df2d93cc7fb9746f6142b5e272fd1cc5c86ddf8580175186f6ad42b
   languageName: node
   linkType: hard
 

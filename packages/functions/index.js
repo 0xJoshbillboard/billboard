@@ -4,11 +4,12 @@ const { onSchedule } = require("firebase-functions/v2/scheduler");
 const { getFirestore } = require("firebase-admin/firestore");
 const { initializeApp } = require("firebase-admin/app");
 const { onRequest } = require("firebase-functions/v2/https");
-const { PinataSDK } = require("pinata");
 const abi = require("./abi");
 const governanceAbi = require("./abi-gov");
 const { setGlobalOptions } = require("firebase-functions");
 const dotenv = require("dotenv");
+const sharp = require("sharp");
+const axios = require("axios");
 
 dotenv.config();
 
@@ -17,10 +18,10 @@ initializeApp();
 
 const cors = { cors: true };
 
-const pinata = new PinataSDK({
-  pinataJwt: process.env.PINATA_API_KEY,
-  pinataGateway: process.env.PINATA_GATEWAY,
-});
+const swarmyURL = `https://api.swarmy.cloud/api/data/bin?k=${process.env.SWARMY_KEY}`;
+const swarmyURLWithReference = (reference) =>
+  `https://api.swarmy.cloud/files/${reference}?k=${process.env.SWARMY_KEY}`;
+
 const rpcUrl = `https://optimism-sepolia.infura.io/v3/${process.env.INFURA_API}`;
 const provider = new ethers.JsonRpcProvider(rpcUrl);
 const contract = new ethers.Contract(
@@ -228,7 +229,7 @@ exports.scheduledUpdateActiveAds = onSchedule(
   },
 );
 
-exports.uploadImageToIPFS = onRequest(cors, async (req, res) => {
+exports.uploadImageToSwarmy = onRequest(cors, async (req, res) => {
   try {
     if (req.method !== "POST") {
       return res
@@ -242,21 +243,43 @@ exports.uploadImageToIPFS = onRequest(cors, async (req, res) => {
 
     const imageData = req.body.imageData;
     const fileSizeInBytes = Buffer.byteLength(imageData, "base64");
-    const maxSizeInBytes = 5 * 1024 * 1024;
+    const maxSizeInBytes = 1024 * 1024;
 
     if (fileSizeInBytes > maxSizeInBytes) {
       return res
         .status(400)
-        .json({ error: "File size exceeds the 5MB limit." });
+        .json({ error: "File size exceeds the 1MB limit." });
     }
 
-    const result = await pinata.upload.public.base64(imageData);
+    const imageBuffer = Buffer.from(imageData, "base64");
 
-    logger.log("Successfully uploaded image to IPFS:", result);
+    const sanitizedImage = await sharp(imageBuffer)
+      .resize(600, 400, {
+        fit: "inside",
+        withoutEnlargement: true,
+      })
+      .jpeg({
+        quality: 80,
+        progressive: true,
+      })
+      .toBuffer();
+
+    const sanitizedBase64 = sanitizedImage.toString("base64");
+
+    const result = await axios.post(swarmyURL, {
+      name: sanitizedBase64
+        .slice(0, 20)
+        .concat(Math.random().toString(36).substring(2, 15))
+        .concat(".bin"),
+      contentType: "application/octet-stream",
+      base64: sanitizedBase64,
+    });
+
+    logger.log("Successfully uploaded sanitized image to IPFS:", result);
 
     return res.status(200).json({
       success: true,
-      cid: result.cid,
+      cid: result.data.swarmReference,
     });
   } catch (error) {
     logger.error("Error uploading image to IPFS:", error);
@@ -650,6 +673,32 @@ exports.fetchGovernanceEventsManual = onRequest(cors, async (req, res) => {
     return res.status(500).json({
       success: false,
       error: error.message || "Failed to fetch governance events",
+    });
+  }
+});
+
+exports.getImageFromSwarmy = onRequest(cors, async (req, res) => {
+  try {
+    if (req.method !== "GET") {
+      return res
+        .status(405)
+        .json({ error: "Method not allowed. Please use GET." });
+    }
+
+    if (!req.query.cid) {
+      return res.status(400).json({ error: "CID is required." });
+    }
+
+    const cid = req.query.cid;
+    const response = await axios.get(swarmyURLWithReference(cid));
+
+    res.set("Content-Type", "application/octet-stream");
+    res.send(response.data);
+  } catch (error) {
+    logger.error("Error fetching image from Swarmy:", error);
+    return res.status(500).json({
+      success: false,
+      error: error.message || "Failed to fetch image from Swarmy",
     });
   }
 });

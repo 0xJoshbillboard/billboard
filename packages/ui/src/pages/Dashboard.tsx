@@ -63,24 +63,13 @@ export default function Dashboard() {
               billboard.owner.toLowerCase() ===
               wallet.accounts[0].address.toLowerCase(),
           );
+          console.log(userBillboards);
 
           const stats = await getStatistics(
             userBillboards.map((billboard) => billboard.owner),
           );
           setStatistics(stats);
-          // could fail because of old IPFS hashes
-          const hashes = userBillboards.map((billboard) => billboard.hash);
-          const imageResponse = await fetch(
-            `https://getimagefromswarmy-pe2o27xb6q-ew.a.run.app?cid=${hashes.join(",")}`,
-          );
-          const json = await imageResponse.json();
-          const billboardsWithImageResponse = userBillboards.map(
-            (billboard, index) => ({
-              ...billboard,
-              hash: json.data[index].data,
-            }),
-          );
-          setBillboards(billboardsWithImageResponse);
+          setBillboards(userBillboards);
         } catch (error) {
           console.error("Error fetching billboards:", error);
         } finally {
@@ -236,7 +225,7 @@ export default function Dashboard() {
                     <CardMedia
                       component="img"
                       height="200"
-                      image={`https://getimagefromswarmy-pe2o27xb6q-ew.a.run.app?cid=${billboard.hash}`}
+                      image={`https://api.swarmy.cloud/bytes/${billboard.hash}`}
                       alt={billboard.description}
                       sx={{
                         objectFit: "cover",

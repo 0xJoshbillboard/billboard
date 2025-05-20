@@ -870,7 +870,7 @@ export default function useBillboard() {
       expiryTime: Number(billboard.expiryTime),
       description: billboard.description,
       link: billboard.link,
-      hash: billboard.ipfsHash,
+      hash: billboard.hash,
     })) as RawBillboard[];
   };
 

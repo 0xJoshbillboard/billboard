@@ -9,7 +9,7 @@ contract USDCMock is ERC20, Ownable {
 
     constructor() ERC20("USD Coin", "USDC") Ownable(msg.sender) {}
 
-    function mint(address to, uint256 amount) external onlyOwner {
+    function mint(address to, uint256 amount) external {
         _mint(to, amount);
     }
 

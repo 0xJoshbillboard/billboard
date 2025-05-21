@@ -10,10 +10,8 @@ import {BillboardGovernanceProxy} from "../src/BillboardGovernanceProxy.sol";
 import {BillboardToken} from "../src/BillboardToken.sol";
 
 contract IntegrationTest is Test {
-    BillboardRegistry public registry;
     BillboardProxy public proxy;
     USDCMock public usdc;
-    BillboardGovernance public governance;
     BillboardGovernanceProxy public governanceProxy;
     BillboardToken public billboardToken;
 
@@ -36,17 +34,13 @@ contract IntegrationTest is Test {
         // Use hardcoded contract addresses
         address usdcAddress = 0xe17612de297d7a6aC3C8af568a556b62D1f2074c;
         address billboardTokenAddress = 0xC6532522Fa6C05533047c17896EA56D41A2e127F;
-        address governanceAddress = 0xd6567E7d5fef1255a49b913bAa13896238a0305e;
         address payable governanceProxyAddress = payable(0x9527F41eb97173EA364B775b4AB99578110fec5f);
-        address registryAddress = 0x7157e940556150f0aD3316b3F86618E2C709A5d5;
         address payable proxyAddress = payable(0xC5533B322861dE8c894Fc44EC421A02395b83Df5);
 
         // Initialize contract instances
         usdc = USDCMock(usdcAddress);
         billboardToken = BillboardToken(billboardTokenAddress);
-        governance = BillboardGovernance(governanceAddress);
         governanceProxy = BillboardGovernanceProxy(governanceProxyAddress);
-        registry = BillboardRegistry(registryAddress);
         proxy = BillboardProxy(proxyAddress);
 
         // Mint USDC to users

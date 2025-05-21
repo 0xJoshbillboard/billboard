@@ -28,18 +28,18 @@ contract IntegrationTest is Test {
 
     function setUp() public {
         // Fork optimism-sepolia
-        vm.createSelectFork(vm.envString("OPTIMISM_SEPOLIA_RPC_URL"));
+        vm.createSelectFork("https://sepolia.optimism.io");
 
         user = address(0x1);
         user2 = address(0x2);
 
-        // Get deployed contract addresses from env
-        address usdcAddress = vm.envAddress("USDC_ADDRESS");
-        address billboardTokenAddress = vm.envAddress("BILLBOARD_TOKEN_ADDRESS");
-        address governanceAddress = vm.envAddress("GOVERNANCE_ADDRESS");
-        address payable governanceProxyAddress = payable(vm.envAddress("GOVERNANCE_PROXY_ADDRESS"));
-        address registryAddress = vm.envAddress("REGISTRY_ADDRESS");
-        address payable proxyAddress = payable(vm.envAddress("PROXY_ADDRESS"));
+        // Use hardcoded contract addresses
+        address usdcAddress = 0xe17612de297d7a6aC3C8af568a556b62D1f2074c;
+        address billboardTokenAddress = 0xC6532522Fa6C05533047c17896EA56D41A2e127F;
+        address governanceAddress = 0xd6567E7d5fef1255a49b913bAa13896238a0305e;
+        address payable governanceProxyAddress = payable(0x9527F41eb97173EA364B775b4AB99578110fec5f);
+        address registryAddress = 0x7157e940556150f0aD3316b3F86618E2C709A5d5;
+        address payable proxyAddress = payable(0xC5533B322861dE8c894Fc44EC421A02395b83Df5);
 
         // Initialize contract instances
         usdc = USDCMock(usdcAddress);
@@ -200,13 +200,13 @@ contract IntegrationTest is Test {
             uint256 duration,
             uint256 pricePerBillboard,
             uint256 securityDepositFromProposal,
-            uint256 initialSecurityDeposit,
+            ,
             uint256 minProposalTokensFromProposal,
             uint256 minVotingTokensFromProposal,
-            uint256 votesFor,
-            uint256 votesAgainst,
+            ,
+            ,
             bool executed,
-            uint256 createdAt,
+            ,
             uint256 securityDepositAdvertiserFromProposal
         ) = BillboardGovernance(address(governanceProxy)).getProposal(1);
 

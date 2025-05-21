@@ -33,8 +33,7 @@ const uploadImageToSwarmy = async (imageData) => {
     const sanitizedBase64 = sanitizedImage.toString("base64");
 
     const result = await axios.post(swarmyURL, {
-      name: Math.random().toString(36).substring(2, 15)
-        .concat(".jpg"),
+      name: Math.random().toString(36).substring(2, 15).concat(".jpg"),
       contentType: "application/octet-stream",
       base64: sanitizedBase64,
     });

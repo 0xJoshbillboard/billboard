@@ -199,7 +199,7 @@ contract GovernanceTest is Test {
         assertEq(BillboardGovernance(address(governanceProxy)).securityDeposit(), 15000 * 10 ** 18);
         assertEq(BillboardGovernance(address(governanceProxy)).minProposalTokens(), 1500 * 10 ** 18);
         assertEq(BillboardGovernance(address(governanceProxy)).minVotingTokens(), 750 * 10 ** 18);
-        assertEq(BillboardGovernance(address(governanceProxy)).securityDepositAdvertiser(), securityDepositAdvertiser);
+        assertEq(BillboardGovernance(address(governanceProxy)).securityDepositAdvertiser(), 800 * 10 ** 18);
 
         (,,,,,,,, bool _executed,,) = BillboardGovernance(address(governanceProxy)).getProposal(0);
         assertEq(_executed, true);

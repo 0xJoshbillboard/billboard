@@ -178,7 +178,7 @@ contract IntegrationTest is Test {
 
         // Create proposal
         BillboardGovernance(address(governanceProxy)).createProposal(
-            60 days, 2000e6, 15000 * 10 ** 18, 1500 * 10 ** 18, 750 * 10 ** 18, 900 * 10 ** 18
+            70 days, 2000e6, 15000 * 10 ** 18, 1500 * 10 ** 18, 750 * 10 ** 18, 900 * 10 ** 18
         );
         vm.stopPrank();
 
@@ -196,16 +196,26 @@ contract IntegrationTest is Test {
         // Execute proposal
         BillboardGovernance(address(governanceProxy)).executeProposal(1);
 
-        // Verify new parameters
-        assertEq(BillboardGovernance(address(governanceProxy)).duration(), 60 days);
-        assertEq(BillboardGovernance(address(governanceProxy)).pricePerBillboard(), 2000e6);
-        assertEq(BillboardGovernance(address(governanceProxy)).securityDeposit(), 15000 * 10 ** 18);
-        assertEq(BillboardGovernance(address(governanceProxy)).minProposalTokens(), 1500 * 10 ** 18);
-        assertEq(BillboardGovernance(address(governanceProxy)).minVotingTokens(), 750 * 10 ** 18);
-        assertEq(BillboardGovernance(address(governanceProxy)).securityDepositAdvertiser(), 900 * 10 ** 18);
+        (
+            uint256 duration,
+            uint256 pricePerBillboard,
+            uint256 securityDepositFromProposal,
+            uint256 initialSecurityDeposit,
+            uint256 minProposalTokensFromProposal,
+            uint256 minVotingTokensFromProposal,
+            uint256 votesFor,
+            uint256 votesAgainst,
+            bool executed,
+            uint256 createdAt,
+            uint256 securityDepositAdvertiserFromProposal
+        ) = BillboardGovernance(address(governanceProxy)).getProposal(1);
 
-        // Verify proposal is executed
-        (,,,,,,,, bool executed,,) = BillboardGovernance(address(governanceProxy)).getProposal(1);
         assertEq(executed, true);
+        assertEq(securityDepositAdvertiserFromProposal, 900 * 10 ** 18);
+        assertEq(duration, 70 days);
+        assertEq(pricePerBillboard, 2000e6);
+        assertEq(securityDepositFromProposal, 15000 * 10 ** 18);
+        assertEq(minProposalTokensFromProposal, 1500 * 10 ** 18);
+        assertEq(minVotingTokensFromProposal, 750 * 10 ** 18);
     }
 }

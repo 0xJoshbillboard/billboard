@@ -295,7 +295,6 @@ export default function useBillboard() {
           wallet.accounts[0].address,
           BILLBOARD_TOKEN_ADDRESS,
           amount.toString(),
-          "2",
         );
       }
 
@@ -469,7 +468,6 @@ export default function useBillboard() {
           wallet.accounts[0].address,
           GOVERNANCE_ADDRESS,
           minProposalTokensRequired.toString(),
-          "2",
         );
       }
 
@@ -689,7 +687,6 @@ export default function useBillboard() {
           wallet.accounts[0].address,
           BILLBOARD_ADDRESS,
           (governanceSettings.price * 1e6).toString(),
-          "2",
         );
       }
 
@@ -717,23 +714,31 @@ export default function useBillboard() {
         buyBillboard: { ...prev.buyBillboard, pending: true, error: null },
       }));
 
-      const tx = permitFromToken
-        ? getMulticall3Contract(signer).aggregate([
-            {
-              target: USDC_ADDRESS,
-              data: permitFromToken?.encodedPermit,
-            },
-            {
-              target: contract.target,
-              data: contract.interface.encodeFunctionData("purchaseBillboard", [
-                description,
-                link,
-                url.hash,
-              ]),
-            },
-          ])
-        : await contract.purchaseBillboard(description, link, url.hash);
+      const tx = await signer?.sendTransaction({
+        to: USDC_ADDRESS,
+        data: permitFromToken?.encodedPermit,
+      });
       await tx.wait();
+
+      // const tx2 = await contract.purchaseBillboard(description, link, url.hash);
+
+      // const tx = permitFromToken
+      //   ? getMulticall3Contract(signer).aggregate([
+      //       {
+      //         target: USDC_ADDRESS,
+      //         data: permitFromToken?.encodedPermit,
+      //       },
+      //       {
+      //         target: contract.target,
+      //         data: contract.interface.encodeFunctionData("purchaseBillboard", [
+      //           description,
+      //           link,
+      //           url.hash,
+      //         ]),
+      //       },
+      //     ])
+      //   : await contract.purchaseBillboard(description, link, url.hash);
+      // await tx.wait();
 
       setTransactionStatus((prev) => ({
         ...prev,
@@ -789,7 +794,6 @@ export default function useBillboard() {
           wallet.accounts[0].address,
           BILLBOARD_ADDRESS,
           (governanceSettings.price * 1e6).toString(),
-          "2",
         );
       }
 
@@ -901,7 +905,6 @@ export default function useBillboard() {
           wallet.accounts[0].address,
           BILLBOARD_ADDRESS,
           (securityDepositAdvertiser * 1e6).toString(),
-          "2",
         );
       }
 

@@ -1,4 +1,4 @@
-import { Contract, TypedDataDomain, Signature } from "ethers";
+import { BrowserProvider, Contract, TypedDataDomain, Signature } from "ethers";
 import { useConnectWallet } from "@web3-onboard/react";
 
 export default function useERC20Permit() {
@@ -16,8 +16,8 @@ export default function useERC20Permit() {
     return {
       name,
       version,
-      chainId,
       verifyingContract,
+      chainId,
     };
   };
 
@@ -47,7 +47,7 @@ export default function useERC20Permit() {
     owner: string,
     spender: string,
     value: string | bigint,
-    version: string,
+    version = "1",
   ) => {
     const chainId = wallet.chains[0].id;
     const name = await token.name();
@@ -63,21 +63,11 @@ export default function useERC20Permit() {
 
     const values = createValues(owner, spender, value, nonce, deadline);
 
-    const signature = (await wallet.provider.request({
-      method: "eth_signTypedData_v4",
-      params: [
-        owner,
-        JSON.stringify({
-          domain,
-          types,
-          primaryType: "Permit",
-          message: values,
-        }),
-      ],
-    })) as any;
+    const provider = new BrowserProvider(wallet.provider);
+    const signer = await provider.getSigner();
+    const signature = await signer.signTypedData(domain, types, values);
 
-    console.log("SIG", signature);
-    const sig = Signature.from(signature);
+    const sig = Signature.from(signature as any);
     const r = sig.r;
     const s = sig.s;
     const v = sig.v;

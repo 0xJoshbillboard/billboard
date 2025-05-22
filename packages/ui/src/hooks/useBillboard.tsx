@@ -292,9 +292,13 @@ export default function useBillboard() {
         wallet.accounts[0].address,
         tokenContract.target,
       );
-      let permitFromToken
+      let permitFromToken;
       if (BigInt(currentAllowance) < BigInt(amount)) {
-        permitFromToken = await permit(amount.toString(), deadline, await usdcContract.getAddress());
+        permitFromToken = await permit(
+          amount.toString(),
+          deadline,
+          await usdcContract.getAddress(),
+        );
       }
 
       setTransactionStatus((prev) => ({
@@ -311,13 +315,35 @@ export default function useBillboard() {
         buyTokens: { ...prev.buyTokens, pending: true, error: null },
       }));
 
-      const calls = permitFromToken ? [
-        {target: tokenContract.target, data: tokenContract.interface.encodeFunctionData('permit', 
-          [wallet.accounts[0].address, tokenContract.target, amount.toString(), deadline, permitFromToken.v, permitFromToken.r, permitFromToken.s])},
-        {target: tokenContract.target, data: tokenContract.interface.encodeFunctionData('buyTokens', [amount])},
-      ] : [
-        {target: tokenContract.target, data: tokenContract.interface.encodeFunctionData('buyTokens', [amount])},
-      ]
+      const calls = permitFromToken
+        ? [
+            {
+              target: tokenContract.target,
+              data: tokenContract.interface.encodeFunctionData("permit", [
+                wallet.accounts[0].address,
+                tokenContract.target,
+                amount.toString(),
+                deadline,
+                permitFromToken.v,
+                permitFromToken.r,
+                permitFromToken.s,
+              ]),
+            },
+            {
+              target: tokenContract.target,
+              data: tokenContract.interface.encodeFunctionData("buyTokens", [
+                amount,
+              ]),
+            },
+          ]
+        : [
+            {
+              target: tokenContract.target,
+              data: tokenContract.interface.encodeFunctionData("buyTokens", [
+                amount,
+              ]),
+            },
+          ];
 
       const tx = await Multicall3.aggregate(calls);
       await tx.wait();
@@ -480,9 +506,13 @@ export default function useBillboard() {
         GOVERNANCE_ADDRESS,
       );
 
-      let permitFromToken
+      let permitFromToken;
       if (BigInt(currentAllowance) < BigInt(minProposalTokensRequired)) {
-        permitFromToken = await permit(minProposalTokensRequired.toString(), deadline, await tokenContract.getAddress());
+        permitFromToken = await permit(
+          minProposalTokensRequired.toString(),
+          deadline,
+          await tokenContract.getAddress(),
+        );
       }
 
       setTransactionStatus((prev) => ({
@@ -499,13 +529,51 @@ export default function useBillboard() {
         createProposal: { ...prev.createProposal, pending: true, error: null },
       }));
 
-      const calls = permitFromToken ? [
-        {target: tokenContract.target, data: tokenContract.interface.encodeFunctionData('permit', 
-          [wallet.accounts[0].address, tokenContract.target, governanceSettings.minProposalTokens.toString(), deadline, permitFromToken.v, permitFromToken.r, permitFromToken.s])},
-        {target: governanceContract.target, data: governanceContract.interface.encodeFunctionData('createProposal', [duration, pricePerBillboard, securityDeposit, minProposalTokens, minVotingTokens, securityDepositProvider])},
-      ] : [
-        {target: governanceContract.target, data: governanceContract.interface.encodeFunctionData('createProposal', [duration, pricePerBillboard, securityDeposit, minProposalTokens, minVotingTokens, securityDepositProvider])},
-      ]
+      const calls = permitFromToken
+        ? [
+            {
+              target: tokenContract.target,
+              data: tokenContract.interface.encodeFunctionData("permit", [
+                wallet.accounts[0].address,
+                tokenContract.target,
+                governanceSettings.minProposalTokens.toString(),
+                deadline,
+                permitFromToken.v,
+                permitFromToken.r,
+                permitFromToken.s,
+              ]),
+            },
+            {
+              target: governanceContract.target,
+              data: governanceContract.interface.encodeFunctionData(
+                "createProposal",
+                [
+                  duration,
+                  pricePerBillboard,
+                  securityDeposit,
+                  minProposalTokens,
+                  minVotingTokens,
+                  securityDepositProvider,
+                ],
+              ),
+            },
+          ]
+        : [
+            {
+              target: governanceContract.target,
+              data: governanceContract.interface.encodeFunctionData(
+                "createProposal",
+                [
+                  duration,
+                  pricePerBillboard,
+                  securityDeposit,
+                  minProposalTokens,
+                  minVotingTokens,
+                  securityDepositProvider,
+                ],
+              ),
+            },
+          ];
 
       const tx = await Multicall3.aggregate(calls);
       await tx.wait();
@@ -524,7 +592,7 @@ export default function useBillboard() {
     } catch (error) {
       const errorMessage =
         error instanceof Error ? error.message : String(error);
-        if (transactionStatus.permitToken.pending) {
+      if (transactionStatus.permitToken.pending) {
         setTransactionStatus((prev) => ({
           ...prev,
           approveTokens: {
@@ -1030,7 +1098,11 @@ export default function useBillboard() {
     }
   };
 
-  const permit = async (amount: string, deadline: number, tokenAddress: string) => {
+  const permit = async (
+    amount: string,
+    deadline: number,
+    tokenAddress: string,
+  ) => {
     if (!wallet) {
       throw new Error("Wallet not connected");
     }
@@ -1043,7 +1115,11 @@ export default function useBillboard() {
       throw new Error("Unsupported chain");
     }
 
-    const tokenContract = new Contract(tokenAddress, ['function name() public view returns (string)'], provider);
+    const tokenContract = new Contract(
+      tokenAddress,
+      ["function name() public view returns (string)"],
+      provider,
+    );
 
     try {
       const domain = {
@@ -1052,7 +1128,6 @@ export default function useBillboard() {
         chainId: supportedChain.id,
         verifyingContract: tokenAddress,
       };
-
 
       const nonce = await tokenContract.nonces(wallet.accounts[0].address);
       const value = {
@@ -1065,7 +1140,15 @@ export default function useBillboard() {
 
       const signature = await wallet.provider.request({
         method: "eth_signTypedData_v4",
-        params: [wallet.accounts[0].address, JSON.stringify({ domain, types: permitTypes, primaryType: "Permit", message: value })],
+        params: [
+          wallet.accounts[0].address,
+          JSON.stringify({
+            domain,
+            types: permitTypes,
+            primaryType: "Permit",
+            message: value,
+          }),
+        ],
       });
 
       return { signature, nonce };

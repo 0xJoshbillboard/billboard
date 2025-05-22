@@ -63,7 +63,12 @@ export const ProposalsList = ({
             p={2}
             width="100%"
           >
-            <Typography variant="h4">#{proposal.id + 1} {proposal.executed ? <Chip label="Executed" color="success" /> : null}</Typography>
+            <Typography variant="h4">
+              #{proposal.id + 1}{" "}
+              {proposal.executed ? (
+                <Chip label="Executed" color="success" />
+              ) : null}
+            </Typography>
             <Stack
               direction={{ xs: "column", md: "row" }}
               spacing={4}

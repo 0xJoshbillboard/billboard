@@ -33,7 +33,11 @@ export const BlameAdvertiser = ({
 }: {
   blameAdvertiser: (address: string) => Promise<void>;
   transactionStatus: TransactionStatus;
-  permitToken: (amount: string, deadline: number, tokenAddress: string) => Promise<any>;
+  permitToken: (
+    amount: string,
+    deadline: number,
+    tokenAddress: string,
+  ) => Promise<any>;
   minProposalTokens: number;
   voteForBlame: (address: string, support: boolean) => Promise<void>;
   resolveAdvertiserBlame: (address: string) => Promise<void>;

@@ -30,7 +30,6 @@ export default function Governance() {
     vote,
     executeProposal,
     buyBBT,
-    permit,
     usdcBalance,
     transactionStatus,
     resolveAdvertiserBlame,
@@ -212,39 +211,39 @@ export default function Governance() {
               </Typography>
               {transactionStatus && (
                 <Stepper
-                  activeStep={transactionStatus?.approveUSDC.completed ? 1 : 0}
+                  activeStep={transactionStatus?.permitToken.completed ? 1 : 0}
                   orientation="vertical"
                 >
-                  <Step completed={transactionStatus?.approveUSDC.completed}>
+                  <Step completed={transactionStatus?.permitToken.completed}>
                     <StepButton
                       disabled={
-                        transactionStatus?.approveUSDC.pending ||
-                        transactionStatus?.approveUSDC.completed
+                        transactionStatus?.permitToken.pending ||
+                        transactionStatus?.permitToken.completed
                       }
                     >
                       <StepLabel>
                         <Box>
                           <Typography variant="body1">
-                            {transactionStatus?.approveUSDC.label ||
+                            {transactionStatus?.permitToken.label ||
                               "Approve USDC"}
                           </Typography>
-                          {transactionStatus?.approveUSDC.pending && (
+                          {transactionStatus?.permitToken.pending && (
                             <Typography variant="caption" color="primary">
                               Processing...
                             </Typography>
                           )}
-                          {transactionStatus?.approveUSDC.completed && (
+                          {transactionStatus?.permitToken.completed && (
                             <Typography variant="caption" color="success.main">
                               ✓ Approved
                             </Typography>
                           )}
-                          {transactionStatus?.approveUSDC.error && (
+                          {transactionStatus?.permitToken.error && (
                             <Typography
                               variant="caption"
                               color="error"
                               sx={{ overflow: "scroll" }}
                             >
-                              Error: {transactionStatus.approveUSDC.error}
+                              Error: {transactionStatus.permitToken.error}
                             </Typography>
                           )}
                         </Box>
@@ -256,7 +255,7 @@ export default function Governance() {
                       disabled={
                         transactionStatus?.buyBillboard.pending ||
                         transactionStatus?.buyBillboard.completed ||
-                        !transactionStatus?.approveUSDC.completed
+                        !transactionStatus?.permitToken.completed
                       }
                     >
                       <StepLabel>
@@ -317,7 +316,6 @@ export default function Governance() {
           <BlameAdvertiser
             blameAdvertiser={blameAdvertiser}
             transactionStatus={transactionStatus}
-            permitToken={permit}
             minProposalTokens={governanceSettings.minProposalTokens}
             voteForBlame={voteForBlame}
             resolveAdvertiserBlame={resolveAdvertiserBlame}

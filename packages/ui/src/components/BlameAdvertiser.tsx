@@ -21,27 +21,25 @@ import { useConnectWallet } from "@web3-onboard/react";
 import { useGetGovernanceEvents } from "../hooks/useGetGovernanceEvents";
 import VoteAgainst from "./Icons/VoteAgainst";
 import VoteFor from "./Icons/VoteFor";
-import { USDC_ADDRESS } from "../utils/contracts";
+import { GOVERNANCE_ADDRESS } from "../utils/contracts";
+import useERC20Permit from "../hooks/useERC20Permit";
+import useBillboard from "../hooks/useBillboard";
 
 export const BlameAdvertiser = ({
   blameAdvertiser,
   transactionStatus,
-  permitToken,
   minProposalTokens,
   voteForBlame,
   resolveAdvertiserBlame,
 }: {
   blameAdvertiser: (address: string) => Promise<void>;
   transactionStatus: TransactionStatus;
-  permitToken: (
-    amount: string,
-    deadline: number,
-    tokenAddress: string,
-  ) => Promise<any>;
   minProposalTokens: number;
   voteForBlame: (address: string, support: boolean) => Promise<void>;
   resolveAdvertiserBlame: (address: string) => Promise<void>;
 }) => {
+  const { usdcContract } = useBillboard();
+  const { getPermit } = useERC20Permit();
   const { events, loading } = useGetGovernanceEvents();
   const [{ wallet }] = useConnectWallet();
   const [advertiserAddress, setAdvertiserAddress] = useState("");
@@ -66,7 +64,13 @@ export const BlameAdvertiser = ({
 
     try {
       setBlameLoading(true);
-      await permitToken(minProposalTokens.toString(), deadline, USDC_ADDRESS);
+      await getPermit(
+        usdcContract,
+        wallet.accounts[0].address,
+        GOVERNANCE_ADDRESS,
+        minProposalTokens.toString(),
+        "2",
+      );
       await blameAdvertiser(advertiserAddress);
       setAdvertiserAddress("");
     } catch (error) {

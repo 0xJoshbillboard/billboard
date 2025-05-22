@@ -66,7 +66,7 @@ const CreateProposal: React.FC<CreateProposalProps> = ({ open, onClose }) => {
   const renderTransactionStatus = () => {
     if (!transactionStatus) return null;
 
-    const { approveUSDC, createProposal } = transactionStatus;
+    const { permitToken, createProposal } = transactionStatus;
 
     return (
       <Box sx={{ mt: 3 }}>
@@ -82,38 +82,38 @@ const CreateProposal: React.FC<CreateProposalProps> = ({ open, onClose }) => {
           }}
         >
           <Stepper
-            activeStep={transactionStatus?.approveUSDC.completed ? 1 : 0}
+            activeStep={transactionStatus?.permitToken.completed ? 1 : 0}
             orientation="vertical"
           >
-            <Step completed={transactionStatus?.approveUSDC.completed}>
+            <Step completed={transactionStatus?.permitToken.completed}>
               <StepButton
                 disabled={
-                  transactionStatus?.approveUSDC.pending ||
-                  transactionStatus?.approveUSDC.completed
+                  transactionStatus?.permitToken.pending ||
+                  transactionStatus?.permitToken.completed
                 }
               >
                 <StepLabel>
                   <Box>
                     <Typography variant="body2" color="white">
-                      {transactionStatus?.approveUSDC.label || "Approve USDC"}
+                      {transactionStatus?.permitToken.label || "Approve USDC"}
                     </Typography>
-                    {transactionStatus?.approveUSDC.pending && (
+                    {transactionStatus?.permitToken.pending && (
                       <Typography variant="caption" color="primary">
                         Processing...
                       </Typography>
                     )}
-                    {transactionStatus?.approveUSDC.completed && (
+                    {transactionStatus?.permitToken.completed && (
                       <Typography variant="caption" color="success.main">
                         ✓ Approved
                       </Typography>
                     )}
-                    {transactionStatus?.approveUSDC.error && (
+                    {transactionStatus?.permitToken.error && (
                       <Typography
                         variant="caption"
                         color="error"
                         sx={{ overflow: "scroll" }}
                       >
-                        Error: {transactionStatus.approveUSDC.error}
+                        Error: {transactionStatus.permitToken.error}
                       </Typography>
                     )}
                   </Box>

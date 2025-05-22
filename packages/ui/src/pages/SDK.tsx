@@ -143,9 +143,9 @@ export default function SDK() {
                     activeStep={
                       transactionStatus.registerProvider.completed
                         ? 2
-                        : transactionStatus.approveUSDC.completed
+                        : transactionStatus.permitToken.completed
                           ? 1
-                          : transactionStatus.approveUSDC.pending
+                          : transactionStatus.permitToken.pending
                             ? 0
                             : -1
                     }
@@ -154,8 +154,8 @@ export default function SDK() {
                     <Step>
                       <StepButton
                         disabled={
-                          transactionStatus.approveUSDC.pending ||
-                          transactionStatus.approveUSDC.completed
+                          transactionStatus.permitToken.pending ||
+                          transactionStatus.permitToken.completed
                         }
                       >
                         <StepLabel
@@ -167,15 +167,15 @@ export default function SDK() {
                         >
                           <Box>
                             <Typography variant="body2">
-                              {transactionStatus.approveUSDC.label ||
+                              {transactionStatus.permitToken.label ||
                                 "Approve USDC"}
                             </Typography>
-                            {transactionStatus.approveUSDC.pending && (
+                            {transactionStatus.permitToken.pending && (
                               <Typography variant="caption" color="primary">
                                 Processing...
                               </Typography>
                             )}
-                            {transactionStatus.approveUSDC.completed && (
+                            {transactionStatus.permitToken.completed && (
                               <Typography
                                 variant="caption"
                                 color="success.main"
@@ -183,9 +183,9 @@ export default function SDK() {
                                 ✓ Approved
                               </Typography>
                             )}
-                            {transactionStatus.approveUSDC.error && (
+                            {transactionStatus.permitToken.error && (
                               <Typography variant="body1" color="error">
-                                Error: {transactionStatus.approveUSDC.error}
+                                Error: {transactionStatus.permitToken.error}
                               </Typography>
                             )}
                           </Box>
@@ -195,7 +195,7 @@ export default function SDK() {
                     <Step>
                       <StepButton
                         disabled={
-                          !transactionStatus.approveUSDC.completed ||
+                          !transactionStatus.permitToken.completed ||
                           transactionStatus.registerProvider.pending ||
                           transactionStatus.registerProvider.completed
                         }
@@ -251,11 +251,11 @@ export default function SDK() {
                 disabled={
                   providerHandle.length < 3 ||
                   loading ||
-                  transactionStatus.approveUSDC.pending ||
+                  transactionStatus.permitToken.pending ||
                   transactionStatus.registerProvider.pending
                 }
                 startIcon={
-                  transactionStatus.approveUSDC.pending ||
+                  transactionStatus.permitToken.pending ||
                   transactionStatus.registerProvider.pending ? (
                     <CircularProgress size={20} color="inherit" />
                   ) : null
@@ -263,7 +263,7 @@ export default function SDK() {
               >
                 {!wallet
                   ? "Connect Wallet"
-                  : transactionStatus.approveUSDC.pending
+                  : transactionStatus.permitToken.pending
                     ? "Approving USDC..."
                     : transactionStatus.registerProvider.pending
                       ? "Registering Provider..."

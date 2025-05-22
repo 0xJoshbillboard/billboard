@@ -30,7 +30,7 @@ export default function Governance() {
     vote,
     executeProposal,
     buyBBT,
-    approveBBT,
+    permit,
     usdcBalance,
     transactionStatus,
     resolveAdvertiserBlame,
@@ -317,7 +317,7 @@ export default function Governance() {
           <BlameAdvertiser
             blameAdvertiser={blameAdvertiser}
             transactionStatus={transactionStatus}
-            approveBBT={approveBBT}
+            permitToken={permit}
             minProposalTokens={governanceSettings.minProposalTokens}
             voteForBlame={voteForBlame}
             resolveAdvertiserBlame={resolveAdvertiserBlame}

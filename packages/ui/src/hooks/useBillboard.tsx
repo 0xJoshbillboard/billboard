@@ -18,11 +18,13 @@ import {
   CONTRACT_ABI,
   GOVERNANCE_ABI,
   GOVERNANCE_ADDRESS,
+  Multicall3,
   USDC_ADDRESS,
   USDC_MOCK_ABI,
 } from "../utils/contracts";
 import {
   BillboardStatistic,
+  permitTypes,
   Proposal,
   RawBillboard,
   TransactionStatus,
@@ -30,6 +32,7 @@ import {
 
 const billboardSDK = new BillboardSDK();
 const MAX_FILE_SIZE = 2 * 1024 * 1024;
+const deadline = Math.floor(Date.now() / 1000) + 3600;
 
 export default function useBillboard() {
   // State variables
@@ -85,11 +88,11 @@ export default function useBillboard() {
         error: null,
         label: "Register Provider",
       },
-      approveTokens: {
+      permitToken: {
         pending: false,
         completed: false,
         error: null,
-        label: "Approve Tokens",
+        label: "Permit Token",
       },
       buyTokens: {
         pending: false,
@@ -120,12 +123,6 @@ export default function useBillboard() {
         completed: false,
         error: null,
         label: "Blame Advertiser",
-      },
-      approveBBT: {
-        pending: false,
-        completed: false,
-        error: null,
-        label: "Approve BBT",
       },
       voteForBlame: {
         pending: false,
@@ -280,68 +277,6 @@ export default function useBillboard() {
     const balance = await tokenContract.balanceOf(wallet.accounts[0].address);
     return (Number(balance) / 1e18).toLocaleString();
   };
-
-  const approveBBT = async (amount: number) => {
-    if (!tokenContract || !wallet?.accounts[0].address) {
-      throw new Error("Token contract or wallet not defined");
-    }
-
-    try {
-      setTransactionStatus((prev) => ({
-        ...prev,
-        approveBBT: {
-          ...prev.approveBBT,
-          pending: true,
-          error: null,
-        },
-      }));
-
-      const currentAllowance = await tokenContract.allowance(
-        wallet.accounts[0].address,
-        GOVERNANCE_ADDRESS,
-      );
-
-      const parsedAmount = BigInt(amount) * BigInt(1e18);
-
-      if (BigInt(currentAllowance) < parsedAmount) {
-        const approveTx = await tokenContract.approve(
-          GOVERNANCE_ADDRESS,
-          parsedAmount,
-        );
-        await approveTx.wait();
-        setTransactionStatus((prev) => ({
-          ...prev,
-          approveBBT: {
-            ...prev.approveBBT,
-            pending: false,
-            completed: true,
-          },
-        }));
-      } else {
-        setTransactionStatus((prev) => ({
-          ...prev,
-          approveBBT: {
-            ...prev.approveBBT,
-            pending: false,
-            completed: true,
-          },
-        }));
-      }
-    } catch (error) {
-      const errorMessage =
-        error instanceof Error ? error.message : String(error);
-      setTransactionStatus((prev) => ({
-        ...prev,
-        approveBBT: {
-          ...prev.approveBBT,
-          pending: false,
-          error: errorMessage,
-        },
-      }));
-      throw error;
-    }
-  };
-
   const buyBBT = async (amount: number) => {
     if (!tokenContract || !wallet?.accounts[0].address) {
       throw new Error("Token contract or wallet not defined");
@@ -350,25 +285,22 @@ export default function useBillboard() {
     try {
       setTransactionStatus((prev) => ({
         ...prev,
-        approveTokens: { ...prev.approveTokens, pending: true, error: null },
+        permitToken: { ...prev.permitToken, pending: true, error: null },
       }));
 
       const currentAllowance = await usdcContract.allowance(
         wallet.accounts[0].address,
         tokenContract.target,
       );
+      let permitFromToken
       if (BigInt(currentAllowance) < BigInt(amount)) {
-        const approveTx = await usdcContract.approve(
-          tokenContract.target,
-          amount,
-        );
-        await approveTx.wait();
+        permitFromToken = await permit(amount.toString(), deadline, await usdcContract.getAddress());
       }
 
       setTransactionStatus((prev) => ({
         ...prev,
-        approveTokens: {
-          ...prev.approveTokens,
+        permitToken: {
+          ...prev.permitToken,
           pending: false,
           completed: true,
         },
@@ -379,7 +311,15 @@ export default function useBillboard() {
         buyTokens: { ...prev.buyTokens, pending: true, error: null },
       }));
 
-      const tx = await tokenContract.buyTokens(amount);
+      const calls = permitFromToken ? [
+        {target: tokenContract.target, data: tokenContract.interface.encodeFunctionData('permit', 
+          [wallet.accounts[0].address, tokenContract.target, amount.toString(), deadline, permitFromToken.v, permitFromToken.r, permitFromToken.s])},
+        {target: tokenContract.target, data: tokenContract.interface.encodeFunctionData('buyTokens', [amount])},
+      ] : [
+        {target: tokenContract.target, data: tokenContract.interface.encodeFunctionData('buyTokens', [amount])},
+      ]
+
+      const tx = await Multicall3.aggregate(calls);
       await tx.wait();
 
       setTransactionStatus((prev) => ({
@@ -389,11 +329,11 @@ export default function useBillboard() {
     } catch (error) {
       const errorMessage =
         error instanceof Error ? error.message : String(error);
-      if (transactionStatus.approveTokens.pending) {
+      if (transactionStatus.buyTokens.pending) {
         setTransactionStatus((prev) => ({
           ...prev,
-          approveTokens: {
-            ...prev.approveTokens,
+          buyTokens: {
+            ...prev.buyTokens,
             pending: false,
             error: errorMessage,
           },
@@ -530,7 +470,7 @@ export default function useBillboard() {
     try {
       setTransactionStatus((prev) => ({
         ...prev,
-        approveTokens: { ...prev.approveTokens, pending: true, error: null },
+        permitToken: { ...prev.permitToken, pending: true, error: null },
       }));
 
       const minProposalTokensRequired =
@@ -540,18 +480,15 @@ export default function useBillboard() {
         GOVERNANCE_ADDRESS,
       );
 
+      let permitFromToken
       if (BigInt(currentAllowance) < BigInt(minProposalTokensRequired)) {
-        const approveTx = await tokenContract.approve(
-          GOVERNANCE_ADDRESS,
-          minProposalTokensRequired,
-        );
-        await approveTx.wait();
+        permitFromToken = await permit(minProposalTokensRequired.toString(), deadline, await tokenContract.getAddress());
       }
 
       setTransactionStatus((prev) => ({
         ...prev,
-        approveTokens: {
-          ...prev.approveTokens,
+        permitToken: {
+          ...prev.permitToken,
           pending: false,
           completed: true,
         },
@@ -562,14 +499,15 @@ export default function useBillboard() {
         createProposal: { ...prev.createProposal, pending: true, error: null },
       }));
 
-      const tx = await governanceContract.createProposal(
-        duration,
-        pricePerBillboard,
-        securityDeposit,
-        minProposalTokens,
-        minVotingTokens,
-        securityDepositProvider,
-      );
+      const calls = permitFromToken ? [
+        {target: tokenContract.target, data: tokenContract.interface.encodeFunctionData('permit', 
+          [wallet.accounts[0].address, tokenContract.target, governanceSettings.minProposalTokens.toString(), deadline, permitFromToken.v, permitFromToken.r, permitFromToken.s])},
+        {target: governanceContract.target, data: governanceContract.interface.encodeFunctionData('createProposal', [duration, pricePerBillboard, securityDeposit, minProposalTokens, minVotingTokens, securityDepositProvider])},
+      ] : [
+        {target: governanceContract.target, data: governanceContract.interface.encodeFunctionData('createProposal', [duration, pricePerBillboard, securityDeposit, minProposalTokens, minVotingTokens, securityDepositProvider])},
+      ]
+
+      const tx = await Multicall3.aggregate(calls);
       await tx.wait();
 
       setTransactionStatus((prev) => ({
@@ -586,11 +524,11 @@ export default function useBillboard() {
     } catch (error) {
       const errorMessage =
         error instanceof Error ? error.message : String(error);
-      if (transactionStatus.approveTokens.pending) {
+        if (transactionStatus.permitToken.pending) {
         setTransactionStatus((prev) => ({
           ...prev,
           approveTokens: {
-            ...prev.approveTokens,
+            ...prev.permitToken,
             pending: false,
             error: errorMessage,
           },
@@ -722,7 +660,7 @@ export default function useBillboard() {
     try {
       setTransactionStatus((prev) => ({
         ...prev,
-        approveUSDC: { ...prev.approveUSDC, pending: true, error: null },
+        permitToken: { ...prev.permitToken, pending: true, error: null },
       }));
 
       const allowance = await allowanceUSDC();
@@ -1092,6 +1030,51 @@ export default function useBillboard() {
     }
   };
 
+  const permit = async (amount: string, deadline: number, tokenAddress: string) => {
+    if (!wallet) {
+      throw new Error("Wallet not connected");
+    }
+
+    const provider = new BrowserProvider(wallet.provider);
+    const chainId = wallet.chains[0].id;
+    const supportedChain = chains.find((chain) => chain.id === chainId);
+
+    if (!supportedChain) {
+      throw new Error("Unsupported chain");
+    }
+
+    const tokenContract = new Contract(tokenAddress, ['function name() public view returns (string)'], provider);
+
+    try {
+      const domain = {
+        name: await tokenContract.name(),
+        version: "1",
+        chainId: supportedChain.id,
+        verifyingContract: tokenAddress,
+      };
+
+
+      const nonce = await tokenContract.nonces(wallet.accounts[0].address);
+      const value = {
+        owner: wallet.accounts[0].address,
+        spender: contract?.address,
+        value: amount,
+        nonce: nonce,
+        deadline: deadline,
+      };
+
+      const signature = await wallet.provider.request({
+        method: "eth_signTypedData_v4",
+        params: [wallet.accounts[0].address, JSON.stringify({ domain, types: permitTypes, primaryType: "Permit", message: value })],
+      });
+
+      return { signature, nonce };
+    } catch (error) {
+      console.error("Error getting permit signature:", error);
+      throw error;
+    }
+  };
+
   return {
     // Billboard operations
     buy,
@@ -1116,7 +1099,7 @@ export default function useBillboard() {
     // Token operations
     tokenBalance,
     buyBBT,
-    approveBBT,
+    permit,
 
     // Governance operations
     governanceSettings,

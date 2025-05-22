@@ -38,7 +38,7 @@ export interface TransactionStatus {
     error: string | null;
     label: string;
   };
-  approveTokens: {
+  permitToken: {
     pending: boolean;
     completed: boolean;
     error: string | null;
@@ -69,12 +69,6 @@ export interface TransactionStatus {
     label: string;
   };
   blameAdvertiser: {
-    pending: boolean;
-    completed: boolean;
-    error: string | null;
-    label: string;
-  };
-  approveBBT: {
     pending: boolean;
     completed: boolean;
     error: string | null;
@@ -140,3 +134,13 @@ export interface BillboardStatistic {
     link: string;
   }>;
 }
+
+export const permitTypes = {
+  Permit: [
+    { name: "owner", type: "address" },
+    { name: "spender", type: "address" },
+    { name: "value", type: "uint256" },
+    { name: "nonce", type: "uint256" },
+    { name: "deadline", type: "uint256" },
+  ],
+};

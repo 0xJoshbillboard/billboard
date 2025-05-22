@@ -9,11 +9,11 @@ export const GOVERNANCE_ABI = governanceABI.abi;
 export const USDC_MOCK_ABI = usdcMockABI.abi;
 export const BILLBOARD_TOKEN_ABI = billboardTokenABI.abi;
 
-export const BILLBOARD_ADDRESS = "0xc5533b322861de8c894fc44ec421a02395b83df5";
-export const GOVERNANCE_ADDRESS = "0x9527f41eb97173ea364b775b4ab99578110fec5f";
-export const USDC_ADDRESS = "0xe17612de297d7a6ac3c8af568a556b62d1f2074c";
+export const BILLBOARD_ADDRESS = "0xdf570c055f7c6416b07a8d2258f1af40eae1a4ec";
+export const GOVERNANCE_ADDRESS = "0xdf570c055f7c6416b07a8d2258f1af40eae1a4ec";
+export const USDC_ADDRESS = "0xaee0081992abdf6995c6196e8ae35345d2301a01";
 export const BILLBOARD_TOKEN_ADDRESS =
-  "0xc6532522fa6c05533047c17896ea56d41a2e127f";
+  "0xddf9f3acf5fe99261ab8bb8867b322a8d245b9b3";
 
 export const Multicall3 = new Contract(
   "0xcA11bde05977b3631167028862bE2a173976CA11",

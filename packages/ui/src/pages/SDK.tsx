@@ -290,7 +290,7 @@ export default function SDK() {
           >
             {adsAreLoading ? (
               <CircularProgress />
-            ) : (
+            ) : ads.length > 0 ? (
               ads.map((ad) => (
                 <Card
                   key={ad.hash.concat(ad.link)}
@@ -326,7 +326,7 @@ export default function SDK() {
                     <CardMedia
                       component="img"
                       height="200"
-                      image={ad.url}
+                      src={ad.url}
                       alt={ad.description}
                       sx={{
                         objectFit: "cover",
@@ -362,6 +362,8 @@ export default function SDK() {
                   </CardContent>
                 </Card>
               ))
+            ) : (
+              <Typography variant="h6">No ads found</Typography>
             )}
           </Stack>
         </Box>

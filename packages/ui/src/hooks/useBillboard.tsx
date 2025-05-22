@@ -720,7 +720,9 @@ export default function useBillboard() {
       });
       await tx.wait();
 
-      // const tx2 = await contract.purchaseBillboard(description, link, url.hash);
+      const tx2 = await contract.purchaseBillboard(description, link, url.hash);
+
+      await tx2.wait();
 
       // const tx = permitFromToken
       //   ? getMulticall3Contract(signer).aggregate([

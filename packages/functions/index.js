@@ -13,14 +13,11 @@ const cors = { cors: true };
 const { fetchContractLogs } = require("./src/services/contractLogs");
 const { updateActiveAds } = require("./src/services/activeAds");
 const { fetchGovernanceEvents } = require("./src/services/governance");
-const {
-  uploadImageToSwarmy,
-  getImageFromSwarmy,
-} = require("./src/services/swarmy");
+const { uploadImageToSwarmy } = require("./src/services/swarmy");
 
 exports.scheduledFetchContractLogs = onSchedule(
   {
-    schedule: "every 12 hours",
+    schedule: "every 6 hours",
     timeZone: "UTC",
   },
   async () => {
@@ -33,7 +30,7 @@ exports.scheduledFetchContractLogs = onSchedule(
 
 exports.scheduledUpdateActiveAds = onSchedule(
   {
-    schedule: "every 12 hours",
+    schedule: "every 6 hours",
     timeZone: "UTC",
   },
   async () => {
@@ -160,10 +157,8 @@ exports.getAds = onRequest(cors, async (req, res) => {
         limitedAds.map(async (ad) => {
           try {
             logger.log("Converting hash to URL:", ad.hash);
-            const response = await getImageFromSwarmy(ad.hash);
-            logger.log("Conversion result:", JSON.stringify(response));
             return {
-              url: response.data,
+              url: `https://api.swarmy.cloud/bzz/${ad.hash}/`,
               link: ad.link,
               description: ad.description,
               expiryTime: ad.expiryTime,
@@ -211,13 +206,11 @@ exports.getAds = onRequest(cors, async (req, res) => {
       }
 
       logger.log("Converting single ad hash to URL:", ad.hash);
-      const response = await getImageFromSwarmy(ad.hash);
-      logger.log("Conversion result for single ad:", JSON.stringify(response));
 
       const responseData = {
         success: true,
         result: {
-          url: response.data,
+          url: `https://api.swarmy.cloud/bzz/${ad.hash}/`,
           link: ad.link,
           description: ad.description,
           expiryTime: ad.expiryTime,
@@ -234,7 +227,7 @@ exports.getAds = onRequest(cors, async (req, res) => {
               host: req.headers.host || "",
               acceptLanguage: req.headers["accept-language"] || "",
               handle: req.body.handle,
-              url: response,
+              url: `https://api.swarmy.cloud/bzz/${ad.hash}/`,
               link: ad.link,
               description: ad.description,
               expiryTime: ad.expiryTime,
@@ -289,8 +282,7 @@ exports.getImageFromSwarmy = onRequest(cors, async (req, res) => {
     const responses = await Promise.all(
       cids.map(async (cid) => {
         try {
-          const response = await getImageFromSwarmy(cid);
-          return { data: response.data };
+          return { data: `https://api.swarmy.cloud/bzz/${cid}/` };
         } catch (error) {
           logger.error(`Error fetching image for CID ${cid}:`, error);
           return { error: error.message };

@@ -9,7 +9,7 @@ export const GOVERNANCE_ABI = governanceABI.abi;
 export const USDC_MOCK_ABI = usdcMockABI.abi;
 export const BILLBOARD_TOKEN_ABI = billboardTokenABI.abi;
 
-export const BILLBOARD_ADDRESS = "0xdf570c055f7c6416b07a8d2258f1af40eae1a4ec";
+export const BILLBOARD_ADDRESS = "0x4bfd7838f67b463a59b04e20d1da9a36eb4855c3";
 export const GOVERNANCE_ADDRESS = "0xdf570c055f7c6416b07a8d2258f1af40eae1a4ec";
 export const USDC_ADDRESS = "0xaee0081992abdf6995c6196e8ae35345d2301a01";
 export const BILLBOARD_TOKEN_ADDRESS =

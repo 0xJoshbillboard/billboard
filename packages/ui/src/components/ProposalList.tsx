@@ -104,12 +104,6 @@ export const ProposalsList = ({
                 </Typography>
               </Stack>
               <Stack direction="column" spacing={2}>
-                <Typography variant="body1">Min Proposal Tokens</Typography>
-                <Typography variant="body1">
-                  {(proposal.minProposalTokens / 1e18).toLocaleString()} BBT
-                </Typography>
-              </Stack>
-              <Stack direction="column" spacing={2}>
                 <Typography variant="body1">Min Voting Tokens</Typography>
                 <Typography variant="body1">
                   {(proposal.minVotingTokens / 1e18).toLocaleString()} BBT

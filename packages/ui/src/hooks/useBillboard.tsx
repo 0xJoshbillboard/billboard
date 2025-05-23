@@ -47,14 +47,12 @@ export default function useBillboard() {
   const [governanceSettings, setGovernanceSettings] = useState<{
     price: number;
     duration: number;
-    minProposalTokens: number;
     minVotingTokens: number;
     securityDeposit: number;
     securityDepositAdvertiser: number;
   }>({
     price: 0,
     duration: 0,
-    minProposalTokens: 0,
     minVotingTokens: 0,
     securityDeposit: 0,
     securityDepositAdvertiser: 0,
@@ -206,14 +204,12 @@ export default function useBillboard() {
         const [
           price,
           duration,
-          minProposalTokens,
           minVotingTokens,
           securityDeposit,
           securityDepositAdvertiser,
         ] = await Promise.all([
           governanceContract.pricePerBillboard(),
           governanceContract.duration(),
-          governanceContract.minProposalTokens(),
           governanceContract.minVotingTokens(),
           governanceContract.securityDeposit(),
           governanceContract.securityDepositAdvertiser(),
@@ -221,7 +217,6 @@ export default function useBillboard() {
 
         const readablePrice = Number(price) / 1_000_000;
         const durationInSeconds = Number(duration);
-        const minProposalTokensReadable = Number(minProposalTokens) / 1e18;
         const minVotingTokensReadable = Number(minVotingTokens) / 1e18;
         const securityDepositReadable = Number(securityDeposit) / 1e6;
         const securityDepositAdvertiserReadable =
@@ -229,7 +224,6 @@ export default function useBillboard() {
         setGovernanceSettings({
           price: readablePrice,
           duration: durationInSeconds,
-          minProposalTokens: minProposalTokensReadable,
           minVotingTokens: minVotingTokensReadable,
           securityDeposit: securityDepositReadable,
           securityDepositAdvertiser: securityDepositAdvertiserReadable,
@@ -399,13 +393,12 @@ export default function useBillboard() {
           pricePerBillboard: Number(proposal[1]),
           securityDeposit: Number(proposal[2]),
           initialSecurityDeposit: Number(proposal[3]),
-          minProposalTokens: Number(proposal[4]),
-          minVotingTokens: Number(proposal[5]),
-          votesFor: Number(proposal[6]),
-          votesAgainst: Number(proposal[7]),
-          executed: proposal[8],
-          createdAt: Number(proposal[9]),
-          securityDepositAdvertiser: Number(proposal[10]),
+          minVotingTokens: Number(proposal[4]),
+          votesFor: Number(proposal[5]),
+          votesAgainst: Number(proposal[6]),
+          executed: proposal[7],
+          createdAt: Number(proposal[8]),
+          securityDepositAdvertiser: Number(proposal[9]),
         });
       }
 
@@ -440,7 +433,6 @@ export default function useBillboard() {
     duration: bigint,
     pricePerBillboard: bigint,
     securityDeposit: bigint,
-    minProposalTokens: bigint,
     minVotingTokens: bigint,
     securityDepositProvider: bigint,
   ) => {
@@ -454,20 +446,20 @@ export default function useBillboard() {
         permitToken: { ...prev.permitToken, pending: true, error: null },
       }));
 
-      const minProposalTokensRequired =
-        await governanceContract.minProposalTokens();
       const currentAllowance = await tokenContract.allowance(
         wallet.accounts[0].address,
         GOVERNANCE_ADDRESS,
       );
 
       let permitFromToken: Awaited<ReturnType<typeof getPermit>> | null = null;
-      if (BigInt(currentAllowance) < BigInt(minProposalTokensRequired)) {
+      if (
+        BigInt(currentAllowance) < BigInt(governanceSettings.securityDeposit)
+      ) {
         permitFromToken = await getPermit(
           usdcContract,
           wallet.accounts[0].address,
           GOVERNANCE_ADDRESS,
-          minProposalTokensRequired.toString(),
+          governanceSettings.securityDeposit.toString(),
         );
       }
 
@@ -485,45 +477,17 @@ export default function useBillboard() {
         createProposal: { ...prev.createProposal, pending: true, error: null },
       }));
 
-      const calls = permitFromToken
-        ? [
-            {
-              target: tokenContract.target,
-              data: permitFromToken?.encodedPermit,
-            },
-            {
-              target: governanceContract.target,
-              data: governanceContract.interface.encodeFunctionData(
-                "createProposal",
-                [
-                  duration,
-                  pricePerBillboard,
-                  securityDeposit,
-                  minProposalTokens,
-                  minVotingTokens,
-                  securityDepositProvider,
-                ],
-              ),
-            },
-          ]
-        : [
-            {
-              target: governanceContract.target,
-              data: governanceContract.interface.encodeFunctionData(
-                "createProposal",
-                [
-                  duration,
-                  pricePerBillboard,
-                  securityDeposit,
-                  minProposalTokens,
-                  minVotingTokens,
-                  securityDepositProvider,
-                ],
-              ),
-            },
-          ];
-
-      const tx = await getMulticall3Contract(signer).aggregate(calls);
+      const tx = await governanceContract.createProposal(
+        duration,
+        pricePerBillboard,
+        securityDeposit,
+        minVotingTokens,
+        securityDepositProvider,
+        permitFromToken?.deadline,
+        permitFromToken?.v,
+        permitFromToken?.r,
+        permitFromToken?.s,
+      );
       await tx.wait();
 
       setTransactionStatus((prev) => ({
@@ -627,7 +591,6 @@ export default function useBillboard() {
       const [
         price,
         duration,
-        minProposalTokens,
         minVotingTokens,
         securityDeposit,
         securityDepositAdvertiser,
@@ -635,7 +598,6 @@ export default function useBillboard() {
         governanceContract.pricePerBillboard(),
         governanceContract.duration(),
         governanceContract.votingPeriod(),
-        governanceContract.minProposalTokens(),
         governanceContract.minVotingTokens(),
         governanceContract.securityDeposit(),
         governanceContract.securityDepositAdvertiser(),
@@ -644,7 +606,6 @@ export default function useBillboard() {
       setGovernanceSettings({
         price: Number(price) / 1_000_000,
         duration: Number(duration),
-        minProposalTokens: Number(minProposalTokens),
         minVotingTokens: Number(minVotingTokens),
         securityDeposit: Number(securityDeposit) / 1e6,
         securityDepositAdvertiser: Number(securityDepositAdvertiser) / 1e6,

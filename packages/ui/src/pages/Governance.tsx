@@ -126,15 +126,6 @@ export default function Governance() {
                 </Typography>
               </Box>
               <Box>
-                <Typography variant="body1">Min Proposal Tokens</Typography>
-                <Typography variant="body1">
-                  {governanceSettings.minProposalTokens
-                    ? governanceSettings.minProposalTokens.toLocaleString()
-                    : 0}{" "}
-                  BBT
-                </Typography>
-              </Box>
-              <Box>
                 <Typography variant="body1">Min Voting Tokens</Typography>
                 <Typography variant="body1">
                   {governanceSettings.minVotingTokens
@@ -316,7 +307,7 @@ export default function Governance() {
           <BlameAdvertiser
             blameAdvertiser={blameAdvertiser}
             transactionStatus={transactionStatus}
-            minProposalTokens={governanceSettings.minProposalTokens}
+            securityDeposit={governanceSettings.securityDeposit}
             voteForBlame={voteForBlame}
             resolveAdvertiserBlame={resolveAdvertiserBlame}
           />

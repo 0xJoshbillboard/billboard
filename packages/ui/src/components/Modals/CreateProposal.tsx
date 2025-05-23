@@ -35,7 +35,6 @@ const CreateProposal: React.FC<CreateProposalProps> = ({ open, onClose }) => {
     duration: "",
     pricePerBillboard: "",
     securityDeposit: "",
-    minProposalTokens: "",
     minVotingTokens: "",
     securityDepositProvider: "",
   });
@@ -49,7 +48,6 @@ const CreateProposal: React.FC<CreateProposalProps> = ({ open, onClose }) => {
         BigInt(proposal.duration) * BigInt(86400), // Convert days to seconds
         BigInt(proposal.pricePerBillboard) * BigInt(1e6), // Convert to USDC decimals
         BigInt(proposal.securityDeposit) * BigInt(1e6), // Convert to USDC decimals
-        BigInt(proposal.minProposalTokens) * BigInt(1e18), // Convert to BBT decimals
         BigInt(proposal.minVotingTokens) * BigInt(1e18), // Convert to BBT decimals
         BigInt(proposal.securityDepositProvider) * BigInt(1e6), // Convert to USDC decimals
       );
@@ -313,35 +311,6 @@ const CreateProposal: React.FC<CreateProposalProps> = ({ open, onClose }) => {
             }}
           />
           <TextField
-            label="Minimum Proposal Tokens (BBT)"
-            type="number"
-            value={proposal.minProposalTokens}
-            onChange={(e) =>
-              setProposal({
-                ...proposal,
-                minProposalTokens: e.target.value,
-              })
-            }
-            fullWidth
-            sx={{
-              "& .MuiOutlinedInput-root": {
-                color: "white",
-                "& fieldset": {
-                  borderColor: "rgba(255, 255, 255, 0.23)",
-                },
-                "&:hover fieldset": {
-                  borderColor: "rgba(255, 255, 255, 0.5)",
-                },
-                "&.Mui-focused fieldset": {
-                  borderColor: "primary.main",
-                },
-              },
-              "& .MuiInputLabel-root": {
-                color: "rgba(255, 255, 255, 0.7)",
-              },
-            }}
-          />
-          <TextField
             label="Minimum Voting Tokens (BBT)"
             type="number"
             value={proposal.minVotingTokens}
@@ -389,7 +358,6 @@ const CreateProposal: React.FC<CreateProposalProps> = ({ open, onClose }) => {
             !proposal.duration ||
             !proposal.pricePerBillboard ||
             !proposal.securityDeposit ||
-            !proposal.minProposalTokens ||
             !proposal.minVotingTokens ||
             !proposal.securityDepositProvider ||
             isLoading

@@ -7,7 +7,6 @@ export interface Proposal {
   votesFor: number;
   votesAgainst: number;
   executed: boolean;
-  minProposalTokens: number;
   minVotingTokens: number;
   createdAt: number;
   securityDepositAdvertiser: number;

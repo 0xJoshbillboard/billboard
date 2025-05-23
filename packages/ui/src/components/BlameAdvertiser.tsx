@@ -28,13 +28,13 @@ import useBillboard from "../hooks/useBillboard";
 export const BlameAdvertiser = ({
   blameAdvertiser,
   transactionStatus,
-  minProposalTokens,
+  securityDeposit,
   voteForBlame,
   resolveAdvertiserBlame,
 }: {
   blameAdvertiser: (address: string) => Promise<void>;
   transactionStatus: TransactionStatus;
-  minProposalTokens: number;
+  securityDeposit: number;
   voteForBlame: (address: string, support: boolean) => Promise<void>;
   resolveAdvertiserBlame: (address: string) => Promise<void>;
 }) => {
@@ -68,8 +68,8 @@ export const BlameAdvertiser = ({
         usdcContract,
         wallet.accounts[0].address,
         GOVERNANCE_ADDRESS,
-        minProposalTokens.toString(),
-        "2",
+        securityDeposit.toString(),
+        "1",
       );
       await blameAdvertiser(advertiserAddress);
       setAdvertiserAddress("");

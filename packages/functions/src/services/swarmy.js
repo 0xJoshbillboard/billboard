@@ -1,7 +1,7 @@
 const axios = require("axios");
 const sharp = require("sharp");
 const logger = require("firebase-functions/logger");
-const { swarmyURL, swarmyURLWithReference } = require("../config");
+const { swarmyURL } = require("../config");
 
 const uploadImageToSwarmy = async (imageData) => {
   try {
@@ -34,7 +34,7 @@ const uploadImageToSwarmy = async (imageData) => {
 
     const result = await axios.post(swarmyURL, {
       name: Math.random().toString(36).substring(2, 15).concat(".jpg"),
-      contentType: "application/octet-stream",
+      contentType: "image/jpeg",
       base64: sanitizedBase64,
     });
 
@@ -50,20 +50,21 @@ const uploadImageToSwarmy = async (imageData) => {
   }
 };
 
-const getImageFromSwarmy = async (cid) => {
-  try {
-    const response = await axios.get(swarmyURLWithReference(cid));
-    if (response.error) {
-      throw new Error(response.error);
-    }
-    return { data: response.data };
-  } catch (error) {
-    logger.error(`Error fetching image for CID ${cid}:`, error);
-    throw error;
-  }
-};
+// const getImageFromSwarmy = async (cid) => {
+//   try {
+//     const response = await axios.get(swarmyURLWithReference(cid));
+//     if (response.error) {
+//       throw new Error(response.error);
+//     }
+//     logger.log("Successfully fetched image from CID:", response);
+//     return { data: response.data };
+//   } catch (error) {
+//     logger.error(`Error fetching image for CID ${cid}:`, error);
+//     throw error;
+//   }
+// };
 
 module.exports = {
   uploadImageToSwarmy,
-  getImageFromSwarmy,
+  // getImageFromSwarmy,
 };

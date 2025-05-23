@@ -35,7 +35,6 @@ const CreateProposal: React.FC<CreateProposalProps> = ({ open, onClose }) => {
     duration: "",
     pricePerBillboard: "",
     securityDeposit: "",
-    minProposalTokens: "",
     minVotingTokens: "",
     securityDepositProvider: "",
   });
@@ -49,7 +48,6 @@ const CreateProposal: React.FC<CreateProposalProps> = ({ open, onClose }) => {
         BigInt(proposal.duration) * BigInt(86400), // Convert days to seconds
         BigInt(proposal.pricePerBillboard) * BigInt(1e6), // Convert to USDC decimals
         BigInt(proposal.securityDeposit) * BigInt(1e6), // Convert to USDC decimals
-        BigInt(proposal.minProposalTokens) * BigInt(1e18), // Convert to BBT decimals
         BigInt(proposal.minVotingTokens) * BigInt(1e18), // Convert to BBT decimals
         BigInt(proposal.securityDepositProvider) * BigInt(1e6), // Convert to USDC decimals
       );
@@ -66,7 +64,7 @@ const CreateProposal: React.FC<CreateProposalProps> = ({ open, onClose }) => {
   const renderTransactionStatus = () => {
     if (!transactionStatus) return null;
 
-    const { approveUSDC, createProposal } = transactionStatus;
+    const { permitToken, createProposal } = transactionStatus;
 
     return (
       <Box sx={{ mt: 3 }}>
@@ -82,38 +80,38 @@ const CreateProposal: React.FC<CreateProposalProps> = ({ open, onClose }) => {
           }}
         >
           <Stepper
-            activeStep={transactionStatus?.approveUSDC.completed ? 1 : 0}
+            activeStep={transactionStatus?.permitToken.completed ? 1 : 0}
             orientation="vertical"
           >
-            <Step completed={transactionStatus?.approveUSDC.completed}>
+            <Step completed={transactionStatus?.permitToken.completed}>
               <StepButton
                 disabled={
-                  transactionStatus?.approveUSDC.pending ||
-                  transactionStatus?.approveUSDC.completed
+                  transactionStatus?.permitToken.pending ||
+                  transactionStatus?.permitToken.completed
                 }
               >
                 <StepLabel>
                   <Box>
                     <Typography variant="body2" color="white">
-                      {transactionStatus?.approveUSDC.label || "Approve USDC"}
+                      {transactionStatus?.permitToken.label || "Approve USDC"}
                     </Typography>
-                    {transactionStatus?.approveUSDC.pending && (
+                    {transactionStatus?.permitToken.pending && (
                       <Typography variant="caption" color="primary">
                         Processing...
                       </Typography>
                     )}
-                    {transactionStatus?.approveUSDC.completed && (
+                    {transactionStatus?.permitToken.completed && (
                       <Typography variant="caption" color="success.main">
                         ✓ Approved
                       </Typography>
                     )}
-                    {transactionStatus?.approveUSDC.error && (
+                    {transactionStatus?.permitToken.error && (
                       <Typography
                         variant="caption"
                         color="error"
                         sx={{ overflow: "scroll" }}
                       >
-                        Error: {transactionStatus.approveUSDC.error}
+                        Error: {transactionStatus.permitToken.error}
                       </Typography>
                     )}
                   </Box>
@@ -313,35 +311,6 @@ const CreateProposal: React.FC<CreateProposalProps> = ({ open, onClose }) => {
             }}
           />
           <TextField
-            label="Minimum Proposal Tokens (BBT)"
-            type="number"
-            value={proposal.minProposalTokens}
-            onChange={(e) =>
-              setProposal({
-                ...proposal,
-                minProposalTokens: e.target.value,
-              })
-            }
-            fullWidth
-            sx={{
-              "& .MuiOutlinedInput-root": {
-                color: "white",
-                "& fieldset": {
-                  borderColor: "rgba(255, 255, 255, 0.23)",
-                },
-                "&:hover fieldset": {
-                  borderColor: "rgba(255, 255, 255, 0.5)",
-                },
-                "&.Mui-focused fieldset": {
-                  borderColor: "primary.main",
-                },
-              },
-              "& .MuiInputLabel-root": {
-                color: "rgba(255, 255, 255, 0.7)",
-              },
-            }}
-          />
-          <TextField
             label="Minimum Voting Tokens (BBT)"
             type="number"
             value={proposal.minVotingTokens}
@@ -389,7 +358,6 @@ const CreateProposal: React.FC<CreateProposalProps> = ({ open, onClose }) => {
             !proposal.duration ||
             !proposal.pricePerBillboard ||
             !proposal.securityDeposit ||
-            !proposal.minProposalTokens ||
             !proposal.minVotingTokens ||
             !proposal.securityDepositProvider ||
             isLoading

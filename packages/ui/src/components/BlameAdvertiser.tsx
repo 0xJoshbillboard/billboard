@@ -21,22 +21,25 @@ import { useConnectWallet } from "@web3-onboard/react";
 import { useGetGovernanceEvents } from "../hooks/useGetGovernanceEvents";
 import VoteAgainst from "./Icons/VoteAgainst";
 import VoteFor from "./Icons/VoteFor";
+import { GOVERNANCE_ADDRESS } from "../utils/contracts";
+import useERC20Permit from "../hooks/useERC20Permit";
+import useBillboard from "../hooks/useBillboard";
 
 export const BlameAdvertiser = ({
   blameAdvertiser,
   transactionStatus,
-  approveBBT,
-  minProposalTokens,
+  securityDeposit,
   voteForBlame,
   resolveAdvertiserBlame,
 }: {
   blameAdvertiser: (address: string) => Promise<void>;
   transactionStatus: TransactionStatus;
-  approveBBT: (amount: number) => Promise<void>;
-  minProposalTokens: number;
+  securityDeposit: number;
   voteForBlame: (address: string, support: boolean) => Promise<void>;
   resolveAdvertiserBlame: (address: string) => Promise<void>;
 }) => {
+  const { usdcContract } = useBillboard();
+  const { getPermit } = useERC20Permit();
   const { events, loading } = useGetGovernanceEvents();
   const [{ wallet }] = useConnectWallet();
   const [advertiserAddress, setAdvertiserAddress] = useState("");
@@ -46,7 +49,7 @@ export const BlameAdvertiser = ({
   console.log(events);
 
   useEffect(() => {
-    if (transactionStatus?.approveBBT?.completed) {
+    if (transactionStatus?.permitToken?.completed) {
       setActiveStep(1);
     }
     if (transactionStatus?.blameAdvertiser?.completed) {
@@ -57,9 +60,17 @@ export const BlameAdvertiser = ({
   const handleBlameAdvertiser = async () => {
     if (!advertiserAddress || !wallet) return;
 
+    const deadline = Math.floor(Date.now() / 1000) + 3600;
+
     try {
       setBlameLoading(true);
-      await approveBBT(minProposalTokens);
+      await getPermit(
+        usdcContract,
+        wallet.accounts[0].address,
+        GOVERNANCE_ADDRESS,
+        securityDeposit.toString(),
+        "1",
+      );
       await blameAdvertiser(advertiserAddress);
       setAdvertiserAddress("");
     } catch (error) {
@@ -129,28 +140,28 @@ export const BlameAdvertiser = ({
           orientation="vertical"
           sx={{ height: "140px" }}
         >
-          <Step completed={transactionStatus?.approveBBT?.completed}>
+          <Step completed={transactionStatus?.permitToken?.completed}>
             <StepButton>
               <StepLabel>
                 <Box sx={{ display: "flex", flexDirection: "column" }}>
                   <Typography variant="body2">Approve BBT Tokens</Typography>
-                  {transactionStatus?.approveBBT?.pending && (
+                  {transactionStatus?.permitToken?.pending && (
                     <Typography variant="caption" color="primary">
                       Processing...
                     </Typography>
                   )}
-                  {transactionStatus?.approveBBT?.completed && (
+                  {transactionStatus?.permitToken?.completed && (
                     <Typography variant="caption" color="success.main">
                       ✓ Complete
                     </Typography>
                   )}
-                  {transactionStatus?.approveBBT?.error && (
+                  {transactionStatus?.permitToken?.error && (
                     <Typography
                       variant="caption"
                       color="error"
                       sx={{ overflow: "scroll" }}
                     >
-                      Error: {transactionStatus.approveBBT.error}
+                      Error: {transactionStatus.permitToken.error}
                     </Typography>
                   )}
                 </Box>

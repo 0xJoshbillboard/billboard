@@ -1,16 +1,16 @@
 const { getFirestore } = require("firebase-admin/firestore");
 const logger = require("firebase-functions/logger");
-const { contract } = require("../contracts");
+const { contract, provider } = require("../contracts");
 
 const fetchContractLogs = async () => {
   try {
     const db = getFirestore();
-    const currentBlock = await contract.provider.getBlockNumber();
+    const currentBlock = await provider.getBlockNumber();
 
     const lastRunRef = db.collection("contract_logs_metadata").doc("last_run");
     const lastRunDoc = await lastRunRef.get();
 
-    let lastProcessedBlock = currentBlock - 10000000;
+    let lastProcessedBlock = currentBlock - 100_000;
 
     if (lastRunDoc.exists) {
       lastProcessedBlock = lastRunDoc.data().lastProcessedBlock;

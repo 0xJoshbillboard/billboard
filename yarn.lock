@@ -4273,7 +4273,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"billboard-sdk@npm:^0.2.0, billboard-sdk@workspace:packages/billboard-sdk":
+"billboard-sdk@npm:^0.2.2, billboard-sdk@workspace:packages/billboard-sdk":
   version: 0.0.0-use.local
   resolution: "billboard-sdk@workspace:packages/billboard-sdk"
   dependencies:
@@ -11853,7 +11853,7 @@ __metadata:
     "@types/react-router-dom": "npm:^5.3.3"
     "@web3-onboard/injected-wallets": "npm:^2.11.3"
     "@web3-onboard/react": "npm:^2.11.0"
-    billboard-sdk: "npm:^0.2.0"
+    billboard-sdk: "npm:^0.2.2"
     copy-webpack-plugin: "npm:^11.0.0"
     css-loader: "npm:^7.1.2"
     ethers: "npm:6.13.5"

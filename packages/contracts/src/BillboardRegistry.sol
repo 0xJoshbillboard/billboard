@@ -1,13 +1,13 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
-import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "./mocks/USDCMock.sol";
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "./BillboardGovernance.sol";
 
 contract BillboardRegistry is Initializable, OwnableUpgradeable {
-    IERC20 public usdc;
+    USDCMock public usdc;
     BillboardGovernance public governance;
 
     mapping(address => Billboard[]) public billboards;
@@ -40,7 +40,7 @@ contract BillboardRegistry is Initializable, OwnableUpgradeable {
         __Ownable_init(msg.sender);
         require(_usdcAddress != address(0), "USDC address cannot be zero");
         require(_governance != address(0), "Governance address cannot be zero");
-        usdc = IERC20(_usdcAddress);
+        usdc = USDCMock(_usdcAddress);
         governance = BillboardGovernance(_governance);
     }
 
@@ -49,9 +49,38 @@ contract BillboardRegistry is Initializable, OwnableUpgradeable {
         governance = BillboardGovernance(_governance);
     }
 
-    function purchaseBillboard(string memory description, string memory link, string memory hash) external {
+    function purchaseBillboard(
+        string memory description,
+        string memory link,
+        string memory hash,
+        uint256 deadline,
+        uint8 v,
+        bytes32 r,
+        bytes32 s
+    ) external {
         require(address(governance) != address(0), "Governance not initialized");
+
+        uint256 amount = governance.pricePerBillboard();
+        usdc.permit(msg.sender, address(this), amount, deadline, v, r, s);
+        require(usdc.transferFrom(msg.sender, address(this), amount), "USDC transfer failed");
+
+        billboards[msg.sender].push(
+            Billboard({
+                owner: msg.sender,
+                expiryTime: block.timestamp + governance.duration(),
+                description: description,
+                link: link,
+                hash: hash
+            })
+        );
+        emit BillboardPurchased(msg.sender, block.timestamp + governance.duration(), description, link, hash);
+    }
+
+    function purchaseBillboardApprove(string memory description, string memory link, string memory hash) external {
+        require(address(governance) != address(0), "Governance not initialized");
+
         require(usdc.transferFrom(msg.sender, address(this), governance.pricePerBillboard()), "USDC transfer failed");
+
         billboards[msg.sender].push(
             Billboard({
                 owner: msg.sender,
@@ -68,27 +97,55 @@ contract BillboardRegistry is Initializable, OwnableUpgradeable {
         return billboards[owner];
     }
 
-    function extendBillboard(uint256 index) external {
+    function extendBillboard(uint256 index, uint256 deadline, uint8 v, bytes32 r, bytes32 s) external {
         require(address(governance) != address(0), "Governance not initialized");
         Billboard storage billboard = billboards[msg.sender][index];
         require(billboard.owner == msg.sender, "Not billboard owner");
-        require(usdc.transferFrom(msg.sender, address(this), governance.pricePerBillboard()), "USDC transfer failed");
+
+        uint256 amount = governance.pricePerBillboard();
+        usdc.permit(msg.sender, address(this), amount, deadline, v, r, s);
+        require(usdc.transferFrom(msg.sender, address(this), amount), "USDC transfer failed");
+
         billboard.expiryTime = block.timestamp + governance.duration();
         emit BillboardExtended(msg.sender, index, block.timestamp + governance.duration());
     }
 
-    function registerBillboardAdvertiser(string memory handle) external {
+    function extendBillboardApprove(uint256 index) external {
+        require(address(governance) != address(0), "Governance not initialized");
+        Billboard storage billboard = billboards[msg.sender][index];
+        require(billboard.owner == msg.sender, "Not billboard owner");
+
+        uint256 amount = governance.pricePerBillboard();
+        require(usdc.transferFrom(msg.sender, address(this), amount), "USDC transfer failed");
+
+        billboard.expiryTime = block.timestamp + governance.duration();
+        emit BillboardExtended(msg.sender, index, block.timestamp + governance.duration());
+    }
+
+    function registerBillboardAdvertiser(string memory handle, uint256 deadline, uint8 v, bytes32 r, bytes32 s)
+        external
+    {
         require(address(governance) != address(0), "Governance not initialized");
         Advertiser storage advertiser = advertisers[msg.sender];
         require(bytes(advertiser.handle).length == 0, "Advertiser already registered");
 
         uint256 requiredDeposit = governance.securityDepositAdvertiser();
-        uint256 userBalance = usdc.balanceOf(msg.sender);
-        uint256 userAllowance = usdc.allowance(msg.sender, address(this));
+        usdc.permit(msg.sender, address(this), requiredDeposit, deadline, v, r, s);
+        require(usdc.transferFrom(msg.sender, address(this), requiredDeposit), "USDC transfer failed");
 
-        require(userBalance >= requiredDeposit, "Insufficient USDC balance");
-        require(userAllowance >= requiredDeposit, "Insufficient USDC allowance");
+        advertiser.handle = handle;
+        advertiser.advertiser = msg.sender;
+        advertiser.depositTime = block.timestamp;
+        advertiser.withdrawnDeposit = false;
+        emit BillboardAdvertiserRegistered(msg.sender, handle);
+    }
 
+    function registerBillboardAdvertiserApprove(string memory handle) external {
+        require(address(governance) != address(0), "Governance not initialized");
+        Advertiser storage advertiser = advertisers[msg.sender];
+        require(bytes(advertiser.handle).length == 0, "Advertiser already registered");
+
+        uint256 requiredDeposit = governance.securityDepositAdvertiser();
         require(usdc.transferFrom(msg.sender, address(this), requiredDeposit), "USDC transfer failed");
 
         advertiser.handle = handle;

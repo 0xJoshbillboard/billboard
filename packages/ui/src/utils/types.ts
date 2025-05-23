@@ -7,19 +7,12 @@ export interface Proposal {
   votesFor: number;
   votesAgainst: number;
   executed: boolean;
-  minProposalTokens: number;
   minVotingTokens: number;
   createdAt: number;
   securityDepositAdvertiser: number;
 }
 
 export interface TransactionStatus {
-  approveUSDC: {
-    pending: boolean;
-    completed: boolean;
-    error: string | null;
-    label: string;
-  };
   buyBillboard: {
     pending: boolean;
     completed: boolean;
@@ -38,7 +31,7 @@ export interface TransactionStatus {
     error: string | null;
     label: string;
   };
-  approveTokens: {
+  permitToken: {
     pending: boolean;
     completed: boolean;
     error: string | null;
@@ -69,12 +62,6 @@ export interface TransactionStatus {
     label: string;
   };
   blameAdvertiser: {
-    pending: boolean;
-    completed: boolean;
-    error: string | null;
-    label: string;
-  };
-  approveBBT: {
     pending: boolean;
     completed: boolean;
     error: string | null;

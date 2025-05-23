@@ -18,8 +18,9 @@ contract IntegrationTest is Test {
     PermitSignature public permitSignature;
 
     address public user = 0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266;
-    address public user2 = address(0x2);
     uint256 public privateKey = 0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80;
+    address public user2 = 0x70997970C51812dc3A010C7d01b50e0d17dc79C8;
+    uint256 public privateKey2 = 0x59c6995e998f97a5a0044966f0945389dc9e86dae88c7a8412f4603b6b78690d;
     uint256 public constant initialDuration = 30 days;
     uint256 public constant initialPrice = 1000e6;
     uint256 public constant securityDeposit = 1000 * 10 ** 6;
@@ -30,10 +31,10 @@ contract IntegrationTest is Test {
     function setUp() public {
         vm.createSelectFork("https://sepolia.optimism.io");
 
-        address usdcAddress = 0xAEe0081992ABdf6995C6196e8AE35345D2301A01;
-        address billboardTokenAddress = 0xdDf9f3ACF5Fe99261aB8BB8867b322a8d245b9b3;
-        address payable governanceProxyAddress = payable(0xDF570c055F7C6416B07A8D2258f1aF40EAE1A4eC);
-        address payable proxyAddress = payable(0x4BfD7838f67B463a59B04e20D1DA9A36eb4855c3);
+        address usdcAddress = 0x95A969D27835317179649aEF24571902c601B922;
+        address billboardTokenAddress = 0x645C7c1f8FDD98967b07A2245d4AA92b920fbbA9;
+        address payable governanceProxyAddress = payable(0x1875986B556048742C4597165510F19e9FDb42Fc);
+        address payable proxyAddress = payable(0xeD6725010B662BccCcEC3Cb1cCe83855809c1Cc4);
 
         usdc = USDCMock(usdcAddress);
         billboardToken = BillboardToken(billboardTokenAddress);
@@ -79,24 +80,22 @@ contract IntegrationTest is Test {
 
     function test_GovernanceProposal() public {
         vm.startPrank(user);
-        uint256 deadline = block.timestamp + 1 hours;
 
+        uint256 deadline = block.timestamp + 1 hours;
         (uint8 v, bytes32 r, bytes32 s) =
-            permitSignature.getPermitSignature(address(usdc), user, address(proxy), 50000e6, privateKey, deadline);
-        billboardToken.buyTokens(50000e6, deadline, v, r, s);
+            permitSignature.getPermitSignature(address(usdc), user, address(billboardToken), 1500e6, privateKey, deadline);
+        billboardToken.buyTokens(1500e6, deadline, v, r, s);
 
         uint256 deadline2 = block.timestamp + 1 hours;
         (uint8 v2, bytes32 r2, bytes32 s2) = permitSignature.getPermitSignature(
-            address(usdc), user, address(governanceProxy), minProposalTokens, privateKey, deadline2
+            address(billboardToken), user, address(governanceProxy), securityDeposit, privateKey, deadline2
         );
 
-        // Create proposal
         BillboardGovernance(address(governanceProxy)).createProposal(
             60 days, 2000e6, 15000 * 10 ** 18, 1500 * 10 ** 18, 900 * 10 ** 18, deadline2, v2, r2, s2
         );
         vm.stopPrank();
 
-        // Verify proposal
         (
             uint256 duration,
             uint256 price,
@@ -108,7 +107,7 @@ contract IntegrationTest is Test {
             bool executed,
             uint256 createdAt,
             uint256 securityDepositAdvertiserFromProposal
-        ) = BillboardGovernance(address(governanceProxy)).getProposal(1);
+        ) = BillboardGovernance(address(governanceProxy)).getProposal(0);
 
         assertEq(duration, 60 days);
         assertEq(price, 2000e6);
@@ -119,7 +118,7 @@ contract IntegrationTest is Test {
         assertEq(executed, false);
         assertEq(createdAt, block.timestamp);
         assertEq(securityDepositAdvertiserFromProposal, 900 * 10 ** 18);
-        assertEq(minVotingTokensFromProposal, minVotingTokens);
+        assertEq(minVotingTokensFromProposal, 1500 * 10 ** 18);
     }
 
     function test_AdvertiserRegistration() public {
@@ -149,7 +148,7 @@ contract IntegrationTest is Test {
 
         uint256 deadline2 = block.timestamp + 1 hours;
         (uint8 v2, bytes32 r2, bytes32 s2) = permitSignature.getPermitSignature(
-            address(usdc), user, address(governanceProxy), minVotingTokens, privateKey, deadline2
+            address(billboardToken), user, address(governanceProxy), securityDeposit, privateKey, deadline2
         );
         BillboardGovernance(address(governanceProxy)).createProposal(
             60 days, 2000e6, 15000 * 10 ** 18, 1500 * 10 ** 18, 900 * 10 ** 18, deadline2, v2, r2, s2
@@ -160,15 +159,15 @@ contract IntegrationTest is Test {
         vm.startPrank(user2);
         uint256 deadline3 = block.timestamp + 1 hours;
         (uint8 v3, bytes32 r3, bytes32 s3) = permitSignature.getPermitSignature(
-            address(usdc), user2, address(billboardToken), 5000e6, privateKey, deadline3
+            address(usdc), user2, address(billboardToken), 5000e6, privateKey2, deadline3
         );
         billboardToken.buyTokens(5000e6, deadline3, v3, r3, s3);
-        BillboardGovernance(address(governanceProxy)).vote(1, true);
+        BillboardGovernance(address(governanceProxy)).vote(0, true);
 
         vm.stopPrank();
 
         // Verify votes
-        (,,,,, uint256 votesFor, uint256 votesAgainst,,,) = BillboardGovernance(address(governanceProxy)).getProposal(1);
+        (,,,,, uint256 votesFor, uint256 votesAgainst,,,) = BillboardGovernance(address(governanceProxy)).getProposal(0);
 
         assertEq(votesFor, billboardToken.balanceOf(user2));
         assertEq(votesAgainst, 0);
@@ -178,32 +177,37 @@ contract IntegrationTest is Test {
         vm.startPrank(user);
         uint256 deadline = block.timestamp + 1 hours;
         (uint8 v, bytes32 r, bytes32 s) = permitSignature.getPermitSignature(
-            address(usdc), user2, address(governanceProxy), 5000e6, privateKey, deadline
+            address(usdc), user, address(billboardToken), 5000e6, privateKey, deadline
         );
         billboardToken.buyTokens(5000e6, deadline, v, r, s);
 
+        uint256 deadline2 = block.timestamp + 1 hours;
+        (uint8 v2, bytes32 r2, bytes32 s2) = permitSignature.getPermitSignature(
+            address(billboardToken), user, address(governanceProxy), securityDeposit, privateKey, deadline2
+        );
+
         BillboardGovernance(address(governanceProxy)).createProposal(
-            70 days, 2000e6, 15000 * 10 ** 18, 1500 * 10 ** 18, 900 * 10 ** 18, deadline, v, r, s
+            70 days, 2000e6, 15000 * 10 ** 18, 1500 * 10 ** 18, 900 * 10 ** 18, deadline2, v2, r2, s2
         );
 
         vm.stopPrank();
 
         // User2 buys tokens and votes
         vm.startPrank(user2);
-        uint256 deadline2 = block.timestamp + 1 hours;
-        (uint8 v2, bytes32 r2, bytes32 s2) = permitSignature.getPermitSignature(
-            address(usdc), user2, address(billboardToken), 5000e6, privateKey, deadline2
+        uint256 deadline3 = block.timestamp + 1 hours;
+        (uint8 v3, bytes32 r3, bytes32 s3) = permitSignature.getPermitSignature(
+            address(usdc), user2, address(billboardToken), 5000e6, privateKey2, deadline3
         );
 
-        billboardToken.buyTokens(5000e6, deadline2, v2, r2, s2);
-        BillboardGovernance(address(governanceProxy)).vote(1, true);
+        billboardToken.buyTokens(5000e6, deadline3, v3, r3, s3);
+        BillboardGovernance(address(governanceProxy)).vote(0, true);
         vm.stopPrank();
 
         // Fast forward time
         vm.warp(block.timestamp + initialDuration + 1);
 
         // Execute proposal
-        BillboardGovernance(address(governanceProxy)).executeProposal(1);
+        BillboardGovernance(address(governanceProxy)).executeProposal(0);
 
         (
             uint256 duration,
@@ -216,13 +220,13 @@ contract IntegrationTest is Test {
             bool executed,
             ,
             uint256 securityDepositAdvertiserFromProposal
-        ) = BillboardGovernance(address(governanceProxy)).getProposal(1);
+        ) = BillboardGovernance(address(governanceProxy)).getProposal(0);
 
         assertEq(executed, true);
         assertEq(securityDepositAdvertiserFromProposal, 900 * 10 ** 18);
         assertEq(duration, 70 days);
         assertEq(pricePerBillboard, 2000e6);
         assertEq(securityDepositFromProposal, 15000 * 10 ** 18);
-        assertEq(minVotingTokensFromProposal, 750 * 10 ** 18);
+        assertEq(minVotingTokensFromProposal, 1500 * 10 ** 18);
     }
 }

@@ -37,7 +37,7 @@ contract BillboardTest is Test {
 
         BillboardRegistry(address(proxy)).initialize(address(usdc), address(governanceProxy));
         BillboardGovernance(address(governanceProxy)).initialize(
-            30 days, 1000e6, securityDeposit, address(usdc), securityDepositForProvider, 1000e6, 500e6
+            30 days, 1000e6, securityDeposit, address(usdc), securityDepositForProvider, 500e6
         );
 
         usdc.mint(address(this), initialBalance);

@@ -36,8 +36,11 @@ contract BillboardToken is ERC20, ERC20Permit, Ownable {
 
     function buyTokensWithApprove(uint256 usdcAmount) external {
         require(usdcAmount > 0, "Amount must be greater than 0");
-        usdc.approve(address(this), usdcAmount);
-        require(usdc.transferFrom(msg.sender, address(this), usdcAmount), "USDC transfer failed");
+
+        uint256 bbtAmount = usdcAmount * 10 ** (TOKEN_DECIMALS - USDC_DECIMALS);
+        soldTokens += bbtAmount;
+        require(soldTokens <= 1_000_000 * 10 ** 18, "Sold tokens exceeds 1 million");
+        _transfer(owner(), msg.sender, bbtAmount);
     }
 
     function withdrawUSDC(uint256 amount) external onlyOwner {

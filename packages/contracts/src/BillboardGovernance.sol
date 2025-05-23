@@ -9,7 +9,6 @@ contract BillboardGovernance is Initializable, OwnableUpgradeable {
     uint256 public duration;
     uint256 public pricePerBillboard;
     uint256 public securityDeposit;
-    uint256 public minProposalTokens;
     uint256 public minVotingTokens;
     BillboardToken public token;
     uint256 public securityDepositAdvertiser;
@@ -19,7 +18,6 @@ contract BillboardGovernance is Initializable, OwnableUpgradeable {
         uint256 pricePerBillboard;
         uint256 securityDeposit;
         uint256 initialSecurityDeposit;
-        uint256 minProposalTokens;
         uint256 minVotingTokens;
         uint256 votesFor;
         uint256 votesAgainst;
@@ -52,7 +50,6 @@ contract BillboardGovernance is Initializable, OwnableUpgradeable {
         uint256 duration,
         uint256 pricePerBillboard,
         uint256 securityDeposit,
-        uint256 minProposalTokens,
         uint256 minVotingTokens,
         uint256 createdAt,
         uint256 securityDepositAdvertiser
@@ -75,15 +72,12 @@ contract BillboardGovernance is Initializable, OwnableUpgradeable {
         uint256 _securityDeposit,
         address _token,
         uint256 _securityDepositAdvertiser,
-        uint256 _minProposalTokens,
         uint256 _minVotingTokens
     ) public initializer {
         __Ownable_init(msg.sender);
         duration = _duration;
         pricePerBillboard = _pricePerBillboard;
         securityDeposit = _securityDeposit;
-        minProposalTokens = _minProposalTokens;
-        minVotingTokens = _minVotingTokens;
         token = BillboardToken(_token);
         proposalCount = 0;
         securityDepositAdvertiser = _securityDepositAdvertiser;
@@ -93,7 +87,6 @@ contract BillboardGovernance is Initializable, OwnableUpgradeable {
         uint256 _duration,
         uint256 _pricePerBillboard,
         uint256 _securityDeposit,
-        uint256 _minProposalTokens,
         uint256 _minVotingTokens,
         uint256 _securityDepositAdvertiser,
         uint256 deadline,
@@ -101,8 +94,6 @@ contract BillboardGovernance is Initializable, OwnableUpgradeable {
         bytes32 r,
         bytes32 s
     ) external {
-        require(token.balanceOf(msg.sender) >= minProposalTokens, "Insufficient tokens to create proposal");
-
         token.permit(msg.sender, address(this), securityDeposit, deadline, v, r, s);
         require(token.transferFrom(msg.sender, address(this), securityDeposit), "Security deposit transfer failed");
 
@@ -111,7 +102,6 @@ contract BillboardGovernance is Initializable, OwnableUpgradeable {
             duration: _duration,
             pricePerBillboard: _pricePerBillboard,
             securityDeposit: _securityDeposit,
-            minProposalTokens: _minProposalTokens,
             minVotingTokens: _minVotingTokens,
             votesFor: 0,
             votesAgainst: 0,
@@ -130,7 +120,6 @@ contract BillboardGovernance is Initializable, OwnableUpgradeable {
             _duration,
             _pricePerBillboard,
             _securityDeposit,
-            _minProposalTokens,
             _minVotingTokens,
             block.timestamp,
             _securityDepositAdvertiser
@@ -141,11 +130,9 @@ contract BillboardGovernance is Initializable, OwnableUpgradeable {
         uint256 _duration,
         uint256 _pricePerBillboard,
         uint256 _securityDeposit,
-        uint256 _minProposalTokens,
         uint256 _minVotingTokens,
         uint256 _securityDepositAdvertiser
     ) external {
-        require(token.balanceOf(msg.sender) >= minProposalTokens, "Insufficient tokens to create proposal");
         require(token.transferFrom(msg.sender, address(this), securityDeposit), "Security deposit transfer failed");
 
         uint256 proposalId = proposalCount;
@@ -153,7 +140,6 @@ contract BillboardGovernance is Initializable, OwnableUpgradeable {
             duration: _duration,
             pricePerBillboard: _pricePerBillboard,
             securityDeposit: _securityDeposit,
-            minProposalTokens: _minProposalTokens,
             minVotingTokens: _minVotingTokens,
             votesFor: 0,
             votesAgainst: 0,
@@ -172,7 +158,6 @@ contract BillboardGovernance is Initializable, OwnableUpgradeable {
             _duration,
             _pricePerBillboard,
             _securityDeposit,
-            _minProposalTokens,
             _minVotingTokens,
             block.timestamp,
             _securityDepositAdvertiser
@@ -208,7 +193,6 @@ contract BillboardGovernance is Initializable, OwnableUpgradeable {
         duration = proposal.duration;
         pricePerBillboard = proposal.pricePerBillboard;
         securityDeposit = proposal.securityDeposit;
-        minProposalTokens = proposal.minProposalTokens;
         minVotingTokens = proposal.minVotingTokens;
         securityDepositAdvertiser = proposal.securityDepositAdvertiser;
         proposal.executed = true;
@@ -231,10 +215,10 @@ contract BillboardGovernance is Initializable, OwnableUpgradeable {
     }
 
     function blameAdvertiser(address advertiser, uint256 deadline, uint8 v, bytes32 r, bytes32 s) external {
-        require(token.balanceOf(msg.sender) >= minProposalTokens, "Insufficient tokens to blame advertiser");
+        require(token.balanceOf(msg.sender) >= minVotingTokens, "Insufficient tokens to blame advertiser");
 
-        token.permit(msg.sender, address(this), minProposalTokens, deadline, v, r, s);
-        require(token.transferFrom(msg.sender, address(this), minProposalTokens), "Token transfer failed");
+        token.permit(msg.sender, address(this), minVotingTokens, deadline, v, r, s);
+        require(token.transferFrom(msg.sender, address(this), minVotingTokens), "Token transfer failed");
 
         if (!advertiserIsBlamed[advertiser].isBlamed) {
             advertiserIsBlamed[advertiser] = AdvertiserIsBlamed({
@@ -243,7 +227,7 @@ contract BillboardGovernance is Initializable, OwnableUpgradeable {
                 votesFor: 0,
                 votesAgainst: 0,
                 resolved: false,
-                blameSecurityDeposit: minProposalTokens,
+                blameSecurityDeposit: minVotingTokens,
                 blameSecurityDepositReturned: false,
                 proposer: msg.sender
             });
@@ -254,8 +238,8 @@ contract BillboardGovernance is Initializable, OwnableUpgradeable {
     }
 
     function blameAdvertiserApprove(address advertiser) external {
-        require(token.balanceOf(msg.sender) >= minProposalTokens, "Insufficient tokens to blame advertiser");
-        require(token.transferFrom(msg.sender, address(this), minProposalTokens), "Token transfer failed");
+        require(token.balanceOf(msg.sender) >= minVotingTokens, "Insufficient tokens to blame advertiser");
+        require(token.transferFrom(msg.sender, address(this), minVotingTokens), "Token transfer failed");
 
         if (!advertiserIsBlamed[advertiser].isBlamed) {
             advertiserIsBlamed[advertiser] = AdvertiserIsBlamed({
@@ -264,7 +248,7 @@ contract BillboardGovernance is Initializable, OwnableUpgradeable {
                 votesFor: 0,
                 votesAgainst: 0,
                 resolved: false,
-                blameSecurityDeposit: minProposalTokens,
+                blameSecurityDeposit: minVotingTokens,
                 blameSecurityDepositReturned: false,
                 proposer: msg.sender
             });
@@ -331,7 +315,6 @@ contract BillboardGovernance is Initializable, OwnableUpgradeable {
             uint256 _pricePerBillboard,
             uint256 _securityDeposit,
             uint256 _initialSecurityDeposit,
-            uint256 _minProposalTokens,
             uint256 _minVotingTokens,
             uint256 _votesFor,
             uint256 _votesAgainst,
@@ -347,7 +330,6 @@ contract BillboardGovernance is Initializable, OwnableUpgradeable {
             proposal.pricePerBillboard,
             proposal.securityDeposit,
             proposal.initialSecurityDeposit,
-            proposal.minProposalTokens,
             proposal.minVotingTokens,
             proposal.votesFor,
             proposal.votesAgainst,

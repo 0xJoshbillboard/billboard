@@ -82,8 +82,9 @@ contract IntegrationTest is Test {
         vm.startPrank(user);
 
         uint256 deadline = block.timestamp + 1 hours;
-        (uint8 v, bytes32 r, bytes32 s) =
-            permitSignature.getPermitSignature(address(usdc), user, address(billboardToken), 1500e6, privateKey, deadline);
+        (uint8 v, bytes32 r, bytes32 s) = permitSignature.getPermitSignature(
+            address(usdc), user, address(billboardToken), 1500e6, privateKey, deadline
+        );
         billboardToken.buyTokens(1500e6, deadline, v, r, s);
 
         uint256 deadline2 = block.timestamp + 1 hours;

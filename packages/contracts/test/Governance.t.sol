@@ -123,7 +123,9 @@ contract GovernanceTest is Test {
 
         // spend his tokens
         token.transfer(user, token.balanceOf(user2));
-        vm.expectRevert(abi.encodeWithSignature("ERC20InsufficientBalance(address,uint256,uint256)", user2, 0, 1000 * 10 ** 18));
+        vm.expectRevert(
+            abi.encodeWithSignature("ERC20InsufficientBalance(address,uint256,uint256)", user2, 0, 1000 * 10 ** 18)
+        );
         BillboardGovernance(address(governanceProxy)).createProposal(
             60 days, 2000e6, 15000 * 10 ** 18, 1500 * 10 ** 18, 900 * 10 ** 18, deadline, v, r, s
         );

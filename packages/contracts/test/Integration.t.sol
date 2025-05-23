@@ -8,15 +8,18 @@ import {USDCMock} from "../src/mocks/USDCMock.sol";
 import {BillboardGovernance} from "../src/BillboardGovernance.sol";
 import {BillboardGovernanceProxy} from "../src/BillboardGovernanceProxy.sol";
 import {BillboardToken} from "../src/BillboardToken.sol";
+import {PermitSignature} from "./utils/PermitSignature.sol";
 
 contract IntegrationTest is Test {
     BillboardProxy public proxy;
     USDCMock public usdc;
     BillboardGovernanceProxy public governanceProxy;
     BillboardToken public billboardToken;
+    PermitSignature public permitSignature;
 
-    address public user;
-    address public user2;
+    address public user = 0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266;
+    address public user2 = address(0x2);
+    uint256 public privateKey = 0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80;
     uint256 public constant initialDuration = 30 days;
     uint256 public constant initialPrice = 1000e6;
     uint256 public constant securityDeposit = 1000 * 10 ** 6;
@@ -25,31 +28,24 @@ contract IntegrationTest is Test {
     uint256 public constant securityDepositAdvertiser = 500 * 10 ** 6;
 
     function setUp() public {
-        // Fork optimism-sepolia
         vm.createSelectFork("https://sepolia.optimism.io");
 
-        user = address(0x1);
-        user2 = address(0x2);
+        address usdcAddress = 0xAEe0081992ABdf6995C6196e8AE35345D2301A01;
+        address billboardTokenAddress = 0xdDf9f3ACF5Fe99261aB8BB8867b322a8d245b9b3;
+        address payable governanceProxyAddress = payable(0xDF570c055F7C6416B07A8D2258f1aF40EAE1A4eC);
+        address payable proxyAddress = payable(0x4BfD7838f67B463a59B04e20D1DA9A36eb4855c3);
 
-        // Use hardcoded contract addresses
-        address usdcAddress = 0xe17612de297d7a6aC3C8af568a556b62D1f2074c;
-        address billboardTokenAddress = 0xC6532522Fa6C05533047c17896EA56D41A2e127F;
-        address payable governanceProxyAddress = payable(0x9527F41eb97173EA364B775b4AB99578110fec5f);
-        address payable proxyAddress = payable(0xC5533B322861dE8c894Fc44EC421A02395b83Df5);
-
-        // Initialize contract instances
         usdc = USDCMock(usdcAddress);
         billboardToken = BillboardToken(billboardTokenAddress);
         governanceProxy = BillboardGovernanceProxy(governanceProxyAddress);
         proxy = BillboardProxy(proxyAddress);
+        permitSignature = new PermitSignature();
 
-        // Mint USDC to users
         deal(address(usdc), user, 10000e6);
         deal(address(usdc), user2, 10000e6);
     }
 
     function test_Deployment() public view {
-        // Verify governance proxy initialization
         assertEq(BillboardGovernance(address(governanceProxy)).duration(), initialDuration);
         assertEq(BillboardGovernance(address(governanceProxy)).pricePerBillboard(), initialPrice);
         assertEq(BillboardGovernance(address(governanceProxy)).securityDeposit(), securityDeposit);
@@ -57,17 +53,20 @@ contract IntegrationTest is Test {
         assertEq(BillboardGovernance(address(governanceProxy)).minVotingTokens(), minVotingTokens);
         assertEq(BillboardGovernance(address(governanceProxy)).securityDepositAdvertiser(), securityDepositAdvertiser);
         assertEq(address(BillboardGovernance(address(governanceProxy)).token()), address(billboardToken));
-
-        // Verify registry initialization
         assertEq(address(BillboardRegistry(address(proxy)).usdc()), address(usdc));
         assertEq(address(BillboardRegistry(address(proxy)).governance()), address(governanceProxy));
     }
 
     function test_BillboardPurchase() public {
         vm.startPrank(user);
-        usdc.approve(address(proxy), initialPrice);
+        vm.warp(1000);
 
-        BillboardRegistry(address(proxy)).purchaseBillboard("Test Billboard", "https://test.com", "test.com");
+        uint256 deadline = block.timestamp + 1 hours;
+        (uint8 v, bytes32 r, bytes32 s) =
+            permitSignature.getPermitSignature(address(usdc), user, address(proxy), initialPrice, privateKey, deadline);
+        BillboardRegistry(address(proxy)).purchaseBillboard(
+            "Test Billboard", "https://test.com", "test.com", deadline, v, r, s
+        );
 
         BillboardRegistry.Billboard[] memory billboards = BillboardRegistry(address(proxy)).getBillboards(user);
         assertEq(billboards.length, 1);
@@ -80,15 +79,21 @@ contract IntegrationTest is Test {
     }
 
     function test_GovernanceProposal() public {
-        // Buy tokens for user
         vm.startPrank(user);
-        usdc.approve(address(billboardToken), 5000e6);
-        billboardToken.buyTokens(5000e6);
-        billboardToken.approve(address(governanceProxy), minProposalTokens);
+        uint256 deadline = block.timestamp + 1 hours;
+
+        (uint8 v, bytes32 r, bytes32 s) =
+            permitSignature.getPermitSignature(address(usdc), user, address(proxy), 50000e6, privateKey, deadline);
+        billboardToken.buyTokens(50000e6, deadline, v, r, s);
+
+        uint256 deadline2 = block.timestamp + 1 hours;
+        (uint8 v2, bytes32 r2, bytes32 s2) = permitSignature.getPermitSignature(
+            address(usdc), user, address(governanceProxy), minProposalTokens, privateKey, deadline2
+        );
 
         // Create proposal
         BillboardGovernance(address(governanceProxy)).createProposal(
-            60 days, 2000e6, 15000 * 10 ** 18, 1500 * 10 ** 18, 750 * 10 ** 18, 900 * 10 ** 18
+            60 days, 2000e6, 15000 * 10 ** 18, 1500 * 10 ** 18, 750 * 10 ** 18, 900 * 10 ** 18, deadline2, v2, r2, s2
         );
         vm.stopPrank();
 
@@ -122,9 +127,12 @@ contract IntegrationTest is Test {
 
     function test_AdvertiserRegistration() public {
         vm.startPrank(user);
-        usdc.approve(address(proxy), securityDepositAdvertiser);
 
-        BillboardRegistry(address(proxy)).registerBillboardAdvertiser("testprovider");
+        uint256 deadline = block.timestamp + 1 hours;
+        (uint8 v, bytes32 r, bytes32 s) = permitSignature.getPermitSignature(
+            address(usdc), user, address(proxy), securityDepositAdvertiser, privateKey, deadline
+        );
+        BillboardRegistry(address(proxy)).registerBillboardAdvertiser("testprovider", deadline, v, r, s);
 
         BillboardRegistry.Advertiser memory advertiser = BillboardRegistry(address(proxy)).getBillboardAdvertiser(user);
         assertEq(advertiser.handle, "testprovider");
@@ -135,24 +143,31 @@ contract IntegrationTest is Test {
     }
 
     function test_ProposalVoting() public {
-        // Setup users with tokens
         vm.startPrank(user);
-        usdc.approve(address(billboardToken), 5000e6);
-        billboardToken.buyTokens(5000e6);
-        billboardToken.approve(address(governanceProxy), minProposalTokens);
+        uint256 deadline = block.timestamp + 1 hours;
+        (uint8 v, bytes32 r, bytes32 s) = permitSignature.getPermitSignature(
+            address(usdc), user, address(billboardToken), 5000e6, privateKey, deadline
+        );
+        billboardToken.buyTokens(5000e6, deadline, v, r, s);
 
-        // Create proposal
+        uint256 deadline2 = block.timestamp + 1 hours;
+        (uint8 v2, bytes32 r2, bytes32 s2) = permitSignature.getPermitSignature(
+            address(usdc), user, address(governanceProxy), minVotingTokens, privateKey, deadline2
+        );
         BillboardGovernance(address(governanceProxy)).createProposal(
-            60 days, 2000e6, 15000 * 10 ** 18, 1500 * 10 ** 18, 750 * 10 ** 18, 900 * 10 ** 18
+            60 days, 2000e6, 15000 * 10 ** 18, 1500 * 10 ** 18, 750 * 10 ** 18, 900 * 10 ** 18, deadline2, v2, r2, s2
         );
         vm.stopPrank();
 
         // User2 buys tokens and votes
         vm.startPrank(user2);
-        usdc.approve(address(billboardToken), 5000e6);
-        billboardToken.buyTokens(5000e6);
-        billboardToken.approve(address(governanceProxy), minVotingTokens);
+        uint256 deadline3 = block.timestamp + 1 hours;
+        (uint8 v3, bytes32 r3, bytes32 s3) = permitSignature.getPermitSignature(
+            address(usdc), user2, address(billboardToken), 5000e6, privateKey, deadline3
+        );
+        billboardToken.buyTokens(5000e6, deadline3, v3, r3, s3);
         BillboardGovernance(address(governanceProxy)).vote(1, true);
+
         vm.stopPrank();
 
         // Verify votes
@@ -164,23 +179,27 @@ contract IntegrationTest is Test {
     }
 
     function test_ProposalExecution() public {
-        // Setup users with tokens
         vm.startPrank(user);
-        usdc.approve(address(billboardToken), 5000e6);
-        billboardToken.buyTokens(5000e6);
-        billboardToken.approve(address(governanceProxy), minProposalTokens);
-
-        // Create proposal
-        BillboardGovernance(address(governanceProxy)).createProposal(
-            70 days, 2000e6, 15000 * 10 ** 18, 1500 * 10 ** 18, 750 * 10 ** 18, 900 * 10 ** 18
+        uint256 deadline = block.timestamp + 1 hours;
+        (uint8 v, bytes32 r, bytes32 s) = permitSignature.getPermitSignature(
+            address(usdc), user2, address(governanceProxy), 5000e6, privateKey, deadline
         );
+        billboardToken.buyTokens(5000e6, deadline, v, r, s);
+
+        BillboardGovernance(address(governanceProxy)).createProposal(
+            70 days, 2000e6, 15000 * 10 ** 18, 1500 * 10 ** 18, 750 * 10 ** 18, 900 * 10 ** 18, deadline, v, r, s
+        );
+
         vm.stopPrank();
 
         // User2 buys tokens and votes
         vm.startPrank(user2);
-        usdc.approve(address(billboardToken), 5000e6);
-        billboardToken.buyTokens(5000e6);
-        billboardToken.approve(address(governanceProxy), minVotingTokens);
+        uint256 deadline2 = block.timestamp + 1 hours;
+        (uint8 v2, bytes32 r2, bytes32 s2) = permitSignature.getPermitSignature(
+            address(usdc), user2, address(billboardToken), 5000e6, privateKey, deadline2
+        );
+
+        billboardToken.buyTokens(5000e6, deadline2, v2, r2, s2);
         BillboardGovernance(address(governanceProxy)).vote(1, true);
         vm.stopPrank();
 

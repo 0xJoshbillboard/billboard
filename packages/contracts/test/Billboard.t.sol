@@ -8,6 +8,7 @@ import {USDCMock} from "../src/mocks/USDCMock.sol";
 import {BillboardGovernance} from "../src/BillboardGovernance.sol";
 import {BillboardGovernanceProxy} from "../src/BillboardGovernanceProxy.sol";
 import {BillboardToken} from "../src/BillboardToken.sol";
+import {PermitSignature} from "./utils/PermitSignature.sol";
 
 contract BillboardTest is Test {
     BillboardRegistry public registry;
@@ -16,13 +17,15 @@ contract BillboardTest is Test {
     BillboardGovernance public governance;
     BillboardGovernanceProxy public governanceProxy;
     BillboardToken public billboardToken;
-
-    address public user;
+    PermitSignature public permitSignature;
+    address public user = 0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266;
+    uint256 public privateKey = 0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80;
     uint256 public initialBalance = 1000000e6;
     uint256 public securityDeposit = 5000e6;
     uint256 public securityDepositForProvider = 1000e6;
 
     function setUp() public {
+        permitSignature = new PermitSignature();
         usdc = new USDCMock();
         billboardToken = new BillboardToken(address(usdc));
 
@@ -39,93 +42,145 @@ contract BillboardTest is Test {
 
         usdc.mint(address(this), initialBalance);
 
-        user = address(0x1);
         vm.label(user, "User");
         usdc.mint(user, initialBalance);
     }
 
     function test_PurchaseBillboard() public {
-        usdc.approve(address(proxy), 1000e6);
-        BillboardRegistry(address(proxy)).purchaseBillboard("Test Billboard", "https://test.com", "test.com");
+        vm.startPrank(user);
+        uint256 deadline = block.timestamp + 1 hours;
+        (uint8 v, bytes32 r, bytes32 s) =
+            permitSignature.getPermitSignature(address(usdc), user, address(proxy), 1000e6, privateKey, deadline);
+        BillboardRegistry(address(proxy)).purchaseBillboard(
+            "Test Billboard", "https://test.com", "test.com", deadline, v, r, s
+        );
+        vm.stopPrank();
     }
 
     function test_BillboardData() public {
+        vm.startPrank(user);
         vm.warp(1000);
 
         assertEq(BillboardGovernance(address(governanceProxy)).duration(), 30 days);
 
-        usdc.approve(address(proxy), 1000e6);
-        BillboardRegistry(address(proxy)).purchaseBillboard("Test Billboard", "https://test.com", "test.com");
+        uint256 deadline = block.timestamp + 1 hours;
+        (uint8 v, bytes32 r, bytes32 s) =
+            permitSignature.getPermitSignature(address(usdc), user, address(proxy), 1000e6, privateKey, deadline);
+        BillboardRegistry(address(proxy)).purchaseBillboard(
+            "Test Billboard", "https://test.com", "test.com", deadline, v, r, s
+        );
 
-        BillboardRegistry.Billboard[] memory billboards = BillboardRegistry(address(proxy)).getBillboards(address(this));
+        BillboardRegistry.Billboard[] memory billboards = BillboardRegistry(address(proxy)).getBillboards(user);
 
         assertEq(billboards.length, 1);
-        assertEq(billboards[0].owner, address(this));
+        assertEq(billboards[0].owner, user);
         assertEq(billboards[0].expiryTime, 1000 + 30 days);
         assertEq(billboards[0].description, "Test Billboard");
         assertEq(billboards[0].link, "https://test.com");
         assertEq(billboards[0].hash, "test.com");
+        vm.stopPrank();
     }
 
     function test_PurchaseBillboardEvent() public {
-        usdc.approve(address(proxy), initialBalance);
+        vm.startPrank(user);
+        vm.warp(1000);
+        uint256 deadline = block.timestamp + 1 hours;
+        (uint8 v, bytes32 r, bytes32 s) =
+            permitSignature.getPermitSignature(address(usdc), user, address(proxy), 1000e6, privateKey, deadline);
 
         vm.expectEmit(true, true, true, true);
-        console.logUint(block.timestamp + 30 days);
         emit BillboardRegistry.BillboardPurchased(
-            address(this), block.timestamp + 30 days, "Test Billboard", "https://test.com", "test.com"
+            user, block.timestamp + 30 days, "Test Billboard", "https://test.com", "test.com"
         );
-
-        BillboardRegistry(address(proxy)).purchaseBillboard("Test Billboard", "https://test.com", "test.com");
+        BillboardRegistry(address(proxy)).purchaseBillboard(
+            "Test Billboard", "https://test.com", "test.com", deadline, v, r, s
+        );
+        vm.stopPrank();
     }
 
     function test_ExtendBillboard() public {
-        usdc.approve(address(proxy), initialBalance);
-        BillboardRegistry(address(proxy)).purchaseBillboard("Test Billboard", "https://test.com", "test.com");
+        vm.startPrank(user);
+        vm.warp(1000);
+
+        uint256 deadline = block.timestamp + 1 hours;
+        (uint8 v, bytes32 r, bytes32 s) =
+            permitSignature.getPermitSignature(address(usdc), user, address(proxy), 1000e6, privateKey, deadline);
+        BillboardRegistry(address(proxy)).purchaseBillboard(
+            "Test Billboard", "https://test.com", "test.com", deadline, v, r, s
+        );
 
         vm.warp(1000);
-        BillboardRegistry(address(proxy)).extendBillboard(0);
+        uint256 deadline2 = block.timestamp + 1 hours;
+        (uint8 v2, bytes32 r2, bytes32 s2) =
+            permitSignature.getPermitSignature(address(usdc), user, address(proxy), 1000e6, privateKey, deadline2);
 
-        BillboardRegistry.Billboard[] memory billboards = BillboardRegistry(address(proxy)).getBillboards(address(this));
+        BillboardRegistry(address(proxy)).extendBillboard(0, deadline2, v2, r2, s2);
+
+        BillboardRegistry.Billboard[] memory billboards = BillboardRegistry(address(proxy)).getBillboards(user);
 
         assertEq(billboards.length, 1);
         assertEq(billboards[0].expiryTime, block.timestamp + 30 days);
-        assertEq(billboards[0].owner, address(this));
+        assertEq(billboards[0].owner, user);
         assertEq(billboards[0].description, "Test Billboard");
         assertEq(billboards[0].link, "https://test.com");
         assertEq(billboards[0].hash, "test.com");
+        vm.stopPrank();
     }
 
     function test_ExtendBillboardEvent() public {
-        usdc.approve(address(proxy), initialBalance);
-        BillboardRegistry(address(proxy)).purchaseBillboard("Test Billboard", "https://test.com", "test.com");
+        vm.startPrank(user);
+        vm.warp(1000);
+
+        uint256 deadline = block.timestamp + 1 hours;
+        (uint8 v, bytes32 r, bytes32 s) =
+            permitSignature.getPermitSignature(address(usdc), user, address(proxy), 1000e6, privateKey, deadline);
+        BillboardRegistry(address(proxy)).purchaseBillboard(
+            "Test Billboard", "https://test.com", "test.com", deadline, v, r, s
+        );
 
         vm.warp(1000);
 
         vm.expectEmit(true, true, true, true);
-        emit BillboardRegistry.BillboardExtended(address(this), 0, block.timestamp + 30 days);
+        emit BillboardRegistry.BillboardExtended(user, 0, block.timestamp + 30 days);
 
-        BillboardRegistry(address(proxy)).extendBillboard(0);
+        uint256 deadline2 = block.timestamp + 1 hours;
+        (uint8 v2, bytes32 r2, bytes32 s2) =
+            permitSignature.getPermitSignature(address(usdc), user, address(proxy), 1000e6, privateKey, deadline2);
+        BillboardRegistry(address(proxy)).extendBillboard(0, deadline2, v2, r2, s2);
+        vm.stopPrank();
     }
 
     function test_WithdrawFunds() public {
-        usdc.approve(address(proxy), initialBalance);
-        BillboardRegistry(address(proxy)).purchaseBillboard("Test Billboard", "https://test.com", "test.com");
+        vm.startPrank(user);
+        vm.warp(1000);
+
+        uint256 deadline = block.timestamp + 1 hours;
+        (uint8 v, bytes32 r, bytes32 s) =
+            permitSignature.getPermitSignature(address(usdc), user, address(proxy), 1000e6, privateKey, deadline);
+        BillboardRegistry(address(proxy)).purchaseBillboard(
+            "Test Billboard", "https://test.com", "test.com", deadline, v, r, s
+        );
+        vm.stopPrank();
 
         vm.warp(1000);
         BillboardRegistry(address(proxy)).withdrawFunds(address(usdc));
 
         assertEq(usdc.balanceOf(address(proxy)), 0);
-        assertEq(usdc.balanceOf(address(this)), initialBalance);
+        assertEq(usdc.balanceOf(address(this)), initialBalance + 1000e6);
     }
 
     function test_RegisterBillboardAdvertiser() public {
         vm.startPrank(user);
-        usdc.approve(address(proxy), securityDepositForProvider);
+        vm.warp(1000);
+
+        uint256 deadline = block.timestamp + 1 hours;
+        (uint8 v, bytes32 r, bytes32 s) = permitSignature.getPermitSignature(
+            address(usdc), user, address(proxy), securityDepositForProvider, privateKey, deadline
+        );
 
         vm.expectEmit(true, true, true, true);
         emit BillboardRegistry.BillboardAdvertiserRegistered(user, "testprovider");
-        BillboardRegistry(address(proxy)).registerBillboardAdvertiser("testprovider");
+        BillboardRegistry(address(proxy)).registerBillboardAdvertiser("testprovider", deadline, v, r, s);
         vm.stopPrank();
 
         string memory handle = BillboardRegistry(address(proxy)).getBillboardAdvertiser(user).handle;
@@ -134,9 +189,14 @@ contract BillboardTest is Test {
 
     function test_WithdrawSecurityDepositForAdvertiser() public {
         vm.startPrank(user);
-        usdc.approve(address(proxy), securityDeposit);
-        BillboardRegistry(address(proxy)).registerBillboardAdvertiser("testprovider");
+        vm.warp(1000);
 
+        uint256 deadline = block.timestamp + 1 hours;
+        (uint8 v, bytes32 r, bytes32 s) = permitSignature.getPermitSignature(
+            address(usdc), user, address(proxy), securityDepositForProvider, privateKey, deadline
+        );
+
+        BillboardRegistry(address(proxy)).registerBillboardAdvertiser("testprovider", deadline, v, r, s);
         uint256 initialUserBalance = usdc.balanceOf(user);
 
         vm.expectRevert("Deposit locked for 30 days");
@@ -159,8 +219,14 @@ contract BillboardTest is Test {
 
     function test_GetBillboardAdvertiser() public {
         vm.startPrank(user);
-        usdc.approve(address(proxy), securityDeposit);
-        BillboardRegistry(address(proxy)).registerBillboardAdvertiser("testprovider");
+        vm.warp(1000);
+
+        uint256 deadline = block.timestamp + 1 hours;
+        (uint8 v, bytes32 r, bytes32 s) = permitSignature.getPermitSignature(
+            address(usdc), user, address(proxy), securityDepositForProvider, privateKey, deadline
+        );
+
+        BillboardRegistry(address(proxy)).registerBillboardAdvertiser("testprovider", deadline, v, r, s);
         vm.stopPrank();
 
         string memory handle = BillboardRegistry(address(proxy)).getBillboardAdvertiser(user).handle;
@@ -172,37 +238,54 @@ contract BillboardTest is Test {
 
     function test_RegisterBillboardAdvertiserTwice() public {
         vm.startPrank(user);
-        usdc.approve(address(proxy), securityDeposit * 2);
+        vm.warp(1000);
 
-        BillboardRegistry(address(proxy)).registerBillboardAdvertiser("testprovider");
+        uint256 deadline = block.timestamp + 1 hours;
+        (uint8 v, bytes32 r, bytes32 s) = permitSignature.getPermitSignature(
+            address(usdc), user, address(proxy), securityDepositForProvider, privateKey, deadline
+        );
+
+        BillboardRegistry(address(proxy)).registerBillboardAdvertiser("testprovider", deadline, v, r, s);
 
         vm.expectRevert("Advertiser already registered");
-        BillboardRegistry(address(proxy)).registerBillboardAdvertiser("newprovider");
+        BillboardRegistry(address(proxy)).registerBillboardAdvertiser("newprovider", deadline, v, r, s);
 
         vm.stopPrank();
     }
 
     function test_RegisterWithdrawRegisterAgain() public {
         vm.startPrank(user);
-        usdc.approve(address(proxy), securityDeposit * 2);
 
-        BillboardRegistry(address(proxy)).registerBillboardAdvertiser("testprovider");
+        uint256 deadline = block.timestamp + 1 hours;
+        (uint8 v, bytes32 r, bytes32 s) = permitSignature.getPermitSignature(
+            address(usdc), user, address(proxy), securityDepositForProvider, privateKey, deadline
+        );
+
+        BillboardRegistry(address(proxy)).registerBillboardAdvertiser("testprovider", deadline, v, r, s);
 
         vm.warp(block.timestamp + 30 days);
 
         BillboardRegistry(address(proxy)).withdrawSecurityDepositForAdvertiser();
 
+        uint256 deadline2 = block.timestamp + 1 hours;
+        (uint8 v2, bytes32 r2, bytes32 s2) = permitSignature.getPermitSignature(
+            address(usdc), user, address(proxy), securityDepositForProvider, privateKey, deadline2
+        );
+
         vm.expectRevert("Advertiser already registered");
-        BillboardRegistry(address(proxy)).registerBillboardAdvertiser("newprovider");
+        BillboardRegistry(address(proxy)).registerBillboardAdvertiser("newprovider", deadline2, v2, r2, s2);
 
         vm.stopPrank();
     }
 
     function test_MultipleWithdrawalAttempts() public {
         vm.startPrank(user);
-        usdc.approve(address(proxy), securityDeposit * 2);
+        uint256 deadline = block.timestamp + 1 hours;
+        (uint8 v, bytes32 r, bytes32 s) = permitSignature.getPermitSignature(
+            address(usdc), user, address(proxy), securityDepositForProvider, privateKey, deadline
+        );
 
-        BillboardRegistry(address(proxy)).registerBillboardAdvertiser("testprovider");
+        BillboardRegistry(address(proxy)).registerBillboardAdvertiser("testprovider", deadline, v, r, s);
 
         vm.warp(block.timestamp + 30 days);
 
@@ -211,8 +294,13 @@ contract BillboardTest is Test {
         vm.expectRevert("Deposit already withdrawn");
         BillboardRegistry(address(proxy)).withdrawSecurityDepositForAdvertiser();
 
+        uint256 deadline2 = block.timestamp + 1 hours;
+        (uint8 v2, bytes32 r2, bytes32 s2) = permitSignature.getPermitSignature(
+            address(usdc), user, address(proxy), securityDepositForProvider, privateKey, deadline2
+        );
+
         vm.expectRevert("Advertiser already registered");
-        BillboardRegistry(address(proxy)).registerBillboardAdvertiser("newprovider");
+        BillboardRegistry(address(proxy)).registerBillboardAdvertiser("newprovider", deadline2, v2, r2, s2);
 
         vm.stopPrank();
     }

@@ -13,6 +13,7 @@ import {
     ITransparentUpgradeableProxy
 } from "@openzeppelin/contracts/proxy/transparent/TransparentUpgradeableProxy.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import {PermitSignature} from "./utils/PermitSignature.sol";
 
 contract GovernanceTest is Test {
     BillboardGovernance public governance;
@@ -21,10 +22,11 @@ contract GovernanceTest is Test {
     BillboardProxy public proxy;
     USDCMock public usdc;
     BillboardToken public token;
-
+    PermitSignature public permitSignature;
     address public owner;
-    address public user;
-    address public user2;
+    address public user = 0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266;
+    uint256 public privateKey = 0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80;
+    address public user2 = 0x70997970C51812dc3A010C7d01b50e0d17dc79C8;
     uint256 public initialDuration = 30 days;
     uint256 public initialPrice = 1000e6;
     uint256 public securityDeposit = 1000 * 10 ** 18;
@@ -34,12 +36,9 @@ contract GovernanceTest is Test {
 
     function setUp() public {
         owner = address(this);
-        user = address(0x1);
-        user2 = address(0x2);
-
+        permitSignature = new PermitSignature();
         usdc = new USDCMock();
         token = new BillboardToken(address(usdc));
-
         governance = new BillboardGovernance();
         governanceProxy = new BillboardGovernanceProxy(address(governance), owner, "");
 
@@ -57,10 +56,21 @@ contract GovernanceTest is Test {
         proxy = new BillboardProxy(address(registry), owner, "");
         BillboardRegistry(address(proxy)).initialize(address(usdc), address(governanceProxy));
 
-        usdc.mint(user, 10_0000e6);
+        usdc.mint(user, 500_000e6);
+        usdc.mint(user2, 500_000e6);
         vm.startPrank(user);
-        usdc.approve(address(token), 5000e6);
-        token.buyTokens(5000e6);
+        uint256 deadline = block.timestamp + 1 hours;
+        (uint8 v, bytes32 r, bytes32 s) = permitSignature.getPermitSignature(
+            address(usdc), user, address(token), usdc.balanceOf(user), privateKey, deadline
+        );
+        token.buyTokens(usdc.balanceOf(user), deadline, v, r, s);
+        vm.stopPrank();
+        vm.startPrank(user2);
+        uint256 deadline2 = block.timestamp + 1 hours;
+        (uint8 v2, bytes32 r2, bytes32 s2) = permitSignature.getPermitSignature(
+            address(usdc), user2, address(token), usdc.balanceOf(user2), privateKey, deadline2
+        );
+        token.buyTokens(usdc.balanceOf(user2), deadline2, v2, r2, s2);
         vm.stopPrank();
     }
 
@@ -78,9 +88,14 @@ contract GovernanceTest is Test {
 
     function test_CreateProposal_WithSufficientTokens() public {
         vm.startPrank(user);
-        token.approve(address(governanceProxy), 1000 * 10 ** 18);
+
+        uint256 deadline = block.timestamp + 1 hours;
+        (uint8 v, bytes32 r, bytes32 s) = permitSignature.getPermitSignature(
+            address(usdc), user, address(governanceProxy), minProposalTokens, privateKey, deadline
+        );
+
         BillboardGovernance(address(governanceProxy)).createProposal(
-            60 days, 2000e6, 15000 * 10 ** 18, 1500 * 10 ** 18, 750 * 10 ** 18, 900 * 10 ** 18
+            60 days, 2000e6, 15000 * 10 ** 18, 1500 * 10 ** 18, 750 * 10 ** 18, 900 * 10 ** 18, deadline, v, r, s
         );
         vm.stopPrank();
 
@@ -113,10 +128,14 @@ contract GovernanceTest is Test {
 
     function test_CreateProposal_RevertWhenInsufficientTokens() public {
         vm.startPrank(user2);
-        token.approve(address(governanceProxy), 1000 * 10 ** 18);
+
+        uint256 deadline = block.timestamp + 1 hours;
+        (uint8 v, bytes32 r, bytes32 s) = permitSignature.getPermitSignature(
+            address(usdc), user2, address(governanceProxy), minProposalTokens, privateKey, deadline
+        );
         vm.expectRevert("Insufficient tokens to create proposal");
         BillboardGovernance(address(governanceProxy)).createProposal(
-            60 days, 2000e6, 15000 * 10 ** 18, 1500 * 10 ** 18, 750 * 10 ** 18, 900 * 10 ** 18
+            60 days, 2000e6, 15000 * 10 ** 18, 1500 * 10 ** 18, 750 * 10 ** 18, 900 * 10 ** 18, deadline, v, r, s
         );
         vm.stopPrank();
     }
@@ -131,20 +150,30 @@ contract GovernanceTest is Test {
         usdc.mint(user2, user2UsdcAmount);
 
         vm.startPrank(user);
-        usdc.approve(address(token), user1UsdcAmount);
-        token.buyTokens(user1UsdcAmount);
-        token.approve(address(governanceProxy), user1BbtAmount);
+        uint256 deadline = block.timestamp + 1 hours;
+        (uint8 v, bytes32 r, bytes32 s) = permitSignature.getPermitSignature(
+            address(usdc), user, address(token), user1UsdcAmount, privateKey, deadline
+        );
+        token.buyTokens(user1UsdcAmount, deadline, v, r, s);
         vm.stopPrank();
 
         vm.startPrank(user2);
-        usdc.approve(address(token), user2UsdcAmount);
-        token.buyTokens(user2UsdcAmount);
-        token.approve(address(governanceProxy), user2BbtAmount);
+        uint256 deadline2 = block.timestamp + 1 hours;
+        (uint8 v2, bytes32 r2, bytes32 s2) = permitSignature.getPermitSignature(
+            address(usdc), user2, address(token), user2UsdcAmount, privateKey, deadline2
+        );
+
+        token.buyTokens(user2UsdcAmount, deadline2, v2, r2, s2);
         vm.stopPrank();
 
         vm.startPrank(user);
+
+        uint256 deadline3 = block.timestamp + 1 hours;
+        (uint8 v3, bytes32 r3, bytes32 s3) = permitSignature.getPermitSignature(
+            address(usdc), user, address(governanceProxy), minProposalTokens, privateKey, deadline3
+        );
         BillboardGovernance(address(governanceProxy)).createProposal(
-            60 days, 2000e6, 15000 * 10 ** 18, 1500 * 10 ** 18, 750 * 10 ** 18, 900 * 10 ** 18
+            60 days, 2000e6, 15000 * 10 ** 18, 1500 * 10 ** 18, 750 * 10 ** 18, 900 * 10 ** 18, deadline3, v3, r3, s3
         );
         vm.stopPrank();
 
@@ -162,27 +191,37 @@ contract GovernanceTest is Test {
     function test_ExecuteProposal() public {
         uint256 user1UsdcAmount = 50000e6; // Increased amount to ensure enough BBT tokens
         uint256 user2UsdcAmount = 20000e6; // Increased amount to ensure enough BBT tokens
-        uint256 user1BbtAmount = user1UsdcAmount * 10 ** 12; // Convert to BBT decimals (18)
-        uint256 user2BbtAmount = user2UsdcAmount * 10 ** 12; // Convert to BBT decimals (18)
 
         usdc.mint(user, user1UsdcAmount);
         usdc.mint(user2, user2UsdcAmount);
 
         vm.startPrank(user);
-        usdc.approve(address(token), user1UsdcAmount);
-        token.buyTokens(user1UsdcAmount);
-        token.approve(address(governanceProxy), user1BbtAmount);
+
+        uint256 deadline = block.timestamp + 1 hours;
+        (uint8 v, bytes32 r, bytes32 s) = permitSignature.getPermitSignature(
+            address(usdc), user, address(token), user1UsdcAmount, privateKey, deadline
+        );
+        token.buyTokens(user1UsdcAmount, deadline, v, r, s);
         vm.stopPrank();
 
         vm.startPrank(user2);
-        usdc.approve(address(token), user2UsdcAmount);
-        token.buyTokens(user2UsdcAmount);
-        token.approve(address(governanceProxy), user2BbtAmount);
+
+        uint256 deadline2 = block.timestamp + 1 hours;
+        (uint8 v2, bytes32 r2, bytes32 s2) = permitSignature.getPermitSignature(
+            address(usdc), user2, address(token), user2UsdcAmount, privateKey, deadline2
+        );
+        token.buyTokens(user2UsdcAmount, deadline2, v2, r2, s2);
         vm.stopPrank();
 
         vm.startPrank(user);
+
+        uint256 deadline3 = block.timestamp + 1 hours;
+        (uint8 v3, bytes32 r3, bytes32 s3) = permitSignature.getPermitSignature(
+            address(usdc), user, address(governanceProxy), minProposalTokens, privateKey, deadline3
+        );
+
         BillboardGovernance(address(governanceProxy)).createProposal(
-            60 days, 2000e6, 15000 * 10 ** 18, 1500 * 10 ** 18, 750 * 10 ** 18, 800 * 10 ** 18
+            60 days, 2000e6, 15000 * 10 ** 18, 1500 * 10 ** 18, 750 * 10 ** 18, 800 * 10 ** 18, deadline3, v3, r3, s3
         );
         vm.stopPrank();
 
@@ -223,21 +262,27 @@ contract GovernanceTest is Test {
 
     function test_ReturnSecurityDeposit_AfterExecution() public {
         uint256 user2UsdcAmount = 20000e6;
-        uint256 user2BbtAmount = user2UsdcAmount * 10 ** 12;
 
         usdc.mint(user2, user2UsdcAmount);
 
         vm.startPrank(user2);
-        usdc.approve(address(token), user2UsdcAmount);
-        token.buyTokens(user2UsdcAmount);
-        token.approve(address(governanceProxy), user2BbtAmount);
+
+        uint256 deadline = block.timestamp + 1 hours;
+        (uint8 v, bytes32 r, bytes32 s) = permitSignature.getPermitSignature(
+            address(usdc), user2, address(token), user2UsdcAmount, privateKey, deadline
+        );
+        token.buyTokens(user2UsdcAmount, deadline, v, r, s);
         vm.stopPrank();
 
         vm.startPrank(user);
-        token.approve(address(governanceProxy), 1000 * 10 ** 18);
+
+        uint256 deadline2 = block.timestamp + 1 hours;
+        (uint8 v2, bytes32 r2, bytes32 s2) = permitSignature.getPermitSignature(
+            address(usdc), user, address(governanceProxy), minProposalTokens, privateKey, deadline2
+        );
         uint256 initialBalance = token.balanceOf(user);
         BillboardGovernance(address(governanceProxy)).createProposal(
-            60 days, 2000e6, 15000 * 10 ** 18, 1500 * 10 ** 18, 750 * 10 ** 18, 800 * 10 ** 18
+            60 days, 2000e6, 15000 * 10 ** 18, 1500 * 10 ** 18, 750 * 10 ** 18, 800 * 10 ** 18, deadline2, v2, r2, s2
         );
         assertEq(token.balanceOf(user), initialBalance - securityDeposit);
         vm.stopPrank();
@@ -273,29 +318,37 @@ contract GovernanceTest is Test {
     }
 
     function test_ReturnSecurityDeposit_RevertWhenAlreadyReturned() public {
-        uint256 user1UsdcAmount = 50000e6; // Increased amount to ensure enough BBT tokens
-        uint256 user2UsdcAmount = 20000e6; // Increased amount to ensure enough BBT tokens
-        uint256 user1BbtAmount = user1UsdcAmount * 10 ** 12; // Convert to BBT decimals (18)
-        uint256 user2BbtAmount = user2UsdcAmount * 10 ** 12; // Convert to BBT decimals (18)
+        uint256 user1UsdcAmount = 50000e6;
+        uint256 user2UsdcAmount = 20000e6;
 
         usdc.mint(user, user1UsdcAmount);
         usdc.mint(user2, user2UsdcAmount);
 
         vm.startPrank(user);
-        usdc.approve(address(token), user1UsdcAmount);
-        token.buyTokens(user1UsdcAmount);
-        token.approve(address(governanceProxy), user1BbtAmount);
+        uint256 deadline = block.timestamp + 1 hours;
+        (uint8 v, bytes32 r, bytes32 s) = permitSignature.getPermitSignature(
+            address(usdc), user, address(token), user1UsdcAmount, privateKey, deadline
+        );
+        token.buyTokens(user1UsdcAmount, deadline, v, r, s);
         vm.stopPrank();
 
         vm.startPrank(user2);
-        usdc.approve(address(token), user2UsdcAmount);
-        token.buyTokens(user2UsdcAmount);
-        token.approve(address(governanceProxy), user2BbtAmount);
+
+        uint256 deadline2 = block.timestamp + 1 hours;
+        (uint8 v2, bytes32 r2, bytes32 s2) = permitSignature.getPermitSignature(
+            address(usdc), user2, address(token), user2UsdcAmount, privateKey, deadline2
+        );
+        token.buyTokens(user2UsdcAmount, deadline2, v2, r2, s2);
         vm.stopPrank();
 
         vm.startPrank(user);
+
+        uint256 deadline3 = block.timestamp + 1 hours;
+        (uint8 v3, bytes32 r3, bytes32 s3) = permitSignature.getPermitSignature(
+            address(usdc), user, address(governanceProxy), minProposalTokens, privateKey, deadline3
+        );
         BillboardGovernance(address(governanceProxy)).createProposal(
-            60 days, 2000e6, 15000 * 10 ** 18, 1500 * 10 ** 18, 750 * 10 ** 18, 800 * 10 ** 18
+            60 days, 2000e6, 15000 * 10 ** 18, 1500 * 10 ** 18, 750 * 10 ** 18, 800 * 10 ** 18, deadline3, v3, r3, s3
         );
         vm.stopPrank();
 
@@ -313,15 +366,22 @@ contract GovernanceTest is Test {
     function test_blameAdvertiser() public {
         usdc.mint(user2, 1000 * 10 ** 6);
         vm.startPrank(user2);
-        usdc.approve(address(proxy), 1000 * 10 ** 6);
-        BillboardRegistry(address(proxy)).registerBillboardAdvertiser("testprovider");
+        uint256 deadline = block.timestamp + 1 hours;
+        (uint8 v, bytes32 r, bytes32 s) = permitSignature.getPermitSignature(
+            address(usdc), user2, address(proxy), 1000 * 10 ** 6, privateKey, deadline
+        );
+        BillboardRegistry(address(proxy)).registerBillboardAdvertiser("testprovider", deadline, v, r, s);
         vm.stopPrank();
 
         vm.startPrank(user);
         token.approve(address(governanceProxy), 1000 * 10 ** 18);
         vm.expectEmit(true, true, true, true);
         emit BillboardGovernance.AdvertiserBlamed(user, user2);
-        BillboardGovernance(address(governanceProxy)).blameAdvertiser(user2);
+        uint256 deadline2 = block.timestamp + 1 hours;
+        (uint8 v2, bytes32 r2, bytes32 s2) = permitSignature.getPermitSignature(
+            address(usdc), user, address(governanceProxy), minProposalTokens, privateKey, deadline2
+        );
+        BillboardGovernance(address(governanceProxy)).blameAdvertiser(user2, deadline2, v2, r2, s2);
         vm.stopPrank();
 
         BillboardGovernance.AdvertiserIsBlamed memory advertiserIsBlamed =
@@ -359,13 +419,20 @@ contract GovernanceTest is Test {
     function test_blameAdvertiser_RevertWhenNotResolved() public {
         usdc.mint(user2, 1000 * 10 ** 6);
         vm.startPrank(user2);
-        usdc.approve(address(proxy), 1000 * 10 ** 6);
-        BillboardRegistry(address(proxy)).registerBillboardAdvertiser("testprovider");
+
+        uint256 deadline = block.timestamp + 1 hours;
+        (uint8 v, bytes32 r, bytes32 s) = permitSignature.getPermitSignature(
+            address(usdc), user2, address(proxy), 1000 * 10 ** 6, privateKey, deadline
+        );
+        BillboardRegistry(address(proxy)).registerBillboardAdvertiser("testprovider", deadline, v, r, s);
         vm.stopPrank();
 
         vm.startPrank(user);
-        token.approve(address(governanceProxy), 1000 * 10 ** 18);
-        BillboardGovernance(address(governanceProxy)).blameAdvertiser(user2);
+        uint256 deadline2 = block.timestamp + 1 hours;
+        (uint8 v2, bytes32 r2, bytes32 s2) = permitSignature.getPermitSignature(
+            address(usdc), user, address(governanceProxy), minProposalTokens, privateKey, deadline2
+        );
+        BillboardGovernance(address(governanceProxy)).blameAdvertiser(user2, deadline2, v2, r2, s2);
         vm.stopPrank();
 
         vm.expectRevert("Blame not resolved");

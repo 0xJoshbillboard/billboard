@@ -69,7 +69,7 @@ contract GovernanceTest is Test {
         assertEq(BillboardGovernance(address(governanceProxy)).pricePerBillboard(), initialPrice);
         assertEq(BillboardGovernance(address(governanceProxy)).securityDeposit(), securityDeposit);
         assertEq(BillboardGovernance(address(governanceProxy)).owner(), owner);
-        assertEq(BillboardGovernance(address(governanceProxy)).minVotingTokens(), 500 * 10 ** 18);
+        assertEq(BillboardGovernance(address(governanceProxy)).minVotingTokens(), minVotingTokens);
         assertEq(BillboardGovernance(address(governanceProxy)).securityDepositAdvertiser(), securityDepositAdvertiser);
         assertEq(address(BillboardGovernance(address(governanceProxy)).token()), address(token));
         assertEq(BillboardGovernance(address(governanceProxy)).proposalCount(), 0);
@@ -116,14 +116,14 @@ contract GovernanceTest is Test {
     function test_CreateProposal_RevertWhenInsufficientTokens() public {
         vm.startPrank(user2);
 
-        // spend his tokens
-        token.transfer(user, token.balanceOf(user2));
-
         uint256 deadline = block.timestamp + 1 hours;
         (uint8 v, bytes32 r, bytes32 s) = permitSignature.getPermitSignature(
             address(token), user2, address(governanceProxy), securityDeposit, privateKey2, deadline
         );
-        vm.expectRevert("Insufficient tokens to create proposal");
+
+        // spend his tokens
+        token.transfer(user, token.balanceOf(user2));
+        vm.expectRevert(abi.encodeWithSignature("ERC20InsufficientBalance(address,uint256,uint256)", user2, 0, 1000 * 10 ** 18));
         BillboardGovernance(address(governanceProxy)).createProposal(
             60 days, 2000e6, 15000 * 10 ** 18, 1500 * 10 ** 18, 900 * 10 ** 18, deadline, v, r, s
         );

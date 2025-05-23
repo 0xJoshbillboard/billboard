@@ -119,6 +119,7 @@ contract IntegrationTest is Test {
         assertEq(executed, false);
         assertEq(createdAt, block.timestamp);
         assertEq(securityDepositAdvertiserFromProposal, 900 * 10 ** 18);
+        assertEq(minVotingTokensFromProposal, minVotingTokens);
     }
 
     function test_AdvertiserRegistration() public {

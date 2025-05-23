@@ -81,6 +81,7 @@ contract BillboardGovernance is Initializable, OwnableUpgradeable {
         token = BillboardToken(_token);
         proposalCount = 0;
         securityDepositAdvertiser = _securityDepositAdvertiser;
+        minVotingTokens = _minVotingTokens;
     }
 
     function createProposal(

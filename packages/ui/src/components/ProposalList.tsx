@@ -1,4 +1,4 @@
-import { Button, Divider } from "@mui/material";
+import { Button, Chip, Divider } from "@mui/material";
 import { Typography } from "@mui/material";
 import { Stack } from "@mui/material";
 import VoteFor from "./Icons/VoteFor";
@@ -63,7 +63,12 @@ export const ProposalsList = ({
             p={2}
             width="100%"
           >
-            <Typography variant="h4">#{proposal.id + 1}</Typography>
+            <Typography variant="h4">
+              #{proposal.id + 1}{" "}
+              {proposal.executed ? (
+                <Chip label="Executed" color="success" />
+              ) : null}
+            </Typography>
             <Stack
               direction={{ xs: "column", md: "row" }}
               spacing={4}
@@ -96,12 +101,6 @@ export const ProposalsList = ({
                 <Typography variant="body1">
                   {(proposal.securityDepositAdvertiser / 1e6).toLocaleString()}{" "}
                   USDC
-                </Typography>
-              </Stack>
-              <Stack direction="column" spacing={2}>
-                <Typography variant="body1">Min Proposal Tokens</Typography>
-                <Typography variant="body1">
-                  {(proposal.minProposalTokens / 1e18).toLocaleString()} BBT
                 </Typography>
               </Stack>
               <Stack direction="column" spacing={2}>

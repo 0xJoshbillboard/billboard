@@ -23,6 +23,8 @@ import CloudUploadIcon from "@mui/icons-material/CloudUpload";
 import CloseIcon from "@mui/icons-material/Close";
 import { useConnectWallet } from "@web3-onboard/react";
 import { Ticker } from "../components/Ticker";
+import { BILLBOARD_ADDRESS } from "../utils/contracts";
+import useERC20Permit from "../hooks/useERC20Permit";
 
 export default function Buy() {
   // State management
@@ -41,8 +43,9 @@ export default function Buy() {
     governanceSettings,
     allowanceUSDC,
     transactionStatus,
-    approveUSDC,
+    usdcContract,
   } = useBillboard();
+  const { getPermit } = useERC20Permit();
   const [{ wallet }, connect] = useConnectWallet();
   const theme = useTheme();
 
@@ -266,7 +269,7 @@ export default function Buy() {
                       activeStep={
                         (allowance !== null &&
                           allowance >= governanceSettings.price) ||
-                        transactionStatus?.approveUSDC.completed
+                        transactionStatus?.permitToken.completed
                           ? 1
                           : 0
                       }
@@ -276,7 +279,7 @@ export default function Buy() {
                         completed={
                           (allowance !== null &&
                             allowance >= governanceSettings.price) ||
-                          transactionStatus?.approveUSDC.completed
+                          transactionStatus?.permitToken.completed
                         }
                       >
                         <StepButton
@@ -284,23 +287,27 @@ export default function Buy() {
                             if (
                               wallet &&
                               governanceSettings &&
-                              !transactionStatus?.approveUSDC.pending &&
-                              !transactionStatus?.approveUSDC.completed &&
+                              !transactionStatus?.permitToken.pending &&
+                              !transactionStatus?.permitToken.completed &&
                               !(
                                 allowance !== null &&
                                 allowance >= governanceSettings.price
                               )
                             ) {
-                              await approveUSDC(
+                              await getPermit(
+                                usdcContract,
+                                wallet.accounts[0].address,
+                                BILLBOARD_ADDRESS,
                                 governanceSettings.price.toString(),
+                                "2",
                               );
                               const newAllowance = await allowanceUSDC();
                               setAllowance(Number(newAllowance));
                             }
                           }}
                           disabled={
-                            transactionStatus?.approveUSDC.pending ||
-                            transactionStatus?.approveUSDC.completed ||
+                            transactionStatus?.permitToken.pending ||
+                            transactionStatus?.permitToken.completed ||
                             (allowance !== null &&
                               allowance >= governanceSettings.price)
                           }
@@ -308,15 +315,15 @@ export default function Buy() {
                           <StepLabel>
                             <Box>
                               <Typography variant="body2">
-                                {transactionStatus?.approveUSDC.label ||
-                                  `Approve USDC (${governanceSettings?.price} USDC)`}
+                                {transactionStatus?.permitToken.label ||
+                                  `Permit USDC (${governanceSettings?.price})`}
                               </Typography>
-                              {transactionStatus?.approveUSDC.pending && (
+                              {transactionStatus?.permitToken.pending && (
                                 <Typography variant="caption" color="primary">
                                   Processing...
                                 </Typography>
                               )}
-                              {(transactionStatus?.approveUSDC.completed ||
+                              {(transactionStatus?.permitToken.completed ||
                                 (allowance !== null &&
                                   allowance >= governanceSettings.price)) && (
                                 <Typography
@@ -326,13 +333,13 @@ export default function Buy() {
                                   ✓ Approved
                                 </Typography>
                               )}
-                              {transactionStatus?.approveUSDC.error && (
+                              {transactionStatus?.permitToken.error && (
                                 <Typography
                                   variant="caption"
                                   color="error"
                                   sx={{ overflow: "scroll" }}
                                 >
-                                  Error: {transactionStatus.approveUSDC.error}
+                                  Error: {transactionStatus.permitToken.error}
                                 </Typography>
                               )}
                             </Box>

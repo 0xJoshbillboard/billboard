@@ -5,12 +5,12 @@ const { rpcUrl } = require("../config");
 
 const provider = new ethers.JsonRpcProvider(rpcUrl);
 const contract = new ethers.Contract(
-  "0xc5533b322861de8c894fc44ec421a02395b83df5",
+  "0xeD6725010B662BccCcEC3Cb1cCe83855809c1Cc4",
   abi,
   provider,
 );
 const governanceContract = new ethers.Contract(
-  "0x9527f41eb97173ea364b775b4ab99578110fec5f",
+  "0x1875986B556048742C4597165510F19e9FDb42Fc",
   governanceAbi,
   provider,
 );

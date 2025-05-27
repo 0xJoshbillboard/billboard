@@ -1,18 +1,18 @@
 const { getFirestore } = require("firebase-admin/firestore");
 const logger = require("firebase-functions/logger");
-const { governanceContract } = require("../contracts");
+const { governanceContract, provider } = require("../contracts");
 
 const fetchGovernanceEvents = async () => {
   try {
     const db = getFirestore();
-    const currentBlock = await governanceContract.provider.getBlockNumber();
+    const currentBlock = await provider.getBlockNumber();
 
     const lastRunRef = db
       .collection("governance_events_metadata")
       .doc("last_run");
     const lastRunDoc = await lastRunRef.get();
 
-    let lastProcessedBlock = currentBlock - 10000;
+    let lastProcessedBlock = currentBlock - 100_000;
 
     if (lastRunDoc.exists) {
       lastProcessedBlock = lastRunDoc.data().lastProcessedBlock;

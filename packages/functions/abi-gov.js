@@ -7,11 +7,7 @@ module.exports = [
       { name: "isBlamed", type: "bool", internalType: "bool" },
       { name: "createdAt", type: "uint256", internalType: "uint256" },
       { name: "votesFor", type: "uint256", internalType: "uint256" },
-      {
-        name: "votesAgainst",
-        type: "uint256",
-        internalType: "uint256",
-      },
+      { name: "votesAgainst", type: "uint256", internalType: "uint256" },
       { name: "resolved", type: "bool", internalType: "bool" },
       {
         name: "blameSecurityDeposit",
@@ -30,6 +26,19 @@ module.exports = [
   {
     type: "function",
     name: "blameAdvertiser",
+    inputs: [
+      { name: "advertiser", type: "address", internalType: "address" },
+      { name: "deadline", type: "uint256", internalType: "uint256" },
+      { name: "v", type: "uint8", internalType: "uint8" },
+      { name: "r", type: "bytes32", internalType: "bytes32" },
+      { name: "s", type: "bytes32", internalType: "bytes32" },
+    ],
+    outputs: [],
+    stateMutability: "nonpayable",
+  },
+  {
+    type: "function",
+    name: "blameAdvertiserApprove",
     inputs: [{ name: "advertiser", type: "address", internalType: "address" }],
     outputs: [],
     stateMutability: "nonpayable",
@@ -39,26 +48,30 @@ module.exports = [
     name: "createProposal",
     inputs: [
       { name: "_duration", type: "uint256", internalType: "uint256" },
+      { name: "_pricePerBillboard", type: "uint256", internalType: "uint256" },
+      { name: "_securityDeposit", type: "uint256", internalType: "uint256" },
+      { name: "_minVotingTokens", type: "uint256", internalType: "uint256" },
       {
-        name: "_pricePerBillboard",
+        name: "_securityDepositAdvertiser",
         type: "uint256",
         internalType: "uint256",
       },
-      {
-        name: "_securityDeposit",
-        type: "uint256",
-        internalType: "uint256",
-      },
-      {
-        name: "_minProposalTokens",
-        type: "uint256",
-        internalType: "uint256",
-      },
-      {
-        name: "_minVotingTokens",
-        type: "uint256",
-        internalType: "uint256",
-      },
+      { name: "deadline", type: "uint256", internalType: "uint256" },
+      { name: "v", type: "uint8", internalType: "uint8" },
+      { name: "r", type: "bytes32", internalType: "bytes32" },
+      { name: "s", type: "bytes32", internalType: "bytes32" },
+    ],
+    outputs: [],
+    stateMutability: "nonpayable",
+  },
+  {
+    type: "function",
+    name: "createProposalApprove",
+    inputs: [
+      { name: "_duration", type: "uint256", internalType: "uint256" },
+      { name: "_pricePerBillboard", type: "uint256", internalType: "uint256" },
+      { name: "_securityDeposit", type: "uint256", internalType: "uint256" },
+      { name: "_minVotingTokens", type: "uint256", internalType: "uint256" },
       {
         name: "_securityDepositAdvertiser",
         type: "uint256",
@@ -93,21 +106,9 @@ module.exports = [
         internalType: "struct BillboardGovernance.AdvertiserIsBlamed",
         components: [
           { name: "isBlamed", type: "bool", internalType: "bool" },
-          {
-            name: "createdAt",
-            type: "uint256",
-            internalType: "uint256",
-          },
-          {
-            name: "votesFor",
-            type: "uint256",
-            internalType: "uint256",
-          },
-          {
-            name: "votesAgainst",
-            type: "uint256",
-            internalType: "uint256",
-          },
+          { name: "createdAt", type: "uint256", internalType: "uint256" },
+          { name: "votesFor", type: "uint256", internalType: "uint256" },
+          { name: "votesAgainst", type: "uint256", internalType: "uint256" },
           { name: "resolved", type: "bool", internalType: "bool" },
           {
             name: "blameSecurityDeposit",
@@ -131,37 +132,16 @@ module.exports = [
     inputs: [{ name: "proposalId", type: "uint256", internalType: "uint256" }],
     outputs: [
       { name: "_duration", type: "uint256", internalType: "uint256" },
-      {
-        name: "_pricePerBillboard",
-        type: "uint256",
-        internalType: "uint256",
-      },
-      {
-        name: "_securityDeposit",
-        type: "uint256",
-        internalType: "uint256",
-      },
+      { name: "_pricePerBillboard", type: "uint256", internalType: "uint256" },
+      { name: "_securityDeposit", type: "uint256", internalType: "uint256" },
       {
         name: "_initialSecurityDeposit",
         type: "uint256",
         internalType: "uint256",
       },
-      {
-        name: "_minProposalTokens",
-        type: "uint256",
-        internalType: "uint256",
-      },
-      {
-        name: "_minVotingTokens",
-        type: "uint256",
-        internalType: "uint256",
-      },
+      { name: "_minVotingTokens", type: "uint256", internalType: "uint256" },
       { name: "_votesFor", type: "uint256", internalType: "uint256" },
-      {
-        name: "_votesAgainst",
-        type: "uint256",
-        internalType: "uint256",
-      },
+      { name: "_votesAgainst", type: "uint256", internalType: "uint256" },
       { name: "_executed", type: "bool", internalType: "bool" },
       { name: "_createdAt", type: "uint256", internalType: "uint256" },
       {
@@ -197,42 +177,18 @@ module.exports = [
     name: "initialize",
     inputs: [
       { name: "_duration", type: "uint256", internalType: "uint256" },
-      {
-        name: "_pricePerBillboard",
-        type: "uint256",
-        internalType: "uint256",
-      },
-      {
-        name: "_securityDeposit",
-        type: "uint256",
-        internalType: "uint256",
-      },
+      { name: "_pricePerBillboard", type: "uint256", internalType: "uint256" },
+      { name: "_securityDeposit", type: "uint256", internalType: "uint256" },
       { name: "_token", type: "address", internalType: "address" },
       {
         name: "_securityDepositAdvertiser",
         type: "uint256",
         internalType: "uint256",
       },
-      {
-        name: "_minProposalTokens",
-        type: "uint256",
-        internalType: "uint256",
-      },
-      {
-        name: "_minVotingTokens",
-        type: "uint256",
-        internalType: "uint256",
-      },
+      { name: "_minVotingTokens", type: "uint256", internalType: "uint256" },
     ],
     outputs: [],
     stateMutability: "nonpayable",
-  },
-  {
-    type: "function",
-    name: "minProposalTokens",
-    inputs: [],
-    outputs: [{ name: "", type: "uint256", internalType: "uint256" }],
-    stateMutability: "view",
   },
   {
     type: "function",
@@ -268,37 +224,16 @@ module.exports = [
     inputs: [{ name: "", type: "uint256", internalType: "uint256" }],
     outputs: [
       { name: "duration", type: "uint256", internalType: "uint256" },
-      {
-        name: "pricePerBillboard",
-        type: "uint256",
-        internalType: "uint256",
-      },
-      {
-        name: "securityDeposit",
-        type: "uint256",
-        internalType: "uint256",
-      },
+      { name: "pricePerBillboard", type: "uint256", internalType: "uint256" },
+      { name: "securityDeposit", type: "uint256", internalType: "uint256" },
       {
         name: "initialSecurityDeposit",
         type: "uint256",
         internalType: "uint256",
       },
-      {
-        name: "minProposalTokens",
-        type: "uint256",
-        internalType: "uint256",
-      },
-      {
-        name: "minVotingTokens",
-        type: "uint256",
-        internalType: "uint256",
-      },
+      { name: "minVotingTokens", type: "uint256", internalType: "uint256" },
       { name: "votesFor", type: "uint256", internalType: "uint256" },
-      {
-        name: "votesAgainst",
-        type: "uint256",
-        internalType: "uint256",
-      },
+      { name: "votesAgainst", type: "uint256", internalType: "uint256" },
       { name: "executed", type: "bool", internalType: "bool" },
       { name: "proposer", type: "address", internalType: "address" },
       { name: "depositReturned", type: "bool", internalType: "bool" },
@@ -358,11 +293,7 @@ module.exports = [
     name: "token",
     inputs: [],
     outputs: [
-      {
-        name: "",
-        type: "address",
-        internalType: "contract BillboardToken",
-      },
+      { name: "", type: "address", internalType: "contract BillboardToken" },
     ],
     stateMutability: "view",
   },
@@ -410,18 +341,8 @@ module.exports = [
     type: "event",
     name: "AdvertiserBlameResolved",
     inputs: [
-      {
-        name: "from",
-        type: "address",
-        indexed: true,
-        internalType: "address",
-      },
-      {
-        name: "resolved",
-        type: "bool",
-        indexed: true,
-        internalType: "bool",
-      },
+      { name: "from", type: "address", indexed: true, internalType: "address" },
+      { name: "resolved", type: "bool", indexed: true, internalType: "bool" },
     ],
     anonymous: false,
   },
@@ -429,12 +350,7 @@ module.exports = [
     type: "event",
     name: "AdvertiserBlamed",
     inputs: [
-      {
-        name: "from",
-        type: "address",
-        indexed: true,
-        internalType: "address",
-      },
+      { name: "from", type: "address", indexed: true, internalType: "address" },
       {
         name: "advertiser",
         type: "address",
@@ -500,12 +416,6 @@ module.exports = [
       },
       {
         name: "securityDeposit",
-        type: "uint256",
-        indexed: false,
-        internalType: "uint256",
-      },
-      {
-        name: "minProposalTokens",
         type: "uint256",
         indexed: false,
         internalType: "uint256",
@@ -610,12 +520,7 @@ module.exports = [
         indexed: true,
         internalType: "address",
       },
-      {
-        name: "support",
-        type: "bool",
-        indexed: false,
-        internalType: "bool",
-      },
+      { name: "support", type: "bool", indexed: false, internalType: "bool" },
       {
         name: "votes",
         type: "uint256",
@@ -641,12 +546,7 @@ module.exports = [
         indexed: true,
         internalType: "address",
       },
-      {
-        name: "support",
-        type: "bool",
-        indexed: false,
-        internalType: "bool",
-      },
+      { name: "support", type: "bool", indexed: false, internalType: "bool" },
       {
         name: "votes",
         type: "uint256",

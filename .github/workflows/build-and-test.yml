@@ -71,4 +71,5 @@ jobs:
         run: |
           cd ./packages/ui && yarn dev & UI_PID=$!
           cd ./packages/cypress && yarn cypress run --headless
+          cd ./packages/cypress && yarn test:component --headless
           kill $UI_PID

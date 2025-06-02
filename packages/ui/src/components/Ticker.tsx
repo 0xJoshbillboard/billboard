@@ -32,6 +32,7 @@ export const Ticker = () => {
         py: 1,
         my: 3,
       }}
+      data-cy="ticker"
     >
       <Box
         ref={containerRef}
@@ -55,6 +56,7 @@ export const Ticker = () => {
                 fontStyle: "italic",
                 color: "white",
               }}
+              data-cy={`ticker-item-${index}`}
             >
               {item}
             </Typography>

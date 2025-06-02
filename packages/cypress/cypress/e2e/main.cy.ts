@@ -44,9 +44,8 @@ describe("Main Application Flow", () => {
   });
 
   it("handles wallet connection", () => {
-    // Test wallet connection
     cy.get("button").contains("Connect Wallet").should("be.visible").click();
-    // Note: We can't fully test wallet connection in E2E tests
-    // as it requires actual wallet interaction
   });
+
+  
 });

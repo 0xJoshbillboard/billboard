@@ -20,6 +20,7 @@
     "@testing-library/cypress": "^10.0.1",
     "@types/node": "^20.11.24",
     "cypress": "^13.6.6",
-    "typescript": "^5.3.3"
+    "typescript": "^5.3.3",
+    "vite": "^6.3.5"
   }
 }

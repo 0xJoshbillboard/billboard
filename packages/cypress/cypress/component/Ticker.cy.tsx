@@ -5,17 +5,11 @@ import { Ticker } from "../../../ui/src/components/Ticker";
 describe("Ticker Component", () => {
   it("renders correctly", () => {
     mount(<Ticker />);
-    cy.get('[data-testid="ticker"]').should("exist");
-  });
-
-  it("displays ticker items", () => {
-    mount(<Ticker />);
-    cy.get('[data-testid="ticker-item"]').should("have.length.at.least", 1);
+    cy.get('[data-cy="ticker"]').should("exist");
   });
 
   it("animates ticker items", () => {
     mount(<Ticker />);
-    cy.get('[data-testid="ticker-item"]').first().should("be.visible");
-    // Add animation assertions here
+    cy.get('[data-cy="ticker-item-0"]').first().should("be.visible");
   });
 });

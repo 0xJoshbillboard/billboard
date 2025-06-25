@@ -7,8 +7,8 @@ import "@openzeppelin/contracts/proxy/transparent/TransparentUpgradeableProxy.so
 import "@openzeppelin/contracts/proxy/transparent/ProxyAdmin.sol";
 
 contract UpgradeGovernance is Script {
-    address PROXY_ADDRESS = address(0x6E5f0FC82f3402c12E8d304403661B7e1CDc5067);
-    address PROXY_ADMIN = address(0x75482B817A6609269035E8d560Be330CDC1030e1);
+    address PROXY_ADDRESS = address(0x1875986B556048742C4597165510F19e9FDb42Fc);
+    address PROXY_ADMIN = address(0x034600CB0a9967181b40D41AEBBDAe93F85eDE4B);
 
     function run() public {
         require(PROXY_ADDRESS != address(0), "Please set the proxy address");
@@ -29,11 +29,24 @@ contract UpgradeGovernance is Script {
     }
 }
 
+contract UpdateSecurityDepositForProposal is Script {
+    address PROXY_ADDRESS = address(0x1875986B556048742C4597165510F19e9FDb42Fc);
+
+    function run() public {
+        // Get the private key from the environment
+        uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
+        vm.startBroadcast(deployerPrivateKey);
+        BillboardGovernance governance = BillboardGovernance(PROXY_ADDRESS);
+        governance.updateSecurityDepositForProposal(1000e18);
+        vm.stopBroadcast();
+    }
+}
+
 contract GetProxyAdmin is Script {
     function run() public view {
         bytes32 ADMIN_SLOT = 0xb53127684a568b3173ae13b9f8a6016e243e63b6e8ee1178d6a717850b5d6103;
 
-        address proxyAddress = address(0x6E5f0FC82f3402c12E8d304403661B7e1CDc5067);
+        address proxyAddress = address(0x1875986B556048742C4597165510F19e9FDb42Fc);
         require(proxyAddress != address(0), "Please set the proxy address");
 
         bytes32 adminSlot = vm.load(proxyAddress, ADMIN_SLOT);

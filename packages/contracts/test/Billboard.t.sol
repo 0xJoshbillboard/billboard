@@ -21,8 +21,8 @@ contract BillboardTest is Test {
     address public user = 0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266;
     uint256 public privateKey = 0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80;
     uint256 public initialBalance = 1000000e6;
-    uint256 public securityDeposit = 5000e6;
     uint256 public securityDepositForProvider = 1000e6;
+    uint256 public securityDepositForProposal = 1000e6;
 
     function setUp() public {
         permitSignature = new PermitSignature();
@@ -37,13 +37,18 @@ contract BillboardTest is Test {
 
         BillboardRegistry(address(proxy)).initialize(address(usdc), address(governanceProxy));
         BillboardGovernance(address(governanceProxy)).initialize(
-            30 days, 1000e6, securityDeposit, address(usdc), securityDepositForProvider, 500e6
+            30 days, 1000e6, securityDepositForProposal, address(usdc), securityDepositForProvider, 500e6
         );
 
         usdc.mint(address(this), initialBalance);
 
         vm.label(user, "User");
         usdc.mint(user, initialBalance);
+
+        vm.startPrank(user);
+        usdc.approve(address(billboardToken), type(uint256).max);
+        billboardToken.buyTokensWithApprove(10000e6);
+        vm.stopPrank();
     }
 
     function test_PurchaseBillboard() public {

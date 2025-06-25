@@ -61,19 +61,7 @@ export default function Home() {
           spacing={2}
         >
           {USP_ITEMS.map((item, index) => (
-            <>
-              <USPBox key={item.headline.concat(index.toString())} {...item} />
-              {index < 2 && (
-                <Box
-                  sx={{
-                    height: "430px",
-                    width: "1px",
-                    bgcolor: "divider",
-                    display: { xs: "none", lg: "block" },
-                  }}
-                />
-              )}
-            </>
+            <USPBox key={item.headline.concat(index.toString())} {...item} />
           ))}
         </Stack>
       </Box>
@@ -113,10 +101,9 @@ const USPBox = ({
 }) => {
   return (
     <Box
-      maxWidth="400px"
-      minWidth="400px"
-      maxHeight="480px"
-      minHeight="480px"
+      minWidth="300px"
+      maxHeight="500px"
+      minHeight="400px"
       display="flex"
       flexDirection="column"
       justifyContent="space-between"

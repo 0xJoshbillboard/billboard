@@ -26,7 +26,7 @@ contract GovernanceTest is Test {
     uint256 public privateKey2 = 0x59c6995e998f97a5a0044966f0945389dc9e86dae88c7a8412f4603b6b78690d;
     uint256 public initialDuration = 30 days;
     uint256 public initialPrice = 1000e6;
-    uint256 public securityDeposit = 1000 * 10 ** 18;
+    uint256 public securityDepositForProposal = 1000 * 10 ** 18;
     uint256 public minVotingTokens = 500 * 10 ** 18;
     uint256 public securityDepositAdvertiser = 1000 * 10 ** 6;
 
@@ -39,7 +39,12 @@ contract GovernanceTest is Test {
         governanceProxy = new BillboardGovernanceProxy(address(governance), owner, "");
 
         BillboardGovernance(address(governanceProxy)).initialize(
-            initialDuration, initialPrice, securityDeposit, address(token), securityDepositAdvertiser, minVotingTokens
+            initialDuration,
+            initialPrice,
+            securityDepositForProposal,
+            address(token),
+            securityDepositAdvertiser,
+            minVotingTokens
         );
 
         registry = new BillboardRegistry();
@@ -67,7 +72,7 @@ contract GovernanceTest is Test {
     function test_Initialization() public view {
         assertEq(BillboardGovernance(address(governanceProxy)).duration(), initialDuration);
         assertEq(BillboardGovernance(address(governanceProxy)).pricePerBillboard(), initialPrice);
-        assertEq(BillboardGovernance(address(governanceProxy)).securityDeposit(), securityDeposit);
+        assertEq(BillboardGovernance(address(governanceProxy)).securityDepositForProposal(), securityDepositForProposal);
         assertEq(BillboardGovernance(address(governanceProxy)).owner(), owner);
         assertEq(BillboardGovernance(address(governanceProxy)).minVotingTokens(), minVotingTokens);
         assertEq(BillboardGovernance(address(governanceProxy)).securityDepositAdvertiser(), securityDepositAdvertiser);
@@ -80,37 +85,26 @@ contract GovernanceTest is Test {
 
         uint256 deadline = block.timestamp + 1 hours;
         (uint8 v, bytes32 r, bytes32 s) = permitSignature.getPermitSignature(
-            address(token), user, address(governanceProxy), securityDeposit, privateKey, deadline
+            address(token), user, address(governanceProxy), securityDepositForProposal, privateKey, deadline
         );
 
         BillboardGovernance(address(governanceProxy)).createProposal(
-            60 days, 2000e6, 1500 * 10 ** 18, 1000 * 10 ** 18, 900 * 10 ** 18, deadline, v, r, s
+            60 days, 2000e6, 1500 * 10 ** 18, 1000 * 10 ** 18, 900 * 10 ** 6, deadline, v, r, s
         );
         vm.stopPrank();
 
-        (
-            uint256 duration,
-            uint256 price,
-            uint256 deposit,
-            uint256 initialSecurityDeposit,
-            uint256 minVotingTokensFromProposal,
-            uint256 votesFor,
-            uint256 votesAgainst,
-            bool executed,
-            uint256 createdAt,
-            uint256 securityDepositAdvertiserFromProposal
-        ) = BillboardGovernance(address(governanceProxy)).getProposal(0);
+        BillboardGovernance.Proposal memory proposal = BillboardGovernance(address(governanceProxy)).getProposal(0);
 
-        assertEq(duration, 60 days);
-        assertEq(price, 2000e6);
-        assertEq(deposit, 1500 * 10 ** 18);
-        assertEq(initialSecurityDeposit, 1000 * 10 ** 18);
-        assertEq(minVotingTokensFromProposal, 1000 * 10 ** 18);
-        assertEq(votesFor, 0);
-        assertEq(votesAgainst, 0);
-        assertEq(executed, false);
-        assertEq(createdAt, block.timestamp);
-        assertEq(securityDepositAdvertiserFromProposal, 900 * 10 ** 18);
+        assertEq(proposal.duration, 60 days);
+        assertEq(proposal.pricePerBillboard, 2000e6);
+        assertEq(proposal.securityDepositForProposal, 1500 * 10 ** 18);
+        assertEq(proposal.initialSecurityDeposit, 1000 * 10 ** 18);
+        assertEq(proposal.minVotingTokens, 1000 * 10 ** 18);
+        assertEq(proposal.votesFor, 0);
+        assertEq(proposal.votesAgainst, 0);
+        assertEq(proposal.executed, false);
+        assertEq(proposal.createdAt, block.timestamp);
+        assertEq(proposal.securityDepositAdvertiser, 900 * 10 ** 6);
     }
 
     function test_CreateProposal_RevertWhenInsufficientTokens() public {
@@ -118,7 +112,7 @@ contract GovernanceTest is Test {
 
         uint256 deadline = block.timestamp + 1 hours;
         (uint8 v, bytes32 r, bytes32 s) = permitSignature.getPermitSignature(
-            address(token), user2, address(governanceProxy), securityDeposit, privateKey2, deadline
+            address(token), user2, address(governanceProxy), securityDepositForProposal, privateKey2, deadline
         );
 
         // spend his tokens
@@ -127,7 +121,7 @@ contract GovernanceTest is Test {
             abi.encodeWithSignature("ERC20InsufficientBalance(address,uint256,uint256)", user2, 0, 1000 * 10 ** 18)
         );
         BillboardGovernance(address(governanceProxy)).createProposal(
-            60 days, 2000e6, 15000 * 10 ** 18, 1500 * 10 ** 18, 900 * 10 ** 18, deadline, v, r, s
+            60 days, 2000e6, 15000 * 10 ** 18, 1500 * 10 ** 18, 900 * 10 ** 6, deadline, v, r, s
         );
         vm.stopPrank();
     }
@@ -151,7 +145,7 @@ contract GovernanceTest is Test {
         vm.startPrank(user);
         uint256 deadline3 = block.timestamp + 1 hours;
         (uint8 v3, bytes32 r3, bytes32 s3) = permitSignature.getPermitSignature(
-            address(token), user, address(governanceProxy), securityDeposit, privateKey, deadline3
+            address(token), user, address(governanceProxy), securityDepositForProposal, privateKey, deadline3
         );
         BillboardGovernance(address(governanceProxy)).createProposal(
             60 days, 2000e6, 15000 * 10 ** 18, 1500 * 10 ** 18, 900 * 10 ** 18, deadline3, v3, r3, s3
@@ -162,11 +156,10 @@ contract GovernanceTest is Test {
         BillboardGovernance(address(governanceProxy)).vote(0, true);
         vm.stopPrank();
 
-        (,,,,, uint256 votesFor, uint256 votesAgainst, bool executed,,) =
-            BillboardGovernance(address(governanceProxy)).getProposal(0);
-        assertEq(votesFor, token.balanceOf(user2));
-        assertEq(votesAgainst, 0);
-        assertEq(executed, false);
+        BillboardGovernance.Proposal memory proposal = BillboardGovernance(address(governanceProxy)).getProposal(0);
+        assertEq(proposal.votesFor, token.balanceOf(user2));
+        assertEq(proposal.votesAgainst, 0);
+        assertEq(proposal.executed, false);
     }
 
     function test_ExecuteProposal() public {
@@ -194,7 +187,7 @@ contract GovernanceTest is Test {
 
         uint256 deadline3 = block.timestamp + 1 hours;
         (uint8 v3, bytes32 r3, bytes32 s3) = permitSignature.getPermitSignature(
-            address(token), user, address(governanceProxy), securityDeposit, privateKey, deadline3
+            address(token), user, address(governanceProxy), securityDepositForProposal, privateKey, deadline3
         );
 
         BillboardGovernance(address(governanceProxy)).createProposal(
@@ -212,12 +205,12 @@ contract GovernanceTest is Test {
 
         assertEq(BillboardGovernance(address(governanceProxy)).duration(), 60 days);
         assertEq(BillboardGovernance(address(governanceProxy)).pricePerBillboard(), 2000e6);
-        assertEq(BillboardGovernance(address(governanceProxy)).securityDeposit(), 1000 * 10 ** 18);
+        assertEq(BillboardGovernance(address(governanceProxy)).securityDepositForProposal(), 1000 * 10 ** 18);
         assertEq(BillboardGovernance(address(governanceProxy)).minVotingTokens(), 1500 * 10 ** 18);
         assertEq(BillboardGovernance(address(governanceProxy)).securityDepositAdvertiser(), 800 * 10 ** 18);
 
-        (,,,,,,, bool _executed,,) = BillboardGovernance(address(governanceProxy)).getProposal(0);
-        assertEq(_executed, true);
+        BillboardGovernance.Proposal memory proposal = BillboardGovernance(address(governanceProxy)).getProposal(0);
+        assertEq(proposal.executed, true);
     }
 
     function test_ExecuteProposal_RevertWhenVotingPeriodNotEnded() public {
@@ -252,13 +245,13 @@ contract GovernanceTest is Test {
 
         uint256 deadline2 = block.timestamp + 1 hours;
         (uint8 v2, bytes32 r2, bytes32 s2) = permitSignature.getPermitSignature(
-            address(token), user, address(governanceProxy), securityDeposit, privateKey, deadline2
+            address(token), user, address(governanceProxy), securityDepositForProposal, privateKey, deadline2
         );
         uint256 initialBalance = token.balanceOf(user);
         BillboardGovernance(address(governanceProxy)).createProposal(
             60 days, 2000e6, 15000 * 10 ** 18, 1500 * 10 ** 18, 800 * 10 ** 18, deadline2, v2, r2, s2
         );
-        assertEq(token.balanceOf(user), initialBalance - securityDeposit);
+        assertEq(token.balanceOf(user), initialBalance - securityDepositForProposal);
         vm.stopPrank();
 
         vm.startPrank(user2);
@@ -271,24 +264,24 @@ contract GovernanceTest is Test {
         assertEq(token.balanceOf(user), initialBalance);
 
         vm.expectRevert("Deposit already returned");
-        BillboardGovernance(address(governanceProxy)).returnSecurityDeposit(0);
+        BillboardGovernance(address(governanceProxy)).returnSecurityDepositForProposal(0);
     }
 
-    function test_ReturnSecurityDeposit_AfterVotingPeriod() public {
+    function test_ReturnSecurityDepositForProposal_AfterVotingPeriod() public {
         test_CreateProposal_WithSufficientTokens();
 
         vm.warp(block.timestamp + 30 days + 1);
 
         uint256 initialBalance = token.balanceOf(user);
-        BillboardGovernance(address(governanceProxy)).returnSecurityDeposit(0);
-        assertEq(token.balanceOf(user), initialBalance + securityDeposit);
+        BillboardGovernance(address(governanceProxy)).returnSecurityDepositForProposal(0);
+        assertEq(token.balanceOf(user), initialBalance + securityDepositForProposal);
     }
 
     function test_ReturnSecurityDeposit_RevertWhenStillActive() public {
         test_CreateProposal_WithSufficientTokens();
 
         vm.expectRevert("Proposal voting not done");
-        BillboardGovernance(address(governanceProxy)).returnSecurityDeposit(0);
+        BillboardGovernance(address(governanceProxy)).returnSecurityDepositForProposal(0);
     }
 
     function test_ReturnSecurityDeposit_RevertWhenAlreadyReturned() public {
@@ -316,7 +309,7 @@ contract GovernanceTest is Test {
 
         uint256 deadline3 = block.timestamp + 1 hours;
         (uint8 v3, bytes32 r3, bytes32 s3) = permitSignature.getPermitSignature(
-            address(token), user, address(governanceProxy), securityDeposit, privateKey, deadline3
+            address(token), user, address(governanceProxy), securityDepositForProposal, privateKey, deadline3
         );
         BillboardGovernance(address(governanceProxy)).createProposal(
             60 days, 2000e6, 15000 * 10 ** 18, 1500 * 10 ** 18, 800 * 10 ** 18, deadline3, v3, r3, s3
@@ -331,7 +324,7 @@ contract GovernanceTest is Test {
 
         BillboardGovernance(address(governanceProxy)).executeProposal(0);
         vm.expectRevert("Deposit already returned");
-        BillboardGovernance(address(governanceProxy)).returnSecurityDeposit(0);
+        BillboardGovernance(address(governanceProxy)).returnSecurityDepositForProposal(0);
     }
 
     function test_blameAdvertiser() public {

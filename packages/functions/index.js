@@ -17,7 +17,7 @@ const { uploadImageToSwarmy } = require("./src/services/swarmy");
 
 exports.scheduledFetchContractLogs = onSchedule(
   {
-    schedule: "every 3 hours",
+    schedule: "every 6 hours",
     timeZone: "UTC",
   },
   async () => {
@@ -30,7 +30,7 @@ exports.scheduledFetchContractLogs = onSchedule(
 
 exports.scheduledUpdateActiveAds = onSchedule(
   {
-    schedule: "every 3 hours",
+    schedule: "every 6 hours",
     timeZone: "UTC",
   },
   async () => {
@@ -43,7 +43,7 @@ exports.scheduledUpdateActiveAds = onSchedule(
 
 exports.scheduledGovernanceEventsFetch = onSchedule(
   {
-    schedule: "every 3 hours",
+    schedule: "every 6 hours",
     timeZone: "Europe/London",
   },
   async () => {

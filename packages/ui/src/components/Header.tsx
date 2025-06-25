@@ -13,14 +13,12 @@ import {
   useTheme,
   Container,
   Divider,
-  Typography,
 } from "@mui/material";
 import { Menu as MenuIcon, KeyboardArrowDown } from "@mui/icons-material";
 import { useConnectWallet, useSetChain } from "@web3-onboard/react";
 import { chains } from "../utils/chains";
 import BillboardIcon from "./Icons/Billboard";
 import { menuItems } from "../utils/links";
-import useBillboard from "../hooks/useBillboard";
 import { AccountDashboard } from "./AccountDashboard";
 
 export default function Header(
@@ -36,7 +34,6 @@ export default function Header(
   const theme = useTheme();
   const location = useLocation();
   const [{ wallet, connecting }, connect, disconnect] = useConnectWallet();
-  const { usdcBalance } = useBillboard();
 
   const toggleMenu = () => {
     setIsMenuOpen(!isMenuOpen);
@@ -374,19 +371,6 @@ export default function Header(
           </List>
         </Drawer>
       </Container>
-      <Box
-        sx={{
-          width: "100%",
-          backgroundColor: theme.palette.primary.main,
-          py: 1,
-          textAlign: "center",
-          height: "40px",
-        }}
-      >
-        <Typography variant="body1" fontWeight="bold" fontSize="small">
-          BETA VERSION - PROCEED WITH CAUTION
-        </Typography>
-      </Box>
     </AppBar>
   );
 }

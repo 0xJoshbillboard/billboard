@@ -219,8 +219,9 @@ export default function useBillboard() {
           const readablePrice = Number(price) / 1_000_000;
           const durationInSeconds = Number(duration);
           const minVotingTokensReadable = Number(minVotingTokens) / 1e18;
-          const securityDepositReadable =
-            Number(securityDepositForProposal) / 1e18;
+          const securityDepositReadable = Number(
+            securityDepositForProposal / BigInt(1e18),
+          );
           const securityDepositAdvertiserReadable =
             Number(securityDepositAdvertiser) / 1e6;
           setGovernanceSettings({

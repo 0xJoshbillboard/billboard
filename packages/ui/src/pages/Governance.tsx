@@ -36,6 +36,7 @@ export default function Governance() {
     blameAdvertiser,
     voteForBlame,
   } = useBillboard();
+  console.log(governanceSettings.securityDepositForProposal);
 
   const [showCreateProposal, setShowCreateProposal] = useState(false);
   const [buyAmount, setBuyAmount] = useState("");

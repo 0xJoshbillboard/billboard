@@ -37,7 +37,7 @@ contract UpdateSecurityDepositForProposal is Script {
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
         vm.startBroadcast(deployerPrivateKey);
         BillboardGovernance governance = BillboardGovernance(PROXY_ADDRESS);
-        governance.updateSecurityDepositForProposal(1000e18);
+        governance.updateSecurityDepositForProposal(1000 * 10 ** 18);
         vm.stopBroadcast();
     }
 }

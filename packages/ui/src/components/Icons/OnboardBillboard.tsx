@@ -1239,4 +1239,4 @@ export const OnboardBillboard = `<svg width="299" height="229" viewBox="0 0 299 
             <rect width="278" height="208" fill="white" transform="translate(10.8334 10.3459)" />
         </clipPath>
     </defs>
-</svg>`
+</svg>`;

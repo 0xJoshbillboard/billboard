@@ -23,7 +23,7 @@ contract IntegrationTest is Test {
     uint256 public privateKey2 = 0x59c6995e998f97a5a0044966f0945389dc9e86dae88c7a8412f4603b6b78690d;
     uint256 public constant initialDuration = 30 days;
     uint256 public constant initialPrice = 1000e6;
-    uint256 public constant securityDeposit = 1000 * 10 ** 6;
+    uint256 public constant securityDepositForProposal = 1000 * 10 ** 18;
     uint256 public constant minProposalTokens = 1000 * 10 ** 18;
     uint256 public constant minVotingTokens = 1000 * 10 ** 18;
     uint256 public constant securityDepositAdvertiser = 500 * 10 ** 6;
@@ -49,7 +49,7 @@ contract IntegrationTest is Test {
     function test_Deployment() public view {
         assertEq(BillboardGovernance(address(governanceProxy)).duration(), initialDuration);
         assertEq(BillboardGovernance(address(governanceProxy)).pricePerBillboard(), initialPrice);
-        assertEq(BillboardGovernance(address(governanceProxy)).securityDeposit(), securityDeposit);
+        assertEq(BillboardGovernance(address(governanceProxy)).securityDepositForProposal(), securityDepositForProposal);
         assertEq(BillboardGovernance(address(governanceProxy)).minVotingTokens(), minVotingTokens);
         assertEq(BillboardGovernance(address(governanceProxy)).securityDepositAdvertiser(), securityDepositAdvertiser);
         assertEq(address(BillboardGovernance(address(governanceProxy)).token()), address(billboardToken));
@@ -89,7 +89,7 @@ contract IntegrationTest is Test {
 
         uint256 deadline2 = block.timestamp + 1 hours;
         (uint8 v2, bytes32 r2, bytes32 s2) = permitSignature.getPermitSignature(
-            address(billboardToken), user, address(governanceProxy), securityDeposit, privateKey, deadline2
+            address(billboardToken), user, address(governanceProxy), securityDepositForProposal, privateKey, deadline2
         );
 
         BillboardGovernance(address(governanceProxy)).createProposal(
@@ -97,29 +97,18 @@ contract IntegrationTest is Test {
         );
         vm.stopPrank();
 
-        (
-            uint256 duration,
-            uint256 price,
-            uint256 deposit,
-            uint256 initialSecurityDeposit,
-            uint256 minVotingTokensFromProposal,
-            uint256 votesFor,
-            uint256 votesAgainst,
-            bool executed,
-            uint256 createdAt,
-            uint256 securityDepositAdvertiserFromProposal
-        ) = BillboardGovernance(address(governanceProxy)).getProposal(0);
+        BillboardGovernance.Proposal memory proposal = BillboardGovernance(address(governanceProxy)).getProposal(0);
 
-        assertEq(duration, 60 days);
-        assertEq(price, 2000e6);
-        assertEq(deposit, 15000 * 10 ** 18);
-        assertEq(initialSecurityDeposit, securityDeposit);
-        assertEq(votesFor, 0);
-        assertEq(votesAgainst, 0);
-        assertEq(executed, false);
-        assertEq(createdAt, block.timestamp);
-        assertEq(securityDepositAdvertiserFromProposal, 900 * 10 ** 18);
-        assertEq(minVotingTokensFromProposal, 1500 * 10 ** 18);
+        assertEq(proposal.duration, 60 days);
+        assertEq(proposal.pricePerBillboard, 2000e6);
+        assertEq(proposal.securityDepositForProposal, 15000 * 10 ** 18);
+        assertEq(proposal.initialSecurityDeposit, securityDepositForProposal);
+        assertEq(proposal.minVotingTokens, 1500 * 10 ** 18);
+        assertEq(proposal.votesFor, 0);
+        assertEq(proposal.votesAgainst, 0);
+        assertEq(proposal.executed, false);
+        assertEq(proposal.createdAt, block.timestamp);
+        assertEq(proposal.securityDepositAdvertiser, 900 * 10 ** 18);
     }
 
     function test_AdvertiserRegistration() public {
@@ -149,7 +138,7 @@ contract IntegrationTest is Test {
 
         uint256 deadline2 = block.timestamp + 1 hours;
         (uint8 v2, bytes32 r2, bytes32 s2) = permitSignature.getPermitSignature(
-            address(billboardToken), user, address(governanceProxy), securityDeposit, privateKey, deadline2
+            address(billboardToken), user, address(governanceProxy), securityDepositForProposal, privateKey, deadline2
         );
         BillboardGovernance(address(governanceProxy)).createProposal(
             60 days, 2000e6, 15000 * 10 ** 18, 1500 * 10 ** 18, 900 * 10 ** 18, deadline2, v2, r2, s2
@@ -168,10 +157,10 @@ contract IntegrationTest is Test {
         vm.stopPrank();
 
         // Verify votes
-        (,,,,, uint256 votesFor, uint256 votesAgainst,,,) = BillboardGovernance(address(governanceProxy)).getProposal(0);
+        BillboardGovernance.Proposal memory proposal = BillboardGovernance(address(governanceProxy)).getProposal(0);
 
-        assertEq(votesFor, billboardToken.balanceOf(user2));
-        assertEq(votesAgainst, 0);
+        assertEq(proposal.votesFor, billboardToken.balanceOf(user2));
+        assertEq(proposal.votesAgainst, 0);
     }
 
     function test_ProposalExecution() public {
@@ -184,7 +173,7 @@ contract IntegrationTest is Test {
 
         uint256 deadline2 = block.timestamp + 1 hours;
         (uint8 v2, bytes32 r2, bytes32 s2) = permitSignature.getPermitSignature(
-            address(billboardToken), user, address(governanceProxy), securityDeposit, privateKey, deadline2
+            address(billboardToken), user, address(governanceProxy), securityDepositForProposal, privateKey, deadline2
         );
 
         BillboardGovernance(address(governanceProxy)).createProposal(
@@ -210,24 +199,13 @@ contract IntegrationTest is Test {
         // Execute proposal
         BillboardGovernance(address(governanceProxy)).executeProposal(0);
 
-        (
-            uint256 duration,
-            uint256 pricePerBillboard,
-            uint256 securityDepositFromProposal,
-            ,
-            uint256 minVotingTokensFromProposal,
-            ,
-            ,
-            bool executed,
-            ,
-            uint256 securityDepositAdvertiserFromProposal
-        ) = BillboardGovernance(address(governanceProxy)).getProposal(0);
+        BillboardGovernance.Proposal memory proposal = BillboardGovernance(address(governanceProxy)).getProposal(0);
 
-        assertEq(executed, true);
-        assertEq(securityDepositAdvertiserFromProposal, 900 * 10 ** 18);
-        assertEq(duration, 70 days);
-        assertEq(pricePerBillboard, 2000e6);
-        assertEq(securityDepositFromProposal, 15000 * 10 ** 18);
-        assertEq(minVotingTokensFromProposal, 1500 * 10 ** 18);
+        assertEq(proposal.executed, true);
+        assertEq(proposal.securityDepositAdvertiser, 900 * 10 ** 18);
+        assertEq(proposal.duration, 70 days);
+        assertEq(proposal.pricePerBillboard, 2000e6);
+        assertEq(proposal.securityDepositForProposal, 15000 * 10 ** 18);
+        assertEq(proposal.minVotingTokens, 1500 * 10 ** 18);
     }
 }

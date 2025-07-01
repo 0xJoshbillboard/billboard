@@ -7,16 +7,20 @@ import "./BillboardToken.sol";
 
 contract BillboardGovernance is Initializable, OwnableUpgradeable {
     uint256 public duration;
+    // In USDC
     uint256 public pricePerBillboard;
-    uint256 public securityDeposit;
+    // In BBT
+    uint256 public securityDepositForProposal;
+    // In BBT
     uint256 public minVotingTokens;
     BillboardToken public token;
+    // In USDC
     uint256 public securityDepositAdvertiser;
 
     struct Proposal {
         uint256 duration;
         uint256 pricePerBillboard;
-        uint256 securityDeposit;
+        uint256 securityDepositForProposal;
         uint256 initialSecurityDeposit;
         uint256 minVotingTokens;
         uint256 votesFor;
@@ -49,7 +53,7 @@ contract BillboardGovernance is Initializable, OwnableUpgradeable {
         uint256 indexed proposalId,
         uint256 duration,
         uint256 pricePerBillboard,
-        uint256 securityDeposit,
+        uint256 securityDepositForProposal,
         uint256 minVotingTokens,
         uint256 createdAt,
         uint256 securityDepositAdvertiser
@@ -66,10 +70,14 @@ contract BillboardGovernance is Initializable, OwnableUpgradeable {
         securityDepositAdvertiser = _securityDepositAdvertiser;
     }
 
+    function updateSecurityDepositForProposal(uint256 _securityDepositForProposal) external onlyOwner {
+        securityDepositForProposal = _securityDepositForProposal;
+    }
+
     function initialize(
         uint256 _duration,
         uint256 _pricePerBillboard,
-        uint256 _securityDeposit,
+        uint256 _securityDepositForProposal,
         address _token,
         uint256 _securityDepositAdvertiser,
         uint256 _minVotingTokens
@@ -77,7 +85,7 @@ contract BillboardGovernance is Initializable, OwnableUpgradeable {
         __Ownable_init(msg.sender);
         duration = _duration;
         pricePerBillboard = _pricePerBillboard;
-        securityDeposit = _securityDeposit;
+        securityDepositForProposal = _securityDepositForProposal;
         token = BillboardToken(_token);
         proposalCount = 0;
         securityDepositAdvertiser = _securityDepositAdvertiser;
@@ -87,7 +95,7 @@ contract BillboardGovernance is Initializable, OwnableUpgradeable {
     function createProposal(
         uint256 _duration,
         uint256 _pricePerBillboard,
-        uint256 _securityDeposit,
+        uint256 _securityDepositForProposal,
         uint256 _minVotingTokens,
         uint256 _securityDepositAdvertiser,
         uint256 deadline,
@@ -95,21 +103,24 @@ contract BillboardGovernance is Initializable, OwnableUpgradeable {
         bytes32 r,
         bytes32 s
     ) external {
-        token.permit(msg.sender, address(this), securityDeposit, deadline, v, r, s);
-        require(token.transferFrom(msg.sender, address(this), securityDeposit), "Security deposit transfer failed");
+        token.permit(msg.sender, address(this), securityDepositForProposal, deadline, v, r, s);
+        require(
+            token.transferFrom(msg.sender, address(this), securityDepositForProposal),
+            "Security deposit transfer failed"
+        );
 
         uint256 proposalId = proposalCount;
         proposals[proposalId] = Proposal({
             duration: _duration,
             pricePerBillboard: _pricePerBillboard,
-            securityDeposit: _securityDeposit,
+            securityDepositForProposal: _securityDepositForProposal,
             minVotingTokens: _minVotingTokens,
             votesFor: 0,
             votesAgainst: 0,
             executed: false,
             proposer: msg.sender,
             depositReturned: false,
-            initialSecurityDeposit: securityDeposit,
+            initialSecurityDeposit: securityDepositForProposal,
             createdAt: block.timestamp,
             securityDepositAdvertiser: _securityDepositAdvertiser
         });
@@ -120,7 +131,7 @@ contract BillboardGovernance is Initializable, OwnableUpgradeable {
             proposalId,
             _duration,
             _pricePerBillboard,
-            _securityDeposit,
+            _securityDepositForProposal,
             _minVotingTokens,
             block.timestamp,
             _securityDepositAdvertiser
@@ -130,24 +141,27 @@ contract BillboardGovernance is Initializable, OwnableUpgradeable {
     function createProposalApprove(
         uint256 _duration,
         uint256 _pricePerBillboard,
-        uint256 _securityDeposit,
+        uint256 _securityDepositForProposal,
         uint256 _minVotingTokens,
         uint256 _securityDepositAdvertiser
     ) external {
-        require(token.transferFrom(msg.sender, address(this), securityDeposit), "Security deposit transfer failed");
+        require(
+            token.transferFrom(msg.sender, address(this), securityDepositForProposal),
+            "Security deposit transfer failed"
+        );
 
         uint256 proposalId = proposalCount;
         proposals[proposalId] = Proposal({
             duration: _duration,
             pricePerBillboard: _pricePerBillboard,
-            securityDeposit: _securityDeposit,
+            securityDepositForProposal: _securityDepositForProposal,
             minVotingTokens: _minVotingTokens,
             votesFor: 0,
             votesAgainst: 0,
             executed: false,
             proposer: msg.sender,
             depositReturned: false,
-            initialSecurityDeposit: securityDeposit,
+            initialSecurityDeposit: securityDepositForProposal,
             createdAt: block.timestamp,
             securityDepositAdvertiser: _securityDepositAdvertiser
         });
@@ -158,7 +172,7 @@ contract BillboardGovernance is Initializable, OwnableUpgradeable {
             proposalId,
             _duration,
             _pricePerBillboard,
-            _securityDeposit,
+            _securityDepositForProposal,
             _minVotingTokens,
             block.timestamp,
             _securityDepositAdvertiser
@@ -193,17 +207,17 @@ contract BillboardGovernance is Initializable, OwnableUpgradeable {
 
         duration = proposal.duration;
         pricePerBillboard = proposal.pricePerBillboard;
-        securityDeposit = proposal.securityDeposit;
+        securityDepositForProposal = proposal.securityDepositForProposal;
         minVotingTokens = proposal.minVotingTokens;
         securityDepositAdvertiser = proposal.securityDepositAdvertiser;
         proposal.executed = true;
 
-        returnSecurityDeposit(proposalId);
+        returnSecurityDepositForProposal(proposalId);
 
         emit ProposalExecuted(proposalId);
     }
 
-    function returnSecurityDeposit(uint256 proposalId) public {
+    function returnSecurityDepositForProposal(uint256 proposalId) public {
         require(proposalId < proposalCount, "Invalid proposal");
         Proposal storage proposal = proposals[proposalId];
         require(!proposal.depositReturned, "Deposit already returned");
@@ -308,35 +322,8 @@ contract BillboardGovernance is Initializable, OwnableUpgradeable {
         );
     }
 
-    function getProposal(uint256 proposalId)
-        external
-        view
-        returns (
-            uint256 _duration,
-            uint256 _pricePerBillboard,
-            uint256 _securityDeposit,
-            uint256 _initialSecurityDeposit,
-            uint256 _minVotingTokens,
-            uint256 _votesFor,
-            uint256 _votesAgainst,
-            bool _executed,
-            uint256 _createdAt,
-            uint256 _securityDepositAdvertiser
-        )
-    {
+    function getProposal(uint256 proposalId) external view returns (Proposal memory proposal) {
         require(proposalId < proposalCount, "Invalid proposal");
-        Proposal storage proposal = proposals[proposalId];
-        return (
-            proposal.duration,
-            proposal.pricePerBillboard,
-            proposal.securityDeposit,
-            proposal.initialSecurityDeposit,
-            proposal.minVotingTokens,
-            proposal.votesFor,
-            proposal.votesAgainst,
-            proposal.executed,
-            proposal.createdAt,
-            proposal.securityDepositAdvertiser
-        );
+        return proposals[proposalId];
     }
 }

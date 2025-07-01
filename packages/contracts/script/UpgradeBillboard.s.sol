@@ -7,8 +7,8 @@ import "@openzeppelin/contracts/proxy/transparent/TransparentUpgradeableProxy.so
 import "@openzeppelin/contracts/proxy/transparent/ProxyAdmin.sol";
 
 contract UpgradeBillboard is Script {
-    address PROXY_ADDRESS = address(0xDcBACD4DE1714F0B6c68E61AaC8AB31fadD649D1);
-    address PROXY_ADMIN = address(0xbb366D9ccD4bA7bCC43a8edbFd15B27a66F70f3d);
+    address PROXY_ADDRESS = address(0xeD6725010B662BccCcEC3Cb1cCe83855809c1Cc4);
+    address PROXY_ADMIN = address(0xc43629a84536A4957F76f12e23dFd093C38B7827);
 
     function run() public {
         require(PROXY_ADDRESS != address(0), "Please set the proxy address");
@@ -29,7 +29,7 @@ contract UpgradeBillboard is Script {
 
 contract VerifyBillboard is Script {
     function run() public view {
-        address proxyAddress = address(0xDcBACD4DE1714F0B6c68E61AaC8AB31fadD649D1);
+        address proxyAddress = address(0xeD6725010B662BccCcEC3Cb1cCe83855809c1Cc4);
         require(proxyAddress != address(0), "Please set the proxy address");
 
         bytes32 IMPLEMENTATION_SLOT = 0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc;
@@ -51,7 +51,7 @@ contract GetProxyAdmin is Script {
     function run() public view {
         bytes32 ADMIN_SLOT = 0xb53127684a568b3173ae13b9f8a6016e243e63b6e8ee1178d6a717850b5d6103;
 
-        address proxyAddress = address(0xDcBACD4DE1714F0B6c68E61AaC8AB31fadD649D1);
+        address proxyAddress = address(0xeD6725010B662BccCcEC3Cb1cCe83855809c1Cc4);
         require(proxyAddress != address(0), "Please set the proxy address");
 
         bytes32 adminSlot = vm.load(proxyAddress, ADMIN_SLOT);

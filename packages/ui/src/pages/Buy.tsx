@@ -60,6 +60,10 @@ export default function Buy() {
   // File handling
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     if (event.target.files && event.target.files.length > 0) {
+      if (event.target.files[0].size > 2097152) {
+        setError("File size must be less than 2MB");
+        return;
+      }
       setSelectedFile(event.target.files[0]);
       setError(null);
     }
@@ -234,7 +238,7 @@ export default function Buy() {
                 startIcon={<CloudUploadIcon />}
                 sx={{ mt: 2 }}
               >
-                Upload an image
+                Upload an image (max 2MB)
                 <input
                   type="file"
                   accept="image/*"

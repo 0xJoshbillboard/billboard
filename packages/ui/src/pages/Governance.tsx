@@ -122,7 +122,8 @@ export default function Governance() {
                   Security Deposit for creating a Proposal
                 </Typography>
                 <Typography variant="body1">
-                  {governanceSettings.securityDeposit.toLocaleString()} USDC
+                  {governanceSettings.securityDepositForProposal.toLocaleString()}{" "}
+                  BBT
                 </Typography>
               </Box>
               <Box>
@@ -307,7 +308,7 @@ export default function Governance() {
           <BlameAdvertiser
             blameAdvertiser={blameAdvertiser}
             transactionStatus={transactionStatus}
-            securityDeposit={governanceSettings.securityDeposit}
+            securityDeposit={governanceSettings.securityDepositForProposal}
             voteForBlame={voteForBlame}
             resolveAdvertiserBlame={resolveAdvertiserBlame}
           />

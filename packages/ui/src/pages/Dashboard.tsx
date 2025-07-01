@@ -63,7 +63,6 @@ export default function Dashboard() {
               billboard.owner.toLowerCase() ===
               wallet.accounts[0].address.toLowerCase(),
           );
-          console.log(userBillboards);
 
           const stats = await getStatistics(
             userBillboards.map((billboard) => billboard.owner),

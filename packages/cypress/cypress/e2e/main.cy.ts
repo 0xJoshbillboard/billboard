@@ -46,6 +46,4 @@ describe("Main Application Flow", () => {
   it("handles wallet connection", () => {
     cy.get("button").contains("Connect Wallet").should("be.visible").click();
   });
-
-  
 });

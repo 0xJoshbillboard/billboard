@@ -682,22 +682,15 @@ export default function useBillboard() {
         buyBillboard: { ...prev.buyBillboard, pending: true, error: null },
       }));
 
-      const tx = permitFromToken
-        ? getMulticall3Contract(signer).aggregate([
-            {
-              target: contract.target,
-              data: contract.interface.encodeFunctionData("purchaseBillboard", [
-                description,
-                link,
-                url.hash,
-                permitFromToken.deadline,
-                permitFromToken.v,
-                permitFromToken.r,
-                permitFromToken.s,
-              ]),
-            },
-          ])
-        : await contract.purchaseBillboard(description, link, url.hash);
+      const tx = await contract.purchaseBillboard(
+        description,
+        link,
+        url.hash,
+        permitFromToken?.deadline,
+        permitFromToken?.v,
+        permitFromToken?.r,
+        permitFromToken?.s,
+      );
       await tx.wait();
 
       setTransactionStatus((prev) => ({

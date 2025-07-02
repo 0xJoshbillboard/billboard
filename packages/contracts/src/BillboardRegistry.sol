@@ -29,7 +29,9 @@ contract BillboardRegistry is Initializable, OwnableUpgradeable {
         bool vertical;
     }
 
-    event BillboardPurchased(address indexed buyer, uint256 expiryTime, string description, string link, string hash, bool vertical);
+    event BillboardPurchased(
+        address indexed buyer, uint256 expiryTime, string description, string link, string hash, bool vertical
+    );
 
     event BillboardExtended(address indexed owner, uint256 index, uint256 newExpiryTime);
 
@@ -94,7 +96,9 @@ contract BillboardRegistry is Initializable, OwnableUpgradeable {
         emit BillboardPurchased(msg.sender, block.timestamp + governance.duration(), description, link, hash, vertical);
     }
 
-    function purchaseBillboardApprove(string memory description, string memory link, string memory hash, bool vertical) external {
+    function purchaseBillboardApprove(string memory description, string memory link, string memory hash, bool vertical)
+        external
+    {
         require(address(governance) != address(0), "Governance not initialized");
 
         require(usdc.transferFrom(msg.sender, address(this), governance.pricePerBillboard()), "USDC transfer failed");

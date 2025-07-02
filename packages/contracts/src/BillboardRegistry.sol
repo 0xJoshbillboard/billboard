@@ -26,9 +26,10 @@ contract BillboardRegistry is Initializable, OwnableUpgradeable {
         string description;
         string link;
         string hash;
+        bool vertical;
     }
 
-    event BillboardPurchased(address indexed buyer, uint256 expiryTime, string description, string link, string hash);
+    event BillboardPurchased(address indexed buyer, uint256 expiryTime, string description, string link, string hash, bool vertical);
 
     event BillboardExtended(address indexed owner, uint256 index, uint256 newExpiryTime);
 
@@ -67,6 +68,7 @@ contract BillboardRegistry is Initializable, OwnableUpgradeable {
         string memory description,
         string memory link,
         string memory hash,
+        bool vertical,
         uint256 deadline,
         uint8 v,
         bytes32 r,
@@ -85,13 +87,14 @@ contract BillboardRegistry is Initializable, OwnableUpgradeable {
                 expiryTime: block.timestamp + governance.duration(),
                 description: description,
                 link: link,
-                hash: hash
+                hash: hash,
+                vertical: vertical
             })
         );
-        emit BillboardPurchased(msg.sender, block.timestamp + governance.duration(), description, link, hash);
+        emit BillboardPurchased(msg.sender, block.timestamp + governance.duration(), description, link, hash, vertical);
     }
 
-    function purchaseBillboardApprove(string memory description, string memory link, string memory hash) external {
+    function purchaseBillboardApprove(string memory description, string memory link, string memory hash, bool vertical) external {
         require(address(governance) != address(0), "Governance not initialized");
 
         require(usdc.transferFrom(msg.sender, address(this), governance.pricePerBillboard()), "USDC transfer failed");
@@ -102,10 +105,11 @@ contract BillboardRegistry is Initializable, OwnableUpgradeable {
                 expiryTime: block.timestamp + governance.duration(),
                 description: description,
                 link: link,
-                hash: hash
+                hash: hash,
+                vertical: vertical
             })
         );
-        emit BillboardPurchased(msg.sender, block.timestamp + governance.duration(), description, link, hash);
+        emit BillboardPurchased(msg.sender, block.timestamp + governance.duration(), description, link, hash, vertical);
     }
 
     function extendBillboard(uint256 index, uint256 deadline, uint8 v, bytes32 r, bytes32 s)
@@ -160,8 +164,8 @@ contract BillboardRegistry is Initializable, OwnableUpgradeable {
         require(block.timestamp >= advertiser.depositTime + 30 days, "Deposit locked for 30 days");
         require(!governance.getAdvertiserIsBlamed(advertiser.advertiser).isBlamed, "Advertiser is blamed");
         uint256 depositAmount = governance.securityDepositAdvertiser();
-        advertiser.withdrawnDeposit = true;
         require(usdc.transfer(msg.sender, depositAmount), "USDC transfer failed");
+        advertiser.withdrawnDeposit = true;
         emit SecurityDepositWithdrawn(msg.sender, depositAmount);
     }
 

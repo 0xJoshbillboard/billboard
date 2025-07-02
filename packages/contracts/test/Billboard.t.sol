@@ -95,7 +95,7 @@ contract BillboardTest is Test {
 
         vm.expectEmit(true, true, true, true);
         emit BillboardRegistry.BillboardPurchased(
-            user, block.timestamp + 30 days, "Test Billboard", "https://test.com", "test.com"
+            user, block.timestamp + 30 days, "Test Billboard", "https://test.com", "test.com", true
         );
         BillboardRegistry(address(proxy)).purchaseBillboard(
             "Test Billboard", "https://test.com", "test.com", true, deadline, v, r, s

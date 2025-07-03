@@ -7,6 +7,7 @@ export interface Billboard {
   hash: string;
   expiryTime: number;
   url: string;
+  vertical: boolean;
 }
 
 export class BillboardSDK {
@@ -39,6 +40,7 @@ export class BillboardSDK {
         link: data.result.link,
         description: data.result.description,
         expiryTime: data.result.expiryTime,
+        vertical: data.result.vertical,
       };
 
       BillboardCache.set(cacheKey, ad);
@@ -82,6 +84,7 @@ export class BillboardSDK {
         link: ad.link,
         description: ad.description,
         expiryTime: ad.expiryTime,
+        vertical: ad.vertical,
       }));
 
       BillboardCache.set(cacheKey, ads);

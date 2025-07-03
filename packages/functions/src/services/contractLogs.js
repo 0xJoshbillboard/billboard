@@ -41,6 +41,7 @@ const fetchContractLogs = async () => {
         description: log.args[2],
         link: log.args[3],
         hash: log.args[4],
+        vertical: log.args[5],
       };
 
       const logRef = db.collection("contract_logs").doc(log.transactionHash);

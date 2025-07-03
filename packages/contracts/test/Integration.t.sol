@@ -65,7 +65,7 @@ contract IntegrationTest is Test {
         (uint8 v, bytes32 r, bytes32 s) =
             permitSignature.getPermitSignature(address(usdc), user, address(proxy), initialPrice, privateKey, deadline);
         BillboardRegistry(address(proxy)).purchaseBillboard(
-            "Test Billboard", "https://test.com", "test.com", deadline, v, r, s
+            "Test Billboard", "https://test.com", "test.com", true, deadline, v, r, s
         );
 
         BillboardRegistry.Billboard[] memory billboards = BillboardRegistry(address(proxy)).getBillboards(user);
@@ -75,6 +75,7 @@ contract IntegrationTest is Test {
         assertEq(billboards[0].description, "Test Billboard");
         assertEq(billboards[0].link, "https://test.com");
         assertEq(billboards[0].hash, "test.com");
+        assertEq(billboards[0].vertical, true);
         vm.stopPrank();
     }
 

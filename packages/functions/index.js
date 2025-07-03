@@ -129,6 +129,7 @@ exports.getAds = onRequest(cors, async (req, res) => {
         description: adData.description,
         expiryTime: adData.expiryTime,
         buyer: adData.buyer,
+        vertical: adData.vertical,
       });
     });
 
@@ -164,6 +165,7 @@ exports.getAds = onRequest(cors, async (req, res) => {
               expiryTime: ad.expiryTime,
               hash: ad.hash,
               buyer: ad.buyer,
+              vertical: ad.vertical,
             };
           } catch (error) {
             logger.error(`Error converting hash ${ad.hash}:`, error);

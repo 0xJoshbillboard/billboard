@@ -18,6 +18,7 @@ import {
   TextareaAutosize,
   Snackbar,
   Slide,
+  Switch,
 } from "@mui/material";
 import CloudUploadIcon from "@mui/icons-material/CloudUpload";
 import CloseIcon from "@mui/icons-material/Close";
@@ -27,7 +28,6 @@ import { BILLBOARD_ADDRESS } from "../utils/contracts";
 import useERC20Permit from "../hooks/useERC20Permit";
 
 export default function Buy() {
-  // State management
   const [isSnackbarOpen, setIsSnackbarOpen] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState(false);
@@ -36,8 +36,8 @@ export default function Buy() {
   const [link, setLink] = useState("");
   const [linkError, setLinkError] = useState<string | null>(null);
   const [allowance, setAllowance] = useState<number | null>(null);
+  const [vertical, setVertical] = useState(false);
 
-  // Hooks
   const {
     buy,
     governanceSettings,
@@ -57,19 +57,40 @@ export default function Buy() {
     }
   }, [wallet]);
 
-  // File handling
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     if (event.target.files && event.target.files.length > 0) {
-      if (event.target.files[0].size > 2097152) {
+      const file = event.target.files[0];
+
+      if (file.size > 2097152) {
         setError("File size must be less than 2MB");
         return;
       }
-      setSelectedFile(event.target.files[0]);
-      setError(null);
+
+      const img = new Image();
+      img.onload = () => {
+        const { width, height } = img;
+        const expectedWidth = !vertical ? 512 : 300;
+        const expectedHeight = !vertical ? 300 : 512;
+
+        if (width !== expectedWidth || height !== expectedHeight) {
+          setError(
+            `Image dimensions must be ${expectedWidth}x${expectedHeight} pixels`,
+          );
+          return;
+        }
+
+        setSelectedFile(file);
+        setError(null);
+      };
+
+      img.onerror = () => {
+        setError("Invalid image file");
+      };
+
+      img.src = URL.createObjectURL(file);
     }
   };
 
-  // Validation
   const validateLink = (url: string): boolean => {
     try {
       new URL(url);
@@ -91,12 +112,10 @@ export default function Buy() {
     }
   };
 
-  // Form submission
   const handleUpload = async () => {
     if (!wallet) {
       connect();
     } else {
-      // Validate inputs
       if (!description.trim()) {
         setError("Please enter a description");
         return;
@@ -119,7 +138,7 @@ export default function Buy() {
 
       try {
         setIsUploading(true);
-        await buy(description, link, selectedFile);
+        await buy(description, link, selectedFile, vertical);
         setError(null);
         afterSuccessfullyPurchased();
       } catch (err) {
@@ -231,12 +250,34 @@ export default function Buy() {
                 helperText={linkError}
               />
 
+              <Typography variant="body1" fontSize="small" mt={2}>
+                Select the orientation of your billboard
+              </Typography>
+              <Stack direction="row" spacing={1} alignItems="center">
+                <Typography variant="h6" fontSize="medium">
+                  Horizontal
+                </Typography>
+                <Switch
+                  checked={vertical}
+                  onChange={() => {
+                    setSelectedFile(null);
+                    setVertical(!vertical);
+                  }}
+                />
+                <Typography variant="h6" fontSize="medium">
+                  Vertical
+                </Typography>
+              </Stack>
+              <Typography variant="body1" fontSize="small" mt={2}>
+                {!vertical
+                  ? "Select an image with the dimensons of 512x300"
+                  : "Select an image with the dimensions of 300x512"}
+              </Typography>
               {/* Upload button */}
               <Button
                 variant="outlined"
                 component="label"
                 startIcon={<CloudUploadIcon />}
-                sx={{ mt: 2 }}
               >
                 Upload an image (max 2MB)
                 <input
@@ -246,7 +287,6 @@ export default function Buy() {
                   onChange={handleFileChange}
                 />
               </Button>
-
               {/* Selected file display */}
               {selectedFile && (
                 <Button
@@ -260,7 +300,6 @@ export default function Buy() {
                   </Typography>
                 </Button>
               )}
-
               {/* Transaction steps */}
               <Box sx={{ mt: 3 }}>
                 <Typography variant="body1" gutterBottom>
@@ -399,7 +438,6 @@ export default function Buy() {
                   )}
                 </Paper>
               </Box>
-
               {/* Submit button */}
               <Button
                 variant="contained"
@@ -422,14 +460,12 @@ export default function Buy() {
                   "Buy Billboard"
                 )}
               </Button>
-
               {/* Error display */}
               {error && (
                 <Alert severity="error" sx={{ mt: 2 }}>
                   {error}
                 </Alert>
               )}
-
               {/* Image preview */}
               {selectedFile && (
                 <Box

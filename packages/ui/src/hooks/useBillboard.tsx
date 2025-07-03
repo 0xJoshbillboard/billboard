@@ -635,7 +635,12 @@ export default function useBillboard() {
   };
 
   // Billboard functions
-  const buy = async (description: string, link: string, file: File | null) => {
+  const buy = async (
+    description: string,
+    link: string,
+    file: File | null,
+    vertical: boolean,
+  ) => {
     if (!contract) {
       throw new Error("Contract not defined");
     }
@@ -686,6 +691,7 @@ export default function useBillboard() {
         description,
         link,
         url.hash,
+        vertical,
         permitFromToken?.deadline,
         permitFromToken?.v,
         permitFromToken?.r,

@@ -57,7 +57,7 @@ contract BillboardTest is Test {
         (uint8 v, bytes32 r, bytes32 s) =
             permitSignature.getPermitSignature(address(usdc), user, address(proxy), 1000e6, privateKey, deadline);
         BillboardRegistry(address(proxy)).purchaseBillboard(
-            "Test Billboard", "https://test.com", "test.com", deadline, v, r, s
+            "Test Billboard", "https://test.com", "test.com", true, deadline, v, r, s
         );
         vm.stopPrank();
     }
@@ -72,7 +72,7 @@ contract BillboardTest is Test {
         (uint8 v, bytes32 r, bytes32 s) =
             permitSignature.getPermitSignature(address(usdc), user, address(proxy), 1000e6, privateKey, deadline);
         BillboardRegistry(address(proxy)).purchaseBillboard(
-            "Test Billboard", "https://test.com", "test.com", deadline, v, r, s
+            "Test Billboard", "https://test.com", "test.com", true, deadline, v, r, s
         );
 
         BillboardRegistry.Billboard[] memory billboards = BillboardRegistry(address(proxy)).getBillboards(user);
@@ -95,10 +95,10 @@ contract BillboardTest is Test {
 
         vm.expectEmit(true, true, true, true);
         emit BillboardRegistry.BillboardPurchased(
-            user, block.timestamp + 30 days, "Test Billboard", "https://test.com", "test.com"
+            user, block.timestamp + 30 days, "Test Billboard", "https://test.com", "test.com", true
         );
         BillboardRegistry(address(proxy)).purchaseBillboard(
-            "Test Billboard", "https://test.com", "test.com", deadline, v, r, s
+            "Test Billboard", "https://test.com", "test.com", true, deadline, v, r, s
         );
         vm.stopPrank();
     }
@@ -111,7 +111,7 @@ contract BillboardTest is Test {
         (uint8 v, bytes32 r, bytes32 s) =
             permitSignature.getPermitSignature(address(usdc), user, address(proxy), 1000e6, privateKey, deadline);
         BillboardRegistry(address(proxy)).purchaseBillboard(
-            "Test Billboard", "https://test.com", "test.com", deadline, v, r, s
+            "Test Billboard", "https://test.com", "test.com", true, deadline, v, r, s
         );
 
         vm.warp(1000);
@@ -129,6 +129,7 @@ contract BillboardTest is Test {
         assertEq(billboards[0].description, "Test Billboard");
         assertEq(billboards[0].link, "https://test.com");
         assertEq(billboards[0].hash, "test.com");
+        assertEq(billboards[0].vertical, true);
         vm.stopPrank();
     }
 
@@ -140,7 +141,7 @@ contract BillboardTest is Test {
         (uint8 v, bytes32 r, bytes32 s) =
             permitSignature.getPermitSignature(address(usdc), user, address(proxy), 1000e6, privateKey, deadline);
         BillboardRegistry(address(proxy)).purchaseBillboard(
-            "Test Billboard", "https://test.com", "test.com", deadline, v, r, s
+            "Test Billboard", "https://test.com", "test.com", true, deadline, v, r, s
         );
 
         vm.warp(1000);
@@ -163,7 +164,7 @@ contract BillboardTest is Test {
         (uint8 v, bytes32 r, bytes32 s) =
             permitSignature.getPermitSignature(address(usdc), user, address(proxy), 1000e6, privateKey, deadline);
         BillboardRegistry(address(proxy)).purchaseBillboard(
-            "Test Billboard", "https://test.com", "test.com", deadline, v, r, s
+            "Test Billboard", "https://test.com", "test.com", true, deadline, v, r, s
         );
         vm.stopPrank();
 

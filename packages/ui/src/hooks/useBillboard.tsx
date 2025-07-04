@@ -728,7 +728,7 @@ export default function useBillboard() {
         }));
       }
       console.error(error);
-      throw new Error("Failed to purchase billboard");
+      throw error;
     }
   };
 

@@ -32,7 +32,13 @@ export const BlameAdvertiser = ({
   voteForBlame,
   resolveAdvertiserBlame,
 }: {
-  blameAdvertiser: (address: string) => Promise<void>;
+  blameAdvertiser: (
+    address: string,
+    deadline: number,
+    v: number,
+    r: string,
+    s: string,
+  ) => Promise<void>;
   transactionStatus: TransactionStatus;
   securityDeposit: number;
   voteForBlame: (address: string, support: boolean) => Promise<void>;
@@ -45,8 +51,6 @@ export const BlameAdvertiser = ({
   const [advertiserAddress, setAdvertiserAddress] = useState("");
   const [blameLoading, setBlameLoading] = useState(false);
   const [activeStep, setActiveStep] = useState(0);
-
-  console.log(events);
 
   useEffect(() => {
     if (transactionStatus?.permitToken?.completed) {
@@ -64,14 +68,21 @@ export const BlameAdvertiser = ({
 
     try {
       setBlameLoading(true);
-      await getPermit(
+      const permit = await getPermit(
         usdcContract,
         wallet.accounts[0].address,
         GOVERNANCE_ADDRESS,
         securityDeposit.toString(),
         "1",
       );
-      await blameAdvertiser(advertiserAddress);
+
+      await blameAdvertiser(
+        advertiserAddress,
+        deadline,
+        permit.v,
+        permit.r,
+        permit.s,
+      );
       setAdvertiserAddress("");
     } catch (error) {
       console.error("Failed to blame advertiser:", error);
@@ -144,7 +155,7 @@ export const BlameAdvertiser = ({
             <StepButton>
               <StepLabel>
                 <Box sx={{ display: "flex", flexDirection: "column" }}>
-                  <Typography variant="body2">Approve BBT Tokens</Typography>
+                  <Typography variant="body2">Permit BBT Tokens</Typography>
                   {transactionStatus?.permitToken?.pending && (
                     <Typography variant="caption" color="primary">
                       Processing...

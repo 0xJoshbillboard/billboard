@@ -226,7 +226,7 @@ export default function Buy() {
                 style={{
                   backgroundColor: theme.palette.background.paper,
                   borderRadius: "4px",
-                  fontFamily: "FuturaPT-Book",
+                  fontFamily: "FuturaPT-Medium",
                   fontSize: "16px",
                   color: "white",
                   outline: "none",
@@ -525,7 +525,7 @@ export default function Buy() {
             bgcolor: theme.palette.primary.main,
             fontSize: "16px",
             fontWeight: "bold",
-            fontFamily: "FuturaPT-Book",
+            fontFamily: "FuturaPT-Medium",
           }}
         >
           Successfully purchased a billboard

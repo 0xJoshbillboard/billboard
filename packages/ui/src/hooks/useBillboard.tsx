@@ -69,12 +69,6 @@ export default function useBillboard() {
         error: null,
         label: "Buy Billboard",
       },
-      extendBillboard: {
-        pending: false,
-        completed: false,
-        error: null,
-        label: "Extend Billboard",
-      },
       registerProvider: {
         pending: false,
         completed: false,
@@ -756,72 +750,16 @@ export default function useBillboard() {
         );
       }
 
-      setTransactionStatus((prev) => ({
-        ...prev,
-        permitToken: {
-          ...prev.permitToken,
-          pending: false,
-          completed: true,
-        },
-      }));
-
-      setTransactionStatus((prev) => ({
-        ...prev,
-        extendBillboard: {
-          ...prev.extendBillboard,
-          pending: true,
-          error: null,
-        },
-      }));
-
-      const tx = permitFromToken
-        ? getMulticall3Contract(signer).aggregate([
-            {
-              target: USDC_ADDRESS,
-              data: permitFromToken?.encodedPermit,
-            },
-            {
-              target: contract.target,
-              data: contract.interface.encodeFunctionData("extendBillboard", [
-                index,
-              ]),
-            },
-          ])
-        : await contract.extendBillboard(index);
+      const tx = await contract.extendBillboard(
+        index,
+        permitFromToken?.deadline,
+        permitFromToken?.v,
+        permitFromToken?.r,
+        permitFromToken?.s,
+      );
       await tx.wait();
-
-      setTransactionStatus((prev) => ({
-        ...prev,
-        extendBillboard: {
-          ...prev.extendBillboard,
-          pending: false,
-          completed: true,
-        },
-      }));
-
       return tx;
     } catch (error) {
-      const errorMessage =
-        error instanceof Error ? error.message : String(error);
-      if (transactionStatus.permitToken.pending) {
-        setTransactionStatus((prev) => ({
-          ...prev,
-          permitToken: {
-            ...prev.permitToken,
-            pending: false,
-            error: errorMessage,
-          },
-        }));
-      } else {
-        setTransactionStatus((prev) => ({
-          ...prev,
-          extendBillboard: {
-            ...prev.extendBillboard,
-            pending: false,
-            error: errorMessage,
-          },
-        }));
-      }
       throw error;
     }
   };

@@ -19,12 +19,6 @@ export interface TransactionStatus {
     error: string | null;
     label: string;
   };
-  extendBillboard: {
-    pending: boolean;
-    completed: boolean;
-    error: string | null;
-    label: string;
-  };
   registerProvider: {
     pending: boolean;
     completed: boolean;

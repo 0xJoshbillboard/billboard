@@ -117,8 +117,7 @@ function App() {
           },
         },
         typography: {
-          fontFamily:
-            '"FuturaCondensedPT-Medium", "Helvetica", "Arial", sans-serif',
+          fontFamily: '"FuturaPT-Medium", "Helvetica", "Arial", sans-serif',
           h1: {
             fontWeight: 800,
           },
@@ -126,7 +125,7 @@ function App() {
             fontWeight: 700,
           },
           h6: {
-            fontFamily: "FuturaPT-Book",
+            fontFamily: "FuturaPT-Medium",
             fontWeight: 400,
           },
           body1: {
@@ -136,6 +135,10 @@ function App() {
           button: {
             fontFamily: "FuturaPT-Medium",
             fontWeight: 600,
+          },
+          caption: {
+            fontFamily: "FuturaPT-Medium",
+            fontWeight: 400,
           },
         },
       }),

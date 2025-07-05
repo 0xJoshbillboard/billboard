@@ -1,5 +1,6 @@
 import ContentCopyIcon from "@mui/icons-material/ContentCopy";
 import {
+  Alert,
   Box,
   Button,
   Card,
@@ -12,6 +13,8 @@ import {
   Grid,
   IconButton,
   Paper,
+  Slide,
+  Snackbar,
   Stack,
   Typography,
   useTheme,
@@ -47,6 +50,7 @@ export default function Dashboard() {
   const [statistics, setStatistics] = useState<BillboardStatistic[]>([]);
   const [billboardsAreLoading, setBillboardsAreLoading] = useState(false);
   const [statisticsLoading, setStatisticsLoading] = useState(false);
+  const [isSnackbarOpen, setIsSnackbarOpen] = useState(false);
   const theme = useTheme();
   const navigate = useNavigate();
 
@@ -83,6 +87,7 @@ export default function Dashboard() {
   const handleExtend = async (index: number) => {
     try {
       await extend(index);
+      setIsSnackbarOpen(true);
       const fetchedBillboards = await fetchBillboards();
       setBillboards(fetchedBillboards);
     } catch (error) {
@@ -153,6 +158,26 @@ export default function Dashboard() {
 
   return (
     <Container maxWidth={false} sx={{ maxWidth: "1440px" }}>
+      <Snackbar
+        open={isSnackbarOpen}
+        autoHideDuration={6000}
+        slots={{ transition: Slide }}
+        anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
+        onClose={() => setIsSnackbarOpen(false)}
+      >
+        <Alert
+          severity="success"
+          variant="filled"
+          sx={{
+            bgcolor: theme.palette.primary.main,
+            fontSize: "16px",
+            fontWeight: "bold",
+            fontFamily: "FuturaPT-Medium",
+          }}
+        >
+          Successfully extended a billboard
+        </Alert>
+      </Snackbar>
       <Box sx={{ p: 4, my: 4 }}>
         <Typography variant="h1">Your Billboards</Typography>
         <Typography variant="h6"></Typography>
@@ -272,7 +297,10 @@ export default function Dashboard() {
                       size="small"
                       color="primary"
                       variant="contained"
-                      onClick={() => handleExtend(index)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleExtend(index);
+                      }}
                     >
                       Extend until{" "}
                       {new Date(

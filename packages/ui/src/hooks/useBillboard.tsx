@@ -728,7 +728,7 @@ export default function useBillboard() {
         }));
       }
       console.error(error);
-      throw new Error("Failed to purchase billboard");
+      throw error;
     }
   };
 
@@ -1034,8 +1034,12 @@ export default function useBillboard() {
     if (image.size > MAX_FILE_SIZE) {
       throw new Error("File size exceeds the maximum limit of 2MB");
     }
-    if (image.type !== "image/png" && image.type !== "image/jpeg") {
-      throw new Error("Only PNG or JPG images are allowed");
+    if (
+      image.type !== "image/png" &&
+      image.type !== "image/jpeg" &&
+      image.type !== "image/gif"
+    ) {
+      throw new Error("Only PNG, JPG, or GIF images are allowed");
     }
     try {
       const arrayBuffer = await image.arrayBuffer();

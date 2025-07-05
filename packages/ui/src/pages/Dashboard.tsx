@@ -224,7 +224,7 @@ export default function Dashboard() {
                     <CardMedia
                       component="img"
                       height="200"
-                      image={`https://api.swarmy.cloud/bytes/${billboard.hash}`}
+                      image={`https://api.swarmy.cloud/bzz/${billboard.hash}/`}
                       alt={billboard.description}
                       sx={{
                         objectFit: "cover",

@@ -15,26 +15,38 @@ const uploadImageToSwarmy = async (imageData) => {
     const imageBuffer = Buffer.from(imageData, "base64");
 
     const imageInfo = await sharp(imageBuffer).metadata();
-    if (!["png", "jpeg"].includes(imageInfo.format)) {
-      throw new Error("Only PNG or JPG images are allowed.");
+    if (!["png", "jpeg", "gif"].includes(imageInfo.format)) {
+      throw new Error("Only PNG, JPG, or GIF images are allowed.");
     }
 
-    const sanitizedImage = await sharp(imageBuffer)
-      .resize(200, 200, {
-        fit: "inside",
-        withoutEnlargement: true,
-      })
-      .jpeg({
-        quality: 80,
-        progressive: true,
-      })
-      .toBuffer();
+    let sanitizedImage;
+    let contentType;
+    let fileExtension;
+
+    if (imageInfo.format === "gif") {
+      sanitizedImage = imageBuffer;
+      contentType = "image/gif";
+      fileExtension = ".gif";
+    } else {
+      sanitizedImage = await sharp(imageBuffer)
+        .resize(200, 200, {
+          fit: "inside",
+          withoutEnlargement: true,
+        })
+        .jpeg({
+          quality: 80,
+          progressive: true,
+        })
+        .toBuffer();
+      contentType = "image/jpeg";
+      fileExtension = ".jpg";
+    }
 
     const sanitizedBase64 = sanitizedImage.toString("base64");
 
     const result = await axios.post(swarmyURL, {
-      name: Math.random().toString(36).substring(2, 15).concat(".jpg"),
-      contentType: "image/jpeg",
+      name: Math.random().toString(36).substring(2, 15).concat(fileExtension),
+      contentType: contentType,
       base64: sanitizedBase64,
     });
 

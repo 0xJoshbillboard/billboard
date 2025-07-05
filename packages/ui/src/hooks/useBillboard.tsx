@@ -939,7 +939,13 @@ export default function useBillboard() {
     }
   };
 
-  const blameAdvertiser = async (address: string) => {
+  const blameAdvertiser = async (
+    address: string,
+    deadline: number,
+    v: number,
+    r: string,
+    s: string,
+  ) => {
     if (!contract || !governanceContract) {
       throw new Error("Contract not defined");
     }
@@ -949,7 +955,13 @@ export default function useBillboard() {
       blameAdvertiser: { ...prev.blameAdvertiser, pending: true, error: null },
     }));
     try {
-      const tx = await governanceContract.blameAdvertiser(address);
+      const tx = await governanceContract.blameAdvertiser(
+        address,
+        deadline,
+        v,
+        r,
+        s,
+      );
       await tx.wait();
       setTransactionStatus((prev) => ({
         ...prev,
